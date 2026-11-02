@@ -24,8 +24,8 @@
       "bytes": 56394
     },
     "README.md": {
-      "sha256": "a755c2f76b327a11b725bc4f45106dbf6659b0099198e18927a4993825215bc8",
-      "bytes": 1057
+      "sha256": "1149d012a55c45a53b8e907cf8a84c604fc29856275a2070c9436f564378f9f7",
+      "bytes": 1352
     },
     "SOURCE_COMMIT.txt": {
       "sha256": "52bf865ce771226b0dfcdeea53443f32cbf516de13abc590c65a6ac51c9760a5",
@@ -86,6 +86,14 @@
     "index.wasm": {
       "sha256": "26b61ce95247012ab3dca3ff51e96d1cdbff44ee91a8c20a83e150afca83f1b6",
       "bytes": 37700666
+    },
+    "RECOVERY.md": {
+      "sha256": "64ce5c940a40ae56b9def53a92a15dd03c0de63ddceb3e73d1c054687c0220ec",
+      "bytes": 4718
+    },
+    "MIGRATION.json": {
+      "sha256": "b2012d51fbc9ac29adef6f6735ca410de3d29eb82f5b6aebcc8dbee681ae6fdf",
+      "bytes": 359
     }
   }
 }

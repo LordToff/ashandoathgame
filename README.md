@@ -1,6 +1,11 @@
 # Ash & Oath v0.25
 
-[Play in your browser](https://lordtoff.github.io/Godot-Game-Template/?v=0.25)
+Canonical source: https://github.com/LordToff/ashandoathgame (`main`). Browser files: `gh-pages`.
+
+This dedicated-repository address requires GitHub Pages enabled for `gh-pages` at the root. The previous verified live site remains https://lordtoff.github.io/Godot-Game-Template/?v=0.25 until then.
+
+
+[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.25)
 
 The Ash Road adds six visible event slots, one d6 selection, explicit choices and stakes, ordinary two-monster encounters, and saved one-time reward claims. Use earned Salves and Reroll Seals in combat; Gold funds Shrine offerings and three Soul Fragments unlock the existing optional Blank-movement Soul. Four bosses and face building remain.
 
