@@ -7,6 +7,7 @@ func reach(f: int) -> String:
  var distance := n("face%d.range" % f)
  return "an adjacent unit" if distance == 1 else "a unit within %d" % distance
 func face(f: int) -> String:
+ if f >= 60 and f < 69:return preload("res://prototype/essence.gd").FACES[f-60][2]
  match f:
   0:return "No ordinary effect. With the test Soul ON, spend a Blank as Move %d; at most %d per hero turn." % [n("soul.move"),n("soul.uses")]
   1:return "Deal %d damage to %s." % [n("face1.damage"),reach(f)]

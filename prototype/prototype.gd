@@ -22,6 +22,15 @@ const NUGH_PHASE = preload("res://prototype/assets/pixel_nugh_phase2.png")
 const WORM_SPRITE = preload("res://prototype/assets/pixel_screaming_worm.png")
 const DIE_Y = 205
 const DIE_STEP = 98
+const CampUI = preload("res://prototype/camp_ui.gd")
+const Essence = preload("res://prototype/essence.gd")
+const CREATURE_SPRITES = {"bone_creature":preload("res://prototype/assets/bone_creature.png"),"support_creature":preload("res://prototype/assets/support_creature.png"),"movement_creature":preload("res://prototype/assets/movement_creature.png")}
+var camp_type := "bone_creature"
+var camp_recipe := "bone_growth"
+var camp_hero := 0
+var camp_message := "Defeat creatures, bank their Essence after victory, then craft and refit here."
+var show_enemy_cards := false
+var event_soul_hero := 0
 const Expedition = preload("res://prototype/expedition.gd")
 const EventBattle = preload("res://prototype/event_battle.gd")
 var expedition = Expedition.new()
@@ -272,6 +281,8 @@ func panel(rect: Rect2, color: Color = Color("161d28"), border: Color = Color("3
 func rebuild() -> void:
  sync_presentation()
  for c in ui.get_children(): ui.remove_child(c); c.queue_free()
+ if page == "camp":
+  CampUI.render(self);soundtrack_ui();queue_redraw();return
  if page == "events":
   events_ui();soundtrack_ui();queue_redraw();return
  if page == "setup":
@@ -288,7 +299,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.26",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.27",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -312,6 +323,7 @@ func rebuild() -> void:
  if show_options: options_ui()
  if show_supplies:supplies_ui()
  if show_soundtrack:soundtrack_settings_ui()
+ if show_enemy_cards:enemy_cards_ui()
  if not combat_notices.is_empty():notice_ui()
  queue_redraw()
 
@@ -332,6 +344,8 @@ func forge_ui() -> void:
    o.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; o.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
    o.name = "ForgeDie%dSide%d" % [d,side]
    for id in range(9): o.add_item(Catalog.display_name(id),id)
+   for id in range(60,69):
+    if expedition.camp.owned(id) > 0:o.add_item(Catalog.display_name(id),id)
    for id in gifts[build_hero]: o.add_item(Catalog.display_name(id),id)
    o.select(o.get_item_index(f));o.text = Model.FACES[f]; o.add_theme_stylebox_override("normal",style(Color("202938"),Color(color_for_face(f),0.55)))
    o.get_theme_stylebox("normal").content_margin_left = 4;o.get_theme_stylebox("normal").content_margin_right = 4
@@ -340,7 +354,7 @@ func forge_ui() -> void:
    o.get_popup().min_size = Vector2i(440,0)
    o.tooltip_text = "SIDE %d · " % (side+1)+Catalog.display_name(f) + "\n" + face_help(f); ui.add_child(o)
    o.set_drag_forwarding(func(_at):return face_drag_data(o,f,d,side),func(_at,data):return face_drop_allowed(d,side,data),func(_at,data):place_dragged_face(d,side,data))
- var error := Model.validate(builds[build_hero],gifts[build_hero],balance_values)
+ var error := Model.validate(builds[build_hero],gifts[build_hero],expedition.camp.profile(balance_values))
  label_at("✓ Legal build · %d/%d ability faces" % [18-builds[build_hero].reduce(func(a,d): return a+d.count(0),0),18-3*balance_number("body.blanks")] if error == "" else error,Vector2(75,706),14,COLORS[build_hero] if error == "" else Color("ef8e87"),730)
  button("Guided practice",Vector2(350,811),Vector2(200,40),start_training,Color("82c8b9"))
  button("Save build preset",Vector2(75,811),Vector2(245,40),save_preset,MUTED)
@@ -358,7 +372,8 @@ func forge_ui() -> void:
  button("Bonus faces: %d / 2 · browse full pool" % gifts[build_hero].size(),Vector2(884,601),Vector2(400,35),func(): draft_modal = true; rebuild(),Color("be9bdf"))
  var legal_builds := true
  for i in range(3):
-  if Model.validate(builds[i],gifts[i],balance_values) != "" or gifts[i].size() != 2: legal_builds = false
+  if Model.validate(builds[i],gifts[i],expedition.camp.profile(balance_values)) != "" or gifts[i].size() != 2: legal_builds = false
+ button("Camp Forge · refit rewards",Vector2(884,833),Vector2(400,35),open_camp,Color("82c8b9"))
  button("Review rules & choose boss →",Vector2(884,773),Vector2(400,55),open_setup,GOLD,not legal_builds)
 
 func retry(with_soul: bool = false) -> void:
@@ -370,30 +385,32 @@ func open_setup() -> void:
 
 func begin() -> void:
  event_fight = false
+ var allocation := camp_allocation_error(builds)
+ if allocation != "":hint = allocation;page = "forge";rebuild();return
  combat_notices.clear();choosing_reroll = false
  for hero in range(3):
-  var error := Model.validate(builds[hero],gifts[hero],balance_values)
+  var error := Model.validate(builds[hero],gifts[hero],expedition.camp.profile(balance_values))
   if error != "":hint = error;page = "forge";rebuild();return
  training = false
  lab = false
  draft_modal = false
  roll_feedback = {};show_active_effects = false;detailed_ability = false
  game = Bugh.new() if encounter == "bugh" else (Cantor.new() if encounter == "cantor" else (Nugh.new() if encounter == "nugh" else Model.new()))
- game.start(builds,0,reward_soul,balanced,balance_values); page = "battle"; seen_roll = 0; roll_seen = 0; seen_event = 0; effects.clear(); snapshots.clear(); visual_positions.clear(); selected = -1; shove_target = -1
+ game.start(builds,0,reward_soul,balanced,camp_battle_profile());game.harvest_revealed = expedition.camp.defeated.duplicate(); page = "battle"; seen_roll = 0; roll_seen = 0; seen_event = 0; effects.clear(); snapshots.clear(); visual_positions.clear(); selected = -1; shove_target = -1
  hint = "Select a rolled die, then a highlighted cell or unit. Boss dice are public."
  rebuild()
 
 func battle_ui() -> void:
  if inspect_actor != game.active:
-  inspect_actor = game.active;combat_inspected = -1;inspect_action = "";show_active_effects = false;roll_feedback = {};selected = -1
+  inspect_actor = game.active;combat_inspected = -1;inspect_action = "";show_active_effects = false;roll_feedback = {};selected = game.forced_die
  var actor: String = "ENCOUNTER ENDED" if game.outcome != "" else (game.boss_name().split(" · ")[0].split(",")[0].to_upper()+"’S TURN" if game.active == 3 else game.heroes[game.active].name.to_upper()+"’S TURN")
  label_at(actor,Vector2(250,19),22,Color("f1e8cf"),360).clip_text = true
  var order_text: Array[String] = []
  for id in game.order: order_text.append(game.unit_name(id))
  label_at("ROUND %02d" % game.round_no,Vector2(622,22),14,GOLD,130).tooltip_text = "Initiative: "+" → ".join(order_text)
- var boss_title := "VEYL · BRASS CANTOR" if game.encounter_id == "cantor" else game.boss_name().to_upper()
+ var boss_title := "CREATURE GROUP" if game.encounter_id == "event" else ("VEYL · BRASS CANTOR" if game.encounter_id == "cantor" else game.boss_name().to_upper())
  label_at(boss_title+(" · PHASE II" if game.phase_two else ""),Vector2(768,20),16,Color("e6c4b6"),320).clip_text = true
- label_at("%d/%d HP  ·  %d Block" % [game.boss.hp,game.boss.max_hp,game.boss.block],Vector2(1120,22),16,Color("e6c4b6"),285)
+ label_at("%d/%d HP  ·  %d Block" % [enemy_pool("hp"),enemy_pool("max_hp"),enemy_pool("block")],Vector2(1120,22),16,Color("e6c4b6"),285)
  for d in range(3):
   var action: String = game.boss_rolls[d]
   var done: bool = game.active == 3 and d < game.boss_visible_index()
@@ -402,7 +419,7 @@ func battle_ui() -> void:
   intent.add_theme_font_size_override("font_size",14);intent.tooltip_text = ""
  var threshold := int(floor(game.boss.max_hp*game.v("boss.phase.percent")/100.0))
  var phase_button := button(("ORDINARY MONSTERS · rules" if game.encounter_id == "event" else ("PHASE II ACTIVE" if game.phase_two else "UPGRADES AT %d HP" % threshold))+" · view changes",Vector2(760,110),Vector2(328,28),func():inspect_action = "__phase__";combat_inspected = -1;show_active_effects = false;detailed_ability = false;rebuild(),Color("e8a56a") if game.phase_two else GOLD)
- label_at("No phase · defeat both" if game.encounter_id == "event" else "%d abilities upgrade at half HP" % game.phase_upgrades().size(),Vector2(1128,115),14,Color("e8b885"),280)
+ label_at("No phase · defeat all" if game.encounter_id == "event" else "%d abilities upgrade at half HP" % game.phase_upgrades().size(),Vector2(1128,115),14,Color("e8b885"),280)
  phase_button.name = "BossPhaseSummary";phase_button.add_theme_font_size_override("font_size",14);phase_button.tooltip_text = ""
  soul_toggle(Vector2(760,159),true,328)
  for i in range(3):
@@ -466,14 +483,14 @@ func battle_ui() -> void:
   instruction_label.max_lines_visible = 2;instruction_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;instruction_label.tooltip_text = instruction
   if selected >= 0 and not h.used[selected]:
    var f: int = game.face(game.active,selected)
-   if (f == 59 and game.owned_worm(game.active) >= 0) or f in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56] or (f == 0 and (not game.reward or game.soul_remaining(game.active) <= 0)):
+   if (f == 59 and game.owned_worm(game.active) >= 0) or f in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65] or (f == 0 and (not game.reward or game.soul_remaining(game.active) <= 0)):
     button("Resolve selected face",Vector2(760,556),Vector2(211,44),func():
      if game.hero_action(selected):selected = -1;roll_feedback = {}
      rebuild())
    button("Decline",Vector2(981,556),Vector2(107,44),func():game.decline(selected);selected = -1;roll_feedback = {};rebuild(),MUTED)
   combat_reroll_ui()
 
-  button("End hero turn   →",Vector2(760,682),Vector2(328,54),func():game.finish_turn();selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
+  button("Return to "+game.unit_name(game.burden_interrupt.owner)+" →" if not game.burden_interrupt.is_empty() else "End hero turn   →",Vector2(760,682),Vector2(328,54),func():game.finish_turn();selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
   label_at(("Blank moves %d/%d · " % [game.soul_remaining(game.active),game.v("soul.uses")] if game.reward else "")+"%d dice available" % h.used.count(false),Vector2(760,750),13,MUTED,328)
   var tags: Array[String] = []
   for tag in game.status_map(game.active):
@@ -507,15 +524,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.26 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
- if game.encounter_id == "event":goal = "ORDINARY MONSTERS · Defeat both. Scuttle 2 / Bite 1 / Guard 1. No phase or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.26 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.26 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ var goal := "v0.27 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ if game.encounter_id == "event":goal = "ORDINARY MONSTERS · Defeat all creatures. Scuttle 2 / Bite 1 / Guard 1. No phase or boss Soul."
+ if game.encounter_id == "nugh":goal = "v0.27 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.27 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.26 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.27 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.26 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.27 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -564,7 +581,9 @@ func pending_ui() -> void:
  overlay()
  var p: Dictionary = game.pending
  label_at("A MOMENT TO RESPOND",Vector2(399,260),12,GOLD)
- if p.kind in ["channel","bind","ember","catalog_choice","slot"]:
+ if p.kind.begins_with("essence_"):
+  essence_pending_ui(p)
+ elif p.kind in ["channel","bind","ember","catalog_choice","slot"]:
   catalog_pending_ui(p)
  elif p.kind == "reaction":
   label_at(game.heroes[p.hero].name + " can react.",Vector2(399,300),26,Color("ece6d9"),620,true)
@@ -606,10 +625,12 @@ func overlay() -> void:
 func outcome_ui() -> void:
  overlay()
  if event_fight:
+  settle_essence()
   expedition.finish_combat(game.outcome == "victory")
   label_at("EVENT COMPLETE" if game.outcome == "victory" else "EVENT FAILED",Vector2(399,270),26,GOLD)
-  label_at(expedition.summary+"\n\n"+expedition.inventory()+"\n\nSupplies and rewards are saved on this device. No boss Soul is granted.\nThe boss fight starts fresh: full HP; temporary mutations and injuries reset.",Vector2(399,325),17,MUTED,570,false,true)
-  button("Continue expedition",Vector2(399,570),Vector2(520,48),func():event_fight = false;page = "events";rebuild())
+  label_at(expedition.summary+"\n"+camp_message+"\n\n"+expedition.inventory()+"\n\nRewards saved locally. Next encounter starts with fresh HP and dice.",Vector2(399,325),17,MUTED,570,false,true)
+  button("Return to Camp · bank / craft / refit",Vector2(399,570),Vector2(520,48),func():event_fight = false;open_camp())
+  button("Defeated cards · Essence tokens",Vector2(399,625),Vector2(520,30),func():show_enemy_cards = true;rebuild(),MUTED)
   return
  if lab:
   label_at("ABILITY LAB · TEST COMPLETE",Vector2(399,280),24,GOLD,620,true)
@@ -618,16 +639,18 @@ func outcome_ui() -> void:
   button("Review battle chronicle",Vector2(399,495),Vector2(520,44),func(): show_history = true; rebuild(),MUTED)
   button("Return to the forge",Vector2(399,560),Vector2(520,44),func(): lab = false; page = "forge"; rebuild(),MUTED)
   return
+ settle_essence()
  var won: bool = game.outcome == "victory"
  label_at("ENCOUNTER COMPLETE",Vector2(399,264),12,GOLD)
  label_at("A soul, reclaimed." if won else "The oath is not over.",Vector2(399,309),32,Color("ece6d9"),700,true)
- label_at(game.boss_name()+" is defeated. The boss Soul is unlocked.\nEach hero: %d HP · %d+ Blanks per die.\n%d Blank conversions per turn, each Move %d.\nSurviving heroes recover between encounters." % [game.v("hero.hp"),game.v("body.blanks"),game.v("soul.uses"),game.v("soul.move")] if won else "All three heroes are Downed or dead.\nA clean test restart restores HP, dice and conditions.\nRebuild your dice or try the encounter again.",Vector2(399,378),16,MUTED)
+ label_at(game.boss_name()+" is defeated.\n"+camp_message+"\n"+("Tutorial Hollow Soul awarded to each hero. Equip at Camp." if game.encounter_id == "hollow" else "No bespoke Soul reward is assigned to this boss yet.") if won else "All three heroes are Downed or dead.\nEncounter tokens discarded; banked Essence is safe.\nReturn to Camp to refit before another expedition.",Vector2(399,378),16,MUTED,570,false,true)
  if won:
-  button("Rematch with reward Soul",Vector2(399,493),Vector2(520,49),func(): retry(true))
+  button("Return to Camp · bank / craft / refit",Vector2(399,493),Vector2(520,49),open_camp)
  else:
-  button("Try again",Vector2(399,493),Vector2(520,49),retry)
+  button("Return to Camp · refit after defeat",Vector2(399,493),Vector2(520,49),open_camp)
  button("Return to the forge",Vector2(399,556),Vector2(520,45),func(): lab = false; page = "forge"; rebuild(),MUTED)
- button("Review battle chronicle",Vector2(399,612),Vector2(520,35),func(): show_history = true; rebuild(),MUTED)
+ button("Battle chronicle",Vector2(399,612),Vector2(250,35),func(): show_history = true; rebuild(),MUTED)
+ button("Defeated enemy cards",Vector2(669,612),Vector2(250,35),func():show_enemy_cards = true;rebuild(),MUTED)
 
 func help_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("0e141f"); shade.size = Vector2(1440,900); ui.add_child(shade)
@@ -676,7 +699,7 @@ func _gui_input(event: InputEvent) -> void:
    friendly_confirm = target; hint = "FRIENDLY FIRE: click this ally again to confirm the attack."; rebuild(); return
   friendly_confirm = -1
   var done := false
-  if f in [0,2,3,53,54,57,59]: done = game.hero_action(selected,-1,c)
+  if f in [0,2,3,53,54,57,59,60,66]: done = game.hero_action(selected,-1,c)
   elif f == 8:
    if shove_target == -1 and target >= 0 and target != game.active and game.distance(game.active,target) <= game.face_range(8):
     shove_target = target; hint = "Choose a push direction from the arrows beside the board."; rebuild(); return
@@ -685,6 +708,7 @@ func _gui_input(event: InputEvent) -> void:
     var delta := c-tp
     var dir := Vector2i(signi(delta.x),0) if absi(delta.x) >= absi(delta.y) else Vector2i(0,signi(delta.y))
     done = game.hero_action(selected,shove_target,dir)
+  elif f in [61,67]:done = game.hero_action(selected,target)
   elif f in [1,7,12,15,19,34,35,36,37,38,39,40,41,55,58]: done = game.hero_action(selected,target)
   if done: selected = -1; shove_target = -1; roll_feedback = {}; hint = "Choose another die, or end this hero’s turn."
   else:
@@ -701,7 +725,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _draw() -> void:
  draw_texture_rect(CHAMBER,Rect2(0,0,1440,900),false)
  draw_line(Vector2(24,76),Vector2(1408,76),Color("303846"))
- if page in ["setup","events"]:return
+ if page in ["setup","events","camp"]:return
  if page == "forge":
   panel(Rect2(68,351,736,336)); panel(Rect2(850,278,472,563))
  else:
@@ -709,7 +733,7 @@ func _draw() -> void:
   panel(Rect2(24,12,716,42),Color("202d37"),turn_color)
   panel(Rect2(752,12,664,126),Color("18222d"),Color("354653"))
   draw_rect(Rect2(760,51,648,6),Color("303846"))
-  draw_rect(Rect2(760,51,int(648.0*maxi(0,game.boss.hp)/game.boss.max_hp),6),Color("b76a65"))
+  draw_rect(Rect2(760,51,int(648.0*maxi(0,enemy_pool("hp"))/maxi(1,enemy_pool("max_hp"))),6),Color("b76a65"))
   panel(Rect2(752,151,344,687),Color("18222d"),Color("354653"))
   panel(Rect2(1112,151,304,687),Color("14212a"),Color("354653"))
   for i in range(3):panel(Rect2(24+i*244,60,232,48),Color("243641") if i == game.active else Color("17212d"),COLORS[i] if i == game.active else Color("354653"))
@@ -725,7 +749,7 @@ func draw_board() -> void:
  var highlights: Array = []
  if selected >= 0 and game.active < 3 and game.pending.is_empty():
   var f: int = game.face(game.active,selected)
-  if f in [2,3,54] or (f == 0 and game.reward and not game.soul_remaining(game.active) <= 0): highlights = game.reachable(game.active,game.move_steps(f),f == 3)
+  if f in [2,3,54,60,66] or (f == 0 and game.reward and not game.soul_remaining(game.active) <= 0): highlights = game.reachable(game.active,game.move_steps(f),f == 3)
   if f == 53: highlights = game.leap_cells(game.active)
   if f == 59 and game.owned_worm(game.active) < 0:highlights = game.summon_cells(game.active)
   if f == 57: highlights = game.reachable(game.active,game.move_steps(f),false)
@@ -821,10 +845,14 @@ func draw_board() -> void:
 
 func sync_presentation() -> void:
  if page != "battle": return
+ game.offer_evasive_step()
  var hit_sound := -1
  for event in game.event_log:
   if event.id <= seen_event: continue
   seen_event = event.id
+  if event.kind == "harvest" and not lab and not training:
+   var type: String = game.essence_type(event.target)
+   expedition.camp.defeated[type] = true;expedition.camp.seen[type] = true;expedition.save()
   if event.kind == "phase":
    inspect_actor = game.active
    effects.append({"kind":"phase","source":3,"target":3,"life":2.6,"length":2.6})
@@ -997,14 +1025,14 @@ func choose_gift(id: int) -> void:
    for side in range(6):
     if die[side] == id:die[side] = 0
  else:
-  var result := FaceLoadout.quick_equip(builds[build_hero],gifts[build_hero],balance_values,id)
+  var result := FaceLoadout.quick_equip(builds[build_hero],gifts[build_hero],expedition.camp.profile(balance_values),id)
   if result.error != "":draft_error = result.error
   else:builds[build_hero] = result.build;gifts[build_hero] = result.gifts
  rebuild()
 
 func confirm_gifts() -> void:
  if gifts[build_hero].size() != 2:return
- var error := Model.validate(builds[build_hero],gifts[build_hero],balance_values)
+ var error := Model.validate(builds[build_hero],gifts[build_hero],expedition.camp.profile(balance_values))
  if error != "" or not gifts[build_hero].all(func(id):return builds[build_hero].any(func(die):return id in die)):
   draft_error = error if error != "" else "Place both chosen designs on the dice first.";rebuild();return
  var next := -1
@@ -1112,8 +1140,8 @@ func face_drag_data(source: Control, face: int, die: int = -1, side: int = -1) -
 
 func face_drop_result(die: int, side: int, data: Variant) -> Dictionary:
  if not data is Dictionary or data.get("hero",-1) != build_hero:return {"error":"Drag a face for the currently selected hero."}
- if side < 0:return FaceLoadout.best_drop(builds[build_hero],gifts[build_hero],balance_values,die,data)
- return FaceLoadout.trial(builds[build_hero],gifts[build_hero],balance_values,die,side,data)
+ if side < 0:return FaceLoadout.best_drop(builds[build_hero],gifts[build_hero],expedition.camp.profile(balance_values),die,data)
+ return FaceLoadout.trial(builds[build_hero],gifts[build_hero],expedition.camp.profile(balance_values),die,side,data)
 
 func face_drop_allowed(die: int, side: int, data: Variant) -> bool:
  var result := face_drop_result(die,side,data)
@@ -1226,13 +1254,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.26 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.27 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.26",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.27",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1356,7 +1384,7 @@ func explain_invalid(f: int, target: int, cell: Vector2i) -> String:
 func save_preset() -> void:
  if gifts.any(func(pool):return pool.size() != 2):hint = "Choose two bonus faces per hero before saving a preset."; rebuild(); return
  for hero in range(3):
-  if Model.validate(builds[hero],gifts[hero],balance_values) != "":hint = "Fix illegal builds before saving.";rebuild();return
+  if Model.validate(builds[hero],gifts[hero],expedition.camp.profile(balance_values)) != "":hint = "Fix illegal builds before saving.";rebuild();return
  var file := FileAccess.open("user://ash_build_preset.json",FileAccess.WRITE)
  if not file: hint = "Could not save preset."; rebuild(); return
  file.store_string(JSON.stringify({"builds":builds,"gifts":gifts,"balanced":balanced,"test_soul":reward_soul}));file.close()
@@ -1364,8 +1392,10 @@ func save_preset() -> void:
 
 func load_preset() -> void:
  if not FileAccess.file_exists("user://ash_build_preset.json"):hint = "No saved preset on this device yet."; rebuild(); return
- var saved := Preset.decode(FileAccess.get_file_as_string("user://ash_build_preset.json"),balance_values)
+ var saved := Preset.decode(FileAccess.get_file_as_string("user://ash_build_preset.json"),expedition.camp.profile(balance_values))
  if saved.error != "":hint = saved.error;rebuild();return
+ var allocation := camp_allocation_error(saved.builds)
+ if allocation != "":hint = allocation;rebuild();return
  builds = saved.builds;gifts = saved.gifts;balanced = saved.balanced;reward_soul = saved.test_soul;draft_modal = false
  hint = "Loaded all three heroes’ saved builds.";rebuild()
 
@@ -1421,7 +1451,8 @@ func soul_toggle(at: Vector2, in_lab: bool, width: float = 0) -> void:
 func set_soul_enabled(enabled: bool, live: bool = true) -> void:
  reward_soul = enabled
  if live and page == "battle":
-  game.reward = enabled
+  game.reward = enabled or expedition.camp.equipped_souls.any(func(id):return id != "")
+  for hero in range(3):game.balance["soul.eligible."+str(hero)] = enabled or expedition.camp.equipped_souls[hero] != ""
   game.record_event("info","Blank → Move %d " % game.v("soul.move") + ("enabled: %d conversions per hero turn." % game.v("soul.uses") if enabled else "disabled: Blanks have no movement effect."))
  hint = "Blank → Move %d is " % balance_number("soul.move") + ("ON. Select a rolled Blank, then a highlighted cell. %d conversions per hero turn." % balance_number("soul.uses") if enabled else "OFF. Rolled Blanks cannot be spent for movement.")
  rebuild()
@@ -1459,7 +1490,7 @@ func portrait_at(id: int, at: Vector2, dimensions: Vector2) -> void:
 
 func draw_unit_sprite(id: int, rect: Rect2) -> void:
  if id == 3 and game.encounter_id == "event":
-  draw_texture_rect_region(MITE_SPRITE,rect,Rect2(0,0,16,16));return
+  draw_texture_rect_region(CREATURE_SPRITES.get(game.essence_type(id),MITE_SPRITE),rect,Rect2(0,0,16,16));return
  if id == 3 and page == "battle" and game.encounter_id == "cantor":
   draw_texture_rect(CANTOR_PHASE if game.phase_two else CANTOR_SPRITE,rect,false)
   var center := rect.get_center()
@@ -1489,7 +1520,8 @@ func menu_ui() -> void:
  button("Game options",Vector2(399,451),Vector2(275,45),func():show_menu = false;open_settings(),MUTED)
  button("Rebuild / restart",Vector2(689,451),Vector2(285,45),func():show_menu = false;page = "forge";selected = -1;rebuild(),MUTED)
  button("Expedition supplies",Vector2(399,510),Vector2(575,43),func():show_menu = false;show_supplies = true;rebuild(),GOLD)
- button("Return to battle",Vector2(399,570),Vector2(575,46),func():show_menu = false;rebuild())
+ button("Enemy cards · harvesting",Vector2(399,570),Vector2(575,43),func():show_menu = false;show_enemy_cards = true;rebuild(),app_gold())
+ button("Return to battle",Vector2(399,625),Vector2(575,46),func():show_menu = false;rebuild())
 
 
 func active_balance() -> Dictionary:
@@ -1534,7 +1566,7 @@ func apply_balance_profile(values: Dictionary, editor: Control = null) -> void:
   else:
    var legal := true
    for i in range(3):
-    if Model.validate(builds[i],gifts[i],balance_values) != "":legal = false
+    if Model.validate(builds[i],gifts[i],expedition.camp.profile(balance_values)) != "":legal = false
    if legal:begin()
    else:page = "forge";hint = "Profile saved. Adjust your dice to the new body / copy limits before entering.";rebuild()
 
@@ -1634,7 +1666,7 @@ func selected_die_help(die: int) -> String:
  if face == 0:
   if h.get("rooted",0) > 0:return "ROOTED: no voluntary movement until the boss’s next turn. Your Blank allowance is not consumed."
   if not game.reward:return "Blank movement is OFF. Turn Soul ON above the dice to enable it."
-  if game.soul_remaining(game.active) <= 0:return "Blank movement used this turn. It refreshes at this hero’s next own turn."
+  if game.soul_remaining(game.active) <= 0:return "No eligible equipped Soul / Blank movement used this turn. It refreshes at this hero’s next own turn."
   return "Blank → Move %d. Click a highlighted empty cell. %d/%d uses remain this own turn." % [game.v("soul.move"),game.soul_remaining(game.active),game.v("soul.uses")]
  return short_face_help(face)
 
@@ -1831,7 +1863,7 @@ func draw_worm(id: int) -> void:
  var center := effect_center(id)
  var frame := int(t*4+id)%2
  draw_circle(center+Vector2(0,18),18,Color(0.02,0.02,0.04,0.5))
- var sprite = FRIENDLY_SPRITE if game.friendly(id) else (MITE_SPRITE if game.encounter_id == "event" else COCOON_SPRITE if worm.get("kind","") == "cocoon" else (MITE_SPRITE if worm.get("kind","") == "mite" else WORM_SPRITE))
+ var sprite = FRIENDLY_SPRITE if game.friendly(id) else (CREATURE_SPRITES.get(game.essence_type(id),MITE_SPRITE) if game.encounter_id == "event" else COCOON_SPRITE if worm.get("kind","") == "cocoon" else (MITE_SPRITE if worm.get("kind","") == "mite" else WORM_SPRITE))
  draw_texture_rect_region(sprite,Rect2(center-Vector2(24,24),Vector2(48,48)),Rect2(frame*16,0,16,16))
  draw_hp_dots(center+Vector2(-8 if worm.block > 0 else 0,29),worm.hp,worm.max_hp,Color("bed4ab"))
  if worm.block > 0:
@@ -1889,12 +1921,12 @@ func setup_ui() -> void:
   label_at(["Vesper","Rook","Wren"][hero]+" · "+" + ".join(names),Vector2(512,618+hero*33),16,COLORS[hero],830)
  var error := ""
  for hero in range(3):
-  var invalid: String = Model.validate(builds[hero],gifts[hero],balance_values)
+  var invalid: String = Model.validate(builds[hero],gifts[hero],expedition.camp.profile(balance_values))
   if gifts[hero].size() != 2:error = "Choose two faces for each hero first."
   elif invalid != "":error = invalid
  label_at(error if error != "" else "Review the boss and rules, then enter. Your chosen faces and placements are preserved.",Vector2(50,782),15,Color("edac94") if error != "" else MUTED,1320)
  button("← Change faces / dice",Vector2(48,826),Vector2(290,48),func():page = "forge";draft_modal = true;rebuild(),MUTED)
- button("Expedition events",Vector2(358,826),Vector2(245,48),open_events,Color("9fc7e6"))
+ button("Camp Forge",Vector2(358,826),Vector2(245,48),open_camp,Color("9fc7e6"))
  button("Advanced numeric rules",Vector2(755,826),Vector2(317,48),open_balance_editor,Color("9fc7e6"))
  var start := button("Begin expedition →",Vector2(1092,826),Vector2(300,48),start_expedition,GOLD,error != "");start.name = "StartEncounter"
 
@@ -1951,7 +1983,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.26",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.27",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -1973,11 +2005,13 @@ func open_events() -> void:
  event_fight = false;show_menu = false;show_supplies = false;page = "events";rebuild()
 
 func event_choice(option: int) -> void:
+ var allocation := camp_allocation_error(builds)
+ if allocation != "":camp_message = allocation;open_camp();return
  if not expedition.choose(option):return
  if expedition.stage == "combat":
-  begin()
-  game = EventBattle.new();game.hard = expedition.selected == 5
-  game.start(builds,0,reward_soul,balanced,balance_values)
+  lab = false;training = false;draft_modal = false;combat_notices.clear();choosing_reroll = false;selected = -1;shove_target = -1;seen_event = 0;seen_roll = 0;roll_seen = 0;effects.clear();snapshots.clear();visual_positions.clear();movement_tracks.clear()
+  game = EventBattle.new();game.hard = expedition.selected == 5;game.prototype_pack = true
+  game.start(builds,0,reward_soul,balanced,camp_battle_profile());game.harvest_revealed = expedition.camp.defeated.duplicate()
   event_fight = true;page = "battle";seen_event = 0;seen_roll = 0;roll_seen = 0
  rebuild()
 
@@ -1999,7 +2033,7 @@ func events_ui() -> void:
   label_at("d6 → %d · %s" % [expedition.selected,Expedition.TITLES[expedition.selected-1]],Vector2(65,375),27,GOLD,1280,true)
   label_at(Expedition.DETAILS[expedition.selected-1] if expedition.stage == "choice" else expedition.summary,Vector2(65,430),21,MUTED,1250,false,true)
   if expedition.stage == "choice":
-   var options: Array = [["Take 1 Salve","Take 1 Reroll Seal"],["Leave safely","Offer 2 Gold · d6"],["Directions · gain 1 Gold","Help · spend 1 Salve"],["Withdraw safely","Fight 2 Scavengers"],["Leave safely","Fight 2 Cinder Mites"],["Take 1 Gold","Search deeper · d6"]][expedition.selected-1]
+   var options: Array = [["Take 1 Salve","Take 1 Reroll Seal"],["Leave safely","Offer 2 Gold · d6"],["Directions · gain 1 Gold","Help · spend 1 Salve"],["Withdraw safely","Fight 2 Bone Creatures"],["Leave safely","Fight mixed prototype group"],["Take 1 Gold","Search deeper · d6"]][expedition.selected-1]
    for option in range(2):
     var locked: bool = option == 1 and ((expedition.selected == 2 and expedition.gold < 2) or (expedition.selected == 3 and expedition.salves < 1))
     var choice := button(options[option],Vector2(100+option*650,685),Vector2(590,55),func():event_choice(option),GOLD,locked)
@@ -2008,10 +2042,11 @@ func events_ui() -> void:
    button("New sortie · new event roll",Vector2(65,685),Vector2(570,50),func():expedition.next_sortie();rebuild(),MUTED)
    button("Enter selected boss →",Vector2(755,685),Vector2(590,50),enter_boss)
  button("← Boss review",Vector2(50,820),Vector2(470,50),func():page = "setup";rebuild(),MUTED)
- button("Spend 3 Fragments · unlock Soul",Vector2(755,820),Vector2(590,50),func():
-  if expedition.unlock_soul():reward_soul = true;balance_values["soul.move"] = 2
+ for hero in range(3):button(["Vesper","Rook","Wren"][hero],Vector2(755+hero*198,778),Vector2(186,32),func():event_soul_hero = hero;rebuild(),COLORS[hero] if event_soul_hero == hero else MUTED,expedition.soul)
+ button("Spend 3 Fragments · bind Soul to chosen hero",Vector2(755,820),Vector2(590,50),func():
+  if expedition.unlock_soul(event_soul_hero):balance_values["soul.move"] = 2
   rebuild(),GOLD,expedition.fragments < 3 or expedition.soul)
- label_at("Soul unlock is optional. If unlocked, select Blank movement on boss review. Gold funds shrine offerings; no shop yet.",Vector2(65,762),15,MUTED,1280,false,true)
+ label_at("Fragment Soul binds to the chosen hero. Swap their owned Souls at Camp. Gold funds shrine offerings; no shop yet.",Vector2(65,762),15,MUTED,1280,false,true)
 
 func supplies_ui() -> void:
  overlay()
@@ -2047,6 +2082,8 @@ func start_expedition() -> void:
  open_events()
 
 func enter_boss() -> void:
+ if gifts.any(func(choices):return choices.size() != 2):
+  hint = "Choose two distinct bonus designs per hero before entering a boss.";page = "forge";draft_modal = true;rebuild();return
  if expedition.stage != "resolved":open_events();return
  expedition.stage = "boss";expedition.save();begin()
 
@@ -2055,8 +2092,113 @@ func restart_to_menu() -> void:
  event_fight = false;lab = false;training = false;page = "forge";build_hero = 0
  gifts = [[],[],[]];builds = [Model.default_build(balance_values),Model.default_build(balance_values),Model.default_build(balance_values)]
  game = Model.new();selected = -1;choosing_reroll = false;combat_notices.clear()
- show_training = false;show_lab_tools = false;training_step = 0
+ show_training = false;show_lab_tools = false;show_enemy_cards = false;training_step = 0
  show_options = false;show_menu = false;show_soundtrack = false;show_supplies = false;show_help = false;show_changes = false;show_history = false;show_dice = false;show_lab_setup = false;show_turn = false
  combat_inspected = -1;inspect_action = "";roll_feedback = {};show_active_effects = false
  effects.clear();snapshots.clear();visual_positions.clear();movement_tracks.clear()
  draft_modal = true;make_offers();rebuild()
+
+
+func app_gold() -> Color:return GOLD
+func camp_battle_profile() -> Dictionary:
+ var result: Dictionary = expedition.camp.profile(balance_values)
+ for hero in range(3):result["soul.eligible."+str(hero)] = reward_soul or expedition.camp.equipped_souls[hero] != ""
+ return result
+func camp_allocation_error(candidate: Array) -> String:
+ var used := {}
+ for build in candidate:
+  for die in build:
+   for face in die:
+    if face >= 60:used[face] = int(used.get(face,0))+1
+ for face in used:
+  if used[face] > expedition.camp.owned(face):return "The party owns only %d %s copies; refit at Camp." % [expedition.camp.owned(face),Catalog.name_for(face)]
+ return ""
+func camp_place(face: int, hero: int, die: int, side: int) -> void:
+ var next: Array = builds.duplicate(true);next[hero][die][side] = face
+ var error := Model.validate(next[hero],gifts[hero],expedition.camp.profile(balance_values))
+ if error == "":error = camp_allocation_error(next)
+ if error == "" and not gifts[hero].all(func(id):return next[hero].any(func(faces):return id in faces)):error = "Keep the two selected bonus designs equipped; replace a starter or another crafted face."
+ if error != "":camp_message = error
+ else:builds = next;camp_message = "Equipped %s on %s, Die %s side %d. Replaced faces remain owned." % [Catalog.name_for(face),["Vesper","Rook","Wren"][hero],["I","II","III"][die],side+1]
+ rebuild()
+func craft_recipe(key: String) -> void:
+ var error: String = expedition.camp.craft(key)
+ camp_message = error if error != "" else "Crafted "+expedition.camp.reward_name(key)+". Exact effect revealed. Additional face copies cost the same amount."
+ if error == "":expedition.save()
+ rebuild()
+func open_camp() -> void:
+ show_menu = false;show_options = false;show_enemy_cards = false;draft_modal = false
+ if page == "battle" and game.outcome != "" and not lab and not training:settle_essence()
+ page = "camp";rebuild()
+func settle_essence() -> void:
+ if lab or training or game.outcome == "":return
+ if expedition.camp.settle(game.harvest_run,game.outcome == "victory",game.harvest_tokens,game.harvest_deaths,game.encounter_types()):
+  var earned: Array[String] = []
+  if game.outcome == "victory":
+   var amounts := {}
+   for token in game.harvest_tokens:amounts[token.type] = int(amounts.get(token.type,0))+1
+   for type in amounts:earned.append("%d %s Essence" % [amounts[type],Essence.type_name(type)])
+  camp_message = "Victory: banked "+", ".join(earned)+". Previously banked Essence is safe." if game.outcome == "victory" else "Defeat: encounter tokens discarded. Previously banked Essence, discoveries and owned rewards remain safe."
+  expedition.save()
+func enemy_cards_ui() -> void:
+ var shade := ColorRect.new();shade.color = Color("101923");shade.size = Vector2(1440,900);ui.add_child(shade)
+ label_at("ENEMY CARDS · ESSENCE HARVESTING",Vector2(55,36),30,GOLD,1310,true)
+ label_at("Tokens sit on defeated cards, never on grid cells. Victory banks them; defeat discards only this encounter’s tokens.",Vector2(57,95),16,MUTED,1300)
+ var scroll := ScrollContainer.new();scroll.position = Vector2(50,140);scroll.size = Vector2(1340,640);ui.add_child(scroll)
+ var column := VBoxContainer.new();column.custom_minimum_size.x = 1290;column.add_theme_constant_override("separation",16);scroll.add_child(column)
+ for id in range(3,game.unit_count()):
+  if game.friendly(id):continue
+  var text := Label.new();text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART;text.custom_minimum_size = Vector2(1280,180)
+  var type: String = game.essence_type(id);var unit: Dictionary = game.unit_data(id)
+  var description: String = game.unit_name(id)+" · %d/%d HP · %d Block\n" % [unit.hp,unit.max_hp,unit.block]+game.harvest_card(id)
+  if game.encounter_id == "event" and game.prototype_pack:
+   description += "\nProvisional AI · public dice: "+str(game.creature_dice(type))+"\nThis round: "+str(unit.get("creature_rolls",game.boss_rolls))
+  var revealed: bool = expedition.camp.discovered(type) or game.harvest_claimed.has(id)
+  description += "\nRewards: "+(" · ".join(Essence.RECIPES.values().filter(func(recipe):return recipe.enemy == type).map(func(recipe):return recipe.category+" — %d Essence" % recipe.cost)) if revealed else "HIDDEN until first defeat.")
+  text.text = description;text.add_theme_font_size_override("font_size",18);column.add_child(text)
+ button("Back to battle",Vector2(1000,825),Vector2(380,45),func():show_enemy_cards = false;rebuild())
+func essence_pending_ui(p: Dictionary) -> void:
+ if p.kind == "essence_evasive":
+  label_at("Evasive Counter · no HP lost",Vector2(399,306),25,GOLD,600,true)
+  label_at("After the Attack resolved: optionally Move 1. Rooted still prevents voluntary movement.",Vector2(399,360),18,MUTED,570,false,true)
+  for i in range(4):
+   var dir: Vector2i = Model.DIRS[i]
+   button(["North","East","South","West"][i],Vector2(399+(i%2)*285,430+(i/2)*62),Vector2(270,48),func():game.evasive_step(dir);resume_creatures();rebuild(),GOLD,game.heroes[p.hero].get("rooted",0) > 0 or not game.legal(p.hero,game.heroes[p.hero].pos+dir))
+  button("Stay",Vector2(399,568),Vector2(555,45),func():game.evasive_step(Vector2i.ZERO);resume_creatures();rebuild(),MUTED)
+ elif p.kind in ["essence_remedy","essence_offering"]:
+  label_at("Shared Remedy" if p.kind == "essence_remedy" else "Sorrow’s Offering",Vector2(399,301),26,GOLD,600,true)
+  label_at("Self-heal restored HP; choose an ally to heal 1." if p.kind == "essence_remedy" else "Cost: lose 1 HP (can Down/kill you). Choose an ally and one benefit, or decline safely.",Vector2(399,350),18,MUTED,575,false,true)
+  for hero in range(3):
+   if hero == game.active:continue
+   var eligible: bool = not game.heroes[hero].dead and game.distance(game.active,hero) <= game.face_range(63 if p.kind == "essence_remedy" else 64)
+   if p.kind == "essence_remedy":button(game.unit_name(hero)+" · heal 1",Vector2(399,425+hero*50),Vector2(550,43),func():game.essence_pick(hero);rebuild(),COLORS[hero],not eligible)
+   else:
+    for option in range(2):button(game.unit_name(hero)+(" · +2 Block" if option == 0 else " · next Attack +1"),Vector2(399+option*285,410+hero*52),Vector2(275,43),func():game.essence_pick(hero,option);rebuild(),COLORS[hero],not eligible or game.heroes[hero].hp <= 0)
+  button("Decline / finish without further effect",Vector2(399,594),Vector2(550,43),func():game.essence_decline();rebuild(),MUTED)
+ elif p.kind == "essence_burden_source":
+  label_at("Shared Burden · choose a rolled result",Vector2(390,296),24,GOLD,640,true)
+  label_at("Includes already resolved results from this round. Next choose an ally within 2 and a ready die.",Vector2(390,342),16,MUTED,590,false,true)
+  var history: Array = game.heroes[game.active].get("round_history",[])
+  var scroll := ScrollContainer.new();scroll.position = Vector2(390,390);scroll.size = Vector2(600,185);ui.add_child(scroll)
+  var column := VBoxContainer.new();column.custom_minimum_size.x = 575;scroll.add_child(column)
+  for i in range(history.size()):
+   var entry: Dictionary = history[i]
+   var choice := Button.new();choice.text = "Die %s · %s" % [["I","II","III"][entry.die],Catalog.name_for(entry.face)];choice.custom_minimum_size = Vector2(570,42);choice.disabled = entry.die == p.die or entry.face == 65;choice.pressed.connect(func():game.burden_source(i);rebuild());column.add_child(choice)
+  button("Decline",Vector2(399,600),Vector2(550,40),func():game.essence_decline();rebuild(),MUTED)
+ else:
+  label_at("Shared Burden · "+Catalog.name_for(p.copy),Vector2(390,296),24,GOLD,640,true)
+  label_at("Spend one ready die of an ally within 2. They resolve the copy now, then return to the original hero. No extra full turn.",Vector2(390,342),16,MUTED,590,false,true)
+  for hero in range(3):
+   for die in range(3):
+    var h: Dictionary = game.heroes[hero]
+    button(game.unit_name(hero)+" · Die "+str(die+1),Vector2(390+die*200,414+hero*50),Vector2(190,43),func():game.burden_ally(hero,die);selected = game.forced_die;rebuild(),COLORS[hero],hero == game.active or h.dead or h.hp <= 0 or (h.used[die] and die not in h.reaction) or game.distance(game.active,hero) > 2)
+  button("Decline",Vector2(399,600),Vector2(550,40),func():game.essence_decline();rebuild(),MUTED)
+func resume_creatures() -> void:
+ if game.encounter_id == "event" and game.pending.is_empty():game.continue_monsters()
+
+func enemy_pool(field: String) -> int:
+ if game.encounter_id != "event":return int(game.boss[field])
+ var total: int = int(game.boss[field])
+ for id in range(4,game.unit_count()):
+  if not game.friendly(id):total += int(game.unit_data(id)[field])
+ return total

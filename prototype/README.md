@@ -247,3 +247,6 @@ Bu’gh and friendly Summon Nu’gh were reconstructed from the handoff at sourc
 
 ## v0.25 event development
 `expedition.gd` owns the saved ledger and atomic reward claims; `event_battle.gd` implements ordinary two-monster encounters. Run `godot --headless --path . --script res://prototype/tests/events_v25_test.gd`. See current rules for exact costs and reward effects.
+
+## v0.27 Essence and Camp
+See [implementation](../docs/Essence-Implementation-v0.27.md) for fixed PDF rules and provisional timing/AI choices. `essence.gd` owns the shared ledger and recipes; `camp_ui.gd` renders Camp. Nine earned faces are IDs 60–68; the 48-choice initial bonus pool is unchanged. Run `prototype/tests/essence_v27_test.gd` for the focused progression/ability suite. No spendable Bone resource or candidate service effects were invented.

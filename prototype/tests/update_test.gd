@@ -56,7 +56,7 @@ func run():
  g.tuned = true
  check(g.boss_dice() == Battle.TUNED_BOSS_DICE,"Tuned encounter uses varied boss faces")
  check(g.boss_sides.size() == 3 and g.initial_builds.size() == 3,"dice inventory records baseline builds and boss rolled sides")
- check(g.turn_explanation().contains("Reroll first") and g.turn_explanation().contains("Next round"),"hero turn explanation covers reroll window and shared roll")
+ check(g.turn_explanation().contains("Action Rerolls") and g.turn_explanation().contains("Next round"),"hero turn explanation covers reroll window and shared roll")
  g.active = 3
  check(g.turn_explanation().contains("detonate first") and g.turn_explanation().contains("I, II, III"),"boss explanation covers hazards and action order")
  for action in ["Ashen Chain","Cinder Brand","Grave Tithe"]:check(g.boss_help(action).length() > 50,"new boss face has full explanation")

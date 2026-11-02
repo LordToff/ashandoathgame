@@ -1,6 +1,7 @@
 class_name AshBattle
 extends RefCounted
 
+const Essence = preload("res://prototype/essence.gd")
 const Balance = preload("res://prototype/balance.gd")
 var balance: Dictionary = {}
 const Catalog = preload("res://prototype/catalog.gd")
@@ -8,7 +9,7 @@ static var FACES: Array = make_face_names()
 
 static func make_face_names() -> Array:
  var names: Array = []
- for id in range(60): names.append(Catalog.name_for(id))
+ for id in range(Catalog.FACE_COUNT): names.append(Catalog.name_for(id))
  return names
 const CAPS = [18, 4, 2, 1, 2, 1, 1, 1, 1]
 const BOSS_DICE = [["Advance","Advance","Smoking Strike","Smoking Strike","Brace","Drive Back"], ["Advance","Skirmish","Smoking Strike","Sweep","Brace","Distort"], ["Advance","Skirmish","Smoking Strike","Sweep","Drive Back","Fracture"]]
@@ -52,6 +53,14 @@ var initiative_base: Array = []
 var minions: Array = []
 var encounter_id := "hollow"
 var last_boss_result := ""
+var harvest_tokens: Array = []
+var harvest_deaths: Array = []
+var harvest_claimed: Dictionary = {}
+var harvest_revealed: Dictionary = {}
+var harvest_run := ""
+var burden_interrupt: Dictionary = {}
+var evasive_due: Array = []
+var evasive_targets: Dictionary = {}
 var phase_two := false
 var roar_queued := false
 
@@ -81,16 +90,16 @@ static func validate(build: Array, gift: Variant = -1, profile: Dictionary = {})
  elif not (gift is int and gift == -1):return "Owned designs must be valid face numbers."
  var canonical_owned: Array = []
  for id in owned:
-  if not valid_face_number(id):return "Owned designs must be whole face numbers from 0 to 59."
+  if not valid_face_number(id):return "Owned designs must be whole face numbers from 0 to 68."
   canonical_owned.append(int(id))
  owned = canonical_owned
  var counts := []
- counts.resize(60);counts.fill(0)
+ counts.resize(Catalog.FACE_COUNT);counts.fill(0)
  for die in build:
   if not die is Array or die.size() != 6:return "Every die must have exactly six faces."
   var blanks := 0
   for f in die:
-   if not valid_face_number(f):return "Each die face must be a whole number from 0 to 59."
+   if not valid_face_number(f):return "Each die face must be a whole number from 0 to 68."
    counts[int(f)] += 1
    if int(f) == 0:blanks += 1
   if blanks < Balance.value(profile,"body.blanks"):return "Every six-sided die needs at least %d Blanks." % Balance.value(profile,"body.blanks")
@@ -98,8 +107,10 @@ static func validate(build: Array, gift: Variant = -1, profile: Dictionary = {})
   if counts[i] > Balance.value(profile,"owned."+str(i)) + (Balance.value(profile,"owned.bonus") if i in owned else 0): return "Not enough owned copies of " + FACES[i] + "."
  for i in range(9,60):
   if counts[i] > (Balance.value(profile,"owned.bonus") if i in owned else 0): return "Only owned bonus faces may be equipped."
+ for id in range(60,Catalog.FACE_COUNT):
+  if counts[id] > int(profile.get("earned."+str(id),0)):return "Not enough crafted party copies of "+FACES[id]+"."
  var totals := {"Movement":0,"Defense":0,"Skill":0}
- for id in range(1,60):
+ for id in range(1,Catalog.FACE_COUNT):
   var cat: String = Catalog.category(id)
   if totals.has(cat): totals[cat] += counts[id]
  if totals.Movement > Balance.value(profile,"body.Movement") or totals.Defense > Balance.value(profile,"body.Defense") or totals.Skill > Balance.value(profile,"body.Skill"):
@@ -108,11 +119,12 @@ static func validate(build: Array, gift: Variant = -1, profile: Dictionary = {})
 
 func start(builds: Array, seed_value: int = 0, soul: bool = false, balanced: bool = true, profile: Dictionary = {}) -> void:
  balance = profile.duplicate(true)
+ harvest_tokens.clear();harvest_deaths.clear();harvest_claimed.clear();burden_interrupt.clear();evasive_due.clear();evasive_targets.clear();harvest_run = str(Time.get_unix_time_from_system())+"-"+str(Time.get_ticks_usec())+"-"+str(randi())
  phase_two = false; roar_queued = false;minions.clear();last_boss_result = ""
  rng.randomize()
  if seed_value: rng.seed = seed_value
  initial_builds = builds.duplicate(true); brand_cells.clear();fire_tiles.clear(); roll_presentations.clear()
- reward = soul
+ reward = soul or [0,1,2].any(func(hero):return balance.get("soul.eligible."+str(hero),false))
  tuned = balanced
  roll_serial = 0
  last_action = ""
@@ -203,6 +215,7 @@ func report_changes() -> void:
   if gained > 0:
    record_event("block_gain","%s: %s gains %d Block → %d total." % [action_label,unit_name(id),gained,h.block],action_owner,id,gained)
   if h.pos != old.pos:
+   if id == active and id < 3:h.moved_turn = int(h.get("moved_turn",0))+movement_distance(id,old.pos,h.pos)
    record_event("move","%s: %s moves %s → %s." % [action_label,unit_name(id),cell_name(old.pos),cell_name(h.pos)],action_owner,id)
   var now: Dictionary = status_map(id)
   for status in now:
@@ -274,6 +287,7 @@ func shared_roll() -> void:
  activate()
 
 func roll_hero(h: Dictionary) -> void:
+ h.bone_count = 0
  var previous: Array = h.rolls.duplicate()
  h.rolls = []; h.results = []; h.used = []; h.reaction = []; h.taken = 0; h.mods = {}; h.smoke = {}
  h.num_boost = 0; h.numeric_focus = false
@@ -313,6 +327,7 @@ func activate() -> void:
   note(boss_name()+" takes its turn. Resolve I → II → III.")
  else:
   var h: Dictionary = heroes[active]
+  h.moved_turn = 0
   h.event_salve_used = false
   if h.dead or h.hp == 0 or active in replaced:
    cursor += 1; activate(); return
@@ -344,13 +359,15 @@ func tick_poison(id: int) -> void:
  if amount <= 0 or h.hp <= 0 or h.get("dead",false):return
  var before: int = h.hp
  var source: int = int(h.get("poison_source",3))
- h.poison = maxi(0,amount-1)
  action_owner = source;action_label = "Poison"
  damage(id,amount,true,"Poison",source)
+ h.poison = maxi(0,amount-1) if h.hp > 0 and not h.get("dead",false) else 0
  record_event("poison_tick","%s: Poison %d deals %d unavoidable HP damage (HP %d → %d); Poison %d → %d. Block is bypassed." % [unit_name(id),amount,before-h.hp,before,h.hp,amount,h.get("poison",0)],source,id,before-h.hp)
  event_log[-1].merge({"hp_before":before,"hp_after":h.hp,"poison_before":amount,"poison_after":h.get("poison",0)})
 
 func finish_turn() -> void:
+ if not burden_interrupt.is_empty():
+  return_from_burden();return
  if outcome != "" or not pending.is_empty(): return
  forced_die = -1
  for h in heroes: h.protected = false
@@ -387,6 +404,7 @@ func finish_turn() -> void:
    finish_turn(); return
   replaced.append(active); recovery_active = true
   heroes[active].block = 0
+  heroes[active].moved_turn = 0
   heroes[active].event_salve_used = false
   heroes[active].opening = true; reset_soul_allowance(active)
   roll_context = "Recovery · fresh Action Dice"
@@ -522,6 +540,7 @@ func damage(id: int, amount: int, unavoidable: bool = false, reason: String = ""
     if not h.used[d]: h.used[d] = true; break
   var old_hp: int = h.hp
   h.hp = maxi(0,h.hp-amount)
+  if id == 3 and old_hp > 0 and h.hp == 0:harvest_death(id)
   if id < 3: h.taken += old_hp-h.hp
   if id < 3 and h.ward and attacker == 3 and old_hp > h.hp and distance(id,3) == 1:
    boss.weak = true;boss.weak_amount = v("face51.weakness")
@@ -558,6 +577,9 @@ func heal(id: int, value: int = 1) -> void:
  if h.hp == 0:
   h.broken = true; h.protected = false; recovery.append(id)
  var restored: int = maxi(0,mini(h.get("max_hp",v("hero.hp"))-h.hp,value))
+ if restored > 0 and action_owner == id and balance.get("memory.loss."+str(id),false) and not h.get("memory_self_used",false):
+  h.memory_self_used = true;restored = mini(h.max_hp-h.hp,restored+1)
+  record_event("buff","Memory of Loss: first actual self-heal this combat restores 1 extra HP (up to maximum).",id,id)
  h.hp += restored
  record_event("heal","%s — %s heals %s for %d HP. HP %d/%d." % [action_label,unit_name(action_owner),unit_name(id),restored,h.hp,h.get("max_hp",v("hero.hp"))],action_owner,id,restored)
 
@@ -575,6 +597,7 @@ func spend(d: int, store_smoke: bool = false) -> void:
 func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,-99)) -> bool:
  if active not in [0,1,2] or d not in range(3) or target < -1 or target >= unit_count():return false
  if active == 3 or outcome != "" or not pending.is_empty(): return false
+ if not burden_interrupt.is_empty() and d != burden_interrupt.die and d != forced_die:return false
  var h: Dictionary = heroes[active]
  if target >= 4 and unit_data(target).dead:return false
  if h.dead or h.hp <= 0:return false
@@ -582,6 +605,7 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
  var f := face(active,d)
  if f == 6 and focus_reason(d,target) != "":return false
  begin_action(active,action_name(active,f),target if f != 6 else -1,d)
+ if f >= 60:return essence_action(d,target,destination)
  if f >= 9: return catalog_action(d,target,destination)
  match f:
   0:
@@ -786,7 +810,7 @@ func continue_attack() -> void:
     var key := str(actor) + ":" + str(die)
     if key in pending.reacted: continue
     var f: int = face(actor,die)
-    var trigger: bool = actor == victim and (f == 5 or (f == 28 and not area) or heroes[actor].smoke.has(die))
+    var trigger: bool = actor == victim and (f == 5 or (f == 28 and not area) or f == 68 or heroes[actor].smoke.has(die))
     if f == 44: trigger = victim < 3 and actor != victim and distance(actor,victim) <= v("face44.range") and sight(actor,victim,v("face44.range"))
     if f == 45: trigger = actor != victim and distance(actor,source) <= mini(v("face45.range"),reach) and not area
     if f == 46: trigger = actor == victim and pending.amount-(boss_weakness() if boss.weak and source == 3 else 0)-heroes[actor].block-heroes[actor].dr >= heroes[actor].hp
@@ -817,6 +841,10 @@ func continue_attack() -> void:
   record_event("attack","%s attacks %s with %s for %d damage." % [unit_name(source),unit_name(t),action,maxi(0,amount-(boss_weakness() if boss.weak and source == 3 else 0))],source,t,amount)
   var hp_before: int = unit_data(t).hp
   damage(t,maxi(0,amount-(boss_weakness() if boss.weak and source == 3 else 0)),false,"",source)
+  if evasive_targets.has(t):
+   for before_hp in evasive_targets[t]:
+    if unit_data(t).hp == before_hp and unit_data(t).hp > 0 and not unit_data(t).get("dead",false):evasive_due.append({"hero":t,"hp":before_hp})
+   evasive_targets.erase(t)
   last_boss_result = "%s · %s → %s: %d HP lost (%d incoming)." % [action,unit_name(source),unit_name(t),hp_before-unit_data(t).hp,amount]
   if action == "Worm Bite" and hp_before > unit_data(t).hp and unit_data(t).hp > 0 and v("nugh.poison") > 0:
    apply_poison(source,t,v("nugh.poison"))
@@ -833,9 +861,11 @@ func continue_attack() -> void:
      if legal(t,unit_data(t).pos+dir):unit_data(t).pos += dir;moved = true;break
     if not moved:break
   if action == "Drive Back" and t < 3:
-   pending = {"kind":"push","hero":t,"direction":impact_direction(t)};push(pending.direction);return
+   pending = {"kind":"push","hero":t,"direction":impact_direction(t)};evasive_targets.clear();push(pending.direction);return
 
  after_enemy_attack(source,action,victims,hit_targets)
+ evasive_targets.clear()
+ offer_evasive_step()
 
 func after_enemy_attack(_source: int, _action: String, _declared: Array, _hit: Array) -> void:pass
 
@@ -856,6 +886,10 @@ func react(use: bool, dir: Vector2i = Vector2i.ZERO) -> void:
   var block_before: int = h.block
   begin_action(t,"Reaction: "+FACES[f],victim,die)
   match f:
+   68:
+    h.block += 1
+    if not evasive_targets.has(t):evasive_targets[t] = []
+    evasive_targets[t].append(h.hp)
    28:
     var options := attack_targets(source,mini(v("face28.range"),reach)).filter(func(id):return id in [0,1,2] and id != t)
     if not options.is_empty(): pending.victims = [nearest_attacked(source,options)]
@@ -909,6 +943,8 @@ func push(dir: Vector2i) -> void:
    break
  if origin != unit_data(t).pos:record_event("move","Drive Back pushes %s %s → %s." % [unit_name(t),cell_name(origin),cell_name(unit_data(t).pos)],3,t)
 
+ offer_evasive_step()
+
 func stun_die(d: int) -> void:
  if pending.get("kind","") not in ["stun","preroll_stun"] or d not in range(3):return
  var t: int = pending.hero
@@ -924,6 +960,7 @@ func stun_die(d: int) -> void:
  heroes[t].used[d] = true
  record_event("stun","Stunned: %s loses its unused Die %s (%s) this activation." % [unit_name(t),["I","II","III"][d],FACES[face(t,d)]],t,t)
  pending = {}
+ offer_evasive_step()
 
 func action_reroll(d: int) -> bool:
  if reroll_reason(d) != "":return false
@@ -966,7 +1003,12 @@ func default_boss_help(action: String) -> String:
   "Distort": return "Target a highest-current-HP standing hero within %d. If no globally highest-HP hero is in reach, target the closest standing hero in reach. HP / distance ties are random. Inflict Weakness %d until the next boss turn. With no reachable hero, use fallback." % [v("boss.distort.range"),v("boss.distort.weakness")]
   "Fracture": return "Closest hero within %d chooses %d installed ability face(s) to become Blank for this fight. Earlier rolled results stay." % [v("boss.fracture.range"),v("boss.fracture.count")]
  return "Resolve one boss die at a time, then end its turn."
-func on_roll(h: Dictionary, d: int) -> void:
+func on_roll(h: Dictionary, d: int, rolled: bool = true) -> void:
+ if rolled:
+  if int(h.get("history_round",-1)) != round_no:h.round_history = [];h.history_round = round_no
+  if not h.has("round_history"):h.round_history = []
+  h.round_history.append({"die":d,"face":h.results[d]})
+  if h.results[d] in [54,60,61,62]:h.bone_count = int(h.get("bone_count",0))+1
  var f: int = h.results[d]
  if f == 13:
   var before: int = h.rerolls
@@ -1027,7 +1069,11 @@ func attack_bonus(_target: int) -> int:return 0
 
 func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: bool = false) -> int:
  var h: Dictionary = heroes[active]
- var value := maxi(0,modified_value(d,base+attack_bonus(target))-hero_weakness(h))
+ var offered: int = int(h.get("offering_boost",0))
+ if offered > 0:
+  h.offering_boost = 0
+  record_event("buff","Sorrow’s Offering: next Attack gains +%d damage before normal modifiers; blessing consumed." % offered,active,target,offered)
+ var value := maxi(0,modified_value(d,base+offered+attack_bonus(target))-hero_weakness(h))
  if numeric_attack and h.numeric_zero: value = 0
  var repeats := 1
  if h.backstab >= round_no and target == 3 and rear(active): repeats += v("face10.repeat"); h.backstab = 0
@@ -1311,7 +1357,7 @@ func catalog_pick(hero: int, d: int, side: int = -1) -> bool:
   h.opening = false;h.results[source] = copy;pending = {};forced_die = source
   record_event("action","%s uses Borrow Shape: copies %s’s face-up Die %s (%s), even if spent or held. Only the Borrow Shape die is consumed when its copied result resolves." % [unit_name(active),unit_name(hero),["I","II","III"][d],FACES[copy]],active,hero)
   if Catalog.is_reaction(copy):h.reaction.append(source);h.used[source] = true;forced_die = -1
-  on_roll(h,source);return true
+  on_roll(h,source,false);return true
  if hero != active:return false
  if f == 23:
   if p.stage == 0:
@@ -1471,14 +1517,19 @@ func boss_weakness() -> int:return int(boss.get("weak_amount",v("face51.weakness
 func hero_weakness(h: Dictionary) -> int:
  return maxi(int(h.get("weak_amount",v("boss.distort.weakness"))) if h.weak else 0,v("face47.weakness") if h.bulwark_weak else 0)
 func soul_remaining(id: int) -> int:
+ if not balance.get("soul.eligible."+str(id),true):return 0
  var h: Dictionary = heroes[id]
  var used: int = int(h.get("soul_moves_used",0))
  return maxi(0,v("soul.uses")-used)
 func move_steps(f: int) -> int:
+ if f == 60:return 1
+ if f == 66:return 2
  return v("soul.move") if f == 0 else v("face%d.move" % f)
 func face_range(f: int) -> int:
+ if f in [63,64,65]:return 2+(1 if f == 63 and balance.get("memory.loss."+str(active),false) else 0)
+ if f in [60,61,62,66,67,68]:return 1
  var key := "face%d.range" % f
- return v(key) if Balance.INDEX.has(key) else 1
+ return (v(key)+(1 if f in [15,19] and balance.get("memory.loss."+str(active),false) else 0)) if Balance.INDEX.has(key) else 1
 func boss_range(action: String) -> int:
  if action == "Smoking Strike":action = "Strike"
  var key := "boss."+action+".range"
@@ -1538,6 +1589,7 @@ func reroll_window_reason() -> String:
  if not pending.is_empty():return "Finish the pending choice first."
  var h: Dictionary = heroes[active]
  if h.dead or h.hp <= 0:return "This hero is incapacitated. End the turn or revive them before taking actions."
+ if not burden_interrupt.is_empty():return "Resolve the Shared Burden copy; this is one borrowed action, not a full turn."
  if forced_die >= 0:return "Resolve the forced result before using an Action Reroll."
  if v("hero.reroll_anytime") == 0 and not h.opening:return "Opening window closed: an action has already resolved. Saved charges are usable next own turn; Focus is a separate ability."
  if h.rerolls < v("hero.reroll_cost"):return "Not enough Action Rerolls. The starting charge does not refill each round."
@@ -1564,6 +1616,9 @@ func status_description(id: int) -> String:
  var lines: Array[String] = []
  if id == 3 and h.get("poison",0) > 0:lines.append("Poison %d: unavoidable HP damage at next boss activation, then decreases by 1." % h.poison)
  if id < 3:
+  if balance.get("memory.loss."+str(id),false):lines.append("Memory of Loss equipped; first actual self-heal bonus "+("spent" if h.get("memory_self_used",false) else "available")+".")
+  if int(h.get("offering_boost",0)) > 0:lines.append("Sorrow’s Offering: next Attack +%d." % h.offering_boost)
+  if id == active:lines.append("This turn: %d Bone result(s) rolled; %d spaces moved." % [h.get("bone_count",0),h.get("moved_turn",0)])
   if h.dead:lines.append("Dead: cannot act or be revived.")
   elif h.hp == 0:lines.append("Downed: heal to revive with Broken.")
   if h.get("poison",0) > 0:lines.append("Poison %d: unavoidable HP loss at next own turn start, then decreases by 1; additional applications stack." % h.poison)
@@ -1646,7 +1701,7 @@ func reset_soul_allowance(id: int) -> void:
  if reward:record_event("soul_refresh","%s refreshes Blank movement: %d/%d uses available for this own turn." % [unit_name(id),v("soul.uses"),v("soul.uses")],id,id)
 
 static func valid_face_number(value: Variant) -> bool:
- return (value is int or value is float) and is_finite(float(value)) and float(value) == floor(float(value)) and value >= 0 and value < 60
+ return (value is int or value is float) and is_finite(float(value)) and float(value) == floor(float(value)) and value >= 0 and value < Catalog.FACE_COUNT
 
 func boss_name() -> String:return "The Hollow"
 func unit_count() -> int:return 4+minions.size()
@@ -1663,6 +1718,7 @@ func damage_minion(id: int, amount: int, unavoidable: bool = false, reason: Stri
  var absorbed := 0 if unavoidable else mini(worm.block,maxi(0,amount))
  worm.block -= absorbed
  var old: int = worm.hp;worm.hp = maxi(0,worm.hp-maxi(0,amount-absorbed))
+ if old > 0 and worm.hp == 0:harvest_death(id)
  record_event("damage" if worm.hp < old else "block","%s — %s → %s: %d blocked; %d HP lost. HP %d/%d, Block %d." % [action_label,unit_name(action_owner),unit_name(id),absorbed,old-worm.hp,worm.hp,worm.max_hp,worm.block],action_owner,id,old-worm.hp)
  if worm.hp == 0:
   worm.dead = true;worm.poison = 0;worm.block = 0
@@ -1798,4 +1854,129 @@ func action_name(owner: int, f: int) -> String:
  return "Command Nu’gh" if f == 59 and owned_worm(owner) >= 0 else FACES[f]
 
 func borrow_eligible(hero: int, d: int) -> bool:
- return hero in range(3) and d in range(3) and heroes[hero].results.size() == 3 and face(hero,d) not in [16,56]
+ return hero in range(3) and d in range(3) and heroes[hero].results.size() == 3 and face(hero,d) not in ([16,56,65] if not burden_interrupt.is_empty() else [16,56])
+
+func essence_type(id: int) -> String:
+ if friendly(id):return ""
+ var unit: Dictionary = unit_data(id)
+ return str(unit.get("essence_type",encounter_id if id == 3 else "nugh_worm"))
+func harvest_death(id: int) -> void:
+ if friendly(id) or harvest_claimed.has(id):return
+ var type := essence_type(id)
+ if type == "":return
+ harvest_claimed[id] = true;harvest_deaths.append(type)
+ var unit: Dictionary = unit_data(id)
+ var condition: String = unit.get("harvest_condition",Essence.TYPES.get(type,{}).get("condition","regular"))
+ if Essence.eligible(unit,condition):
+  harvest_tokens.append({"id":id,"type":type,"name":unit_name(id)})
+  record_event("harvest","%s defeated: 1 %s Essence token placed on its enemy card. Bank only after victory; defeat discards this encounter’s tokens." % [unit_name(id),Essence.type_name(type)],-1,id,1)
+ else:record_event("harvest",unit_name(id)+" defeated without satisfying its condition at death: no token.",-1,id)
+func harvest_card(id: int) -> String:
+ var type := essence_type(id)
+ var hidden: bool = unit_data(id).get("rank",Essence.TYPES.get(type,{}).get("rank","normal")) != "normal" and not harvest_revealed.has(type) and not harvest_claimed.has(id)
+ if hidden:return "Harvest requirement: HIDDEN until first defeat. Eligibility and rewards are hidden."
+ var condition: String = unit_data(id).get("harvest_condition",Essence.TYPES.get(type,{}).get("condition","regular"))
+ var token := harvest_tokens.any(func(entry):return entry.id == id)
+ return Essence.condition_text(condition)+("\nDefeated card: 1 Essence token." if token else ("\nDefeated card: no token." if harvest_claimed.has(id) else "\nEligible now: "+("YES" if Essence.eligible(unit_data(id),condition) else "NO")))
+func encounter_types() -> Array:
+ var types: Array = []
+ for id in range(3,unit_count()):
+  if not friendly(id) and essence_type(id) not in types:types.append(essence_type(id))
+ return types
+func movement_distance(id: int, origin: Vector2i, destination: Vector2i) -> int:
+ var queue: Array = [[origin,0]];var visited: Array = [origin]
+ while not queue.is_empty():
+  var item: Array = queue.pop_front()
+  if item[0] == destination:return item[1]
+  for dir in DIRS:
+   var next: Vector2i = item[0]+dir
+   if next not in visited and legal(id,next):visited.append(next);queue.append([next,item[1]+1])
+ return absi(destination.x-origin.x)+absi(destination.y-origin.y)
+func essence_action(d: int, target: int, destination: Vector2i) -> bool:
+ var h: Dictionary = heroes[active];var f := face(active,d)
+ match f:
+  60:
+   if destination.x != -99:
+    if destination not in reachable(active,1,false):return false
+    h.pos = destination
+   h.block += 1
+  61:
+   if target < 0 or not enemies(active,target) or unit_data(target).hp <= 0 or distance(active,target) > 1:return false
+   strike(d,target,int(h.get("bone_count",0)))
+  62:h.block += modified_value(d,int(h.get("bone_count",0)))
+  63:
+   var before: int = h.hp;heal(active,1)
+   if h.hp > before:
+    pending = {"kind":"essence_remedy","hero":active,"die":d};return true
+  64:
+   if not heroes.any(func(ally):return ally != h and not ally.dead and ally.hp > 0 and distance(active,heroes.find(ally)) <= 2):return false
+   pending = {"kind":"essence_offering","hero":active,"die":d};return true
+  65:
+   if not burden_interrupt.is_empty():return false
+   pending = {"kind":"essence_burden_source","hero":active,"die":d};return true
+  66:
+   if destination not in reachable(active,2,false):return false
+   var farther := true
+   for enemy in attack_targets(active,99):
+    if distance(active,enemy,destination) <= distance(active,enemy):farther = false
+   h.pos = destination
+   if farther:h.block += 1
+  67:
+   if int(h.get("moved_turn",0)) < 2 or target < 0 or not enemies(active,target) or unit_data(target).hp <= 0 or distance(active,target) > 1:return false
+   var value := numeric_for(f,h,true)+1 if int(h.get("moved_turn",0)) >= 3 else 1
+   strike(d,target,value,0,int(h.get("moved_turn",0)) >= 3)
+  _:return false
+ spend(d);return true
+func essence_pick(hero: int, mode: int = 0) -> bool:
+ if pending.is_empty():return false
+ var p := pending.duplicate();var kind: String = p.kind
+ if kind == "essence_remedy":
+  if hero not in range(3) or hero == active or heroes[hero].dead or distance(active,hero) > face_range(63):return false
+  heal(hero,1);pending = {};spend(p.die);return true
+ if kind == "essence_offering":
+  if hero not in range(3) or hero == active or heroes[hero].dead or heroes[hero].hp <= 0 or distance(active,hero) > 2 or mode not in [0,1]:return false
+  var source := active
+  pending = {};spend(p.die);damage(source,1,true,"Sorrow’s Offering",source)
+  # A voluntary lethal offering still grants its promised ally benefit.
+  if mode == 0:heroes[hero].block += 2
+  else:heroes[hero].offering_boost = int(heroes[hero].get("offering_boost",0))+1
+  record_event("buff","Sorrow’s Offering: %s pays 1 HP; %s gains %s." % [unit_name(source),unit_name(hero),"2 Block" if mode == 0 else "+1 damage on their next Attack"],source,hero,2 if mode == 0 else 1)
+  return true
+ return false
+func burden_source(index: int) -> bool:
+ if pending.get("kind","") != "essence_burden_source":return false
+ var history: Array = heroes[active].get("round_history",[])
+ if index not in range(history.size()) or history[index].die == pending.die or history[index].face == 65:return false
+ pending.kind = "essence_burden_ally";pending.copy = history[index].face;return true
+func burden_ally(hero: int, die: int) -> bool:
+ if pending.get("kind","") != "essence_burden_ally" or hero not in range(3) or hero == active or die not in range(3):return false
+ var h: Dictionary = heroes[hero]
+ if h.dead or h.hp <= 0 or (h.used[die] and die not in h.reaction) or distance(active,hero) > 2:return false
+ var p := pending.duplicate();var owner := active
+ pending = {};spend(p.die)
+ burden_interrupt = {"owner":owner,"cursor":cursor,"die":die,"moved_before":h.get("moved_turn",0)}
+ h.moved_turn = 0
+ active = hero;forced_die = die;h.reaction.erase(die);h.smoke.erase(die);h.used[die] = false;h.results[die] = p.copy
+ if Catalog.is_reaction(p.copy):h.reaction.append(die);h.used[die] = true;forced_die = -1
+ on_roll(h,die,false)
+ record_event("copy","Shared Burden: %s spends Die %s to resolve %s immediately. Return to %s afterwards; no full turn, activation, Poison tick or initiative change." % [unit_name(hero),["I","II","III"][die],FACES[p.copy],unit_name(owner)],owner,hero)
+ return true
+func return_from_burden() -> bool:
+ if burden_interrupt.is_empty() or not pending.is_empty() or forced_die >= 0 or not heroes[active].used[burden_interrupt.die]:return false
+ var recipient := active;heroes[recipient].moved_turn = burden_interrupt.moved_before;active = burden_interrupt.owner;cursor = burden_interrupt.cursor;burden_interrupt = {};forced_die = -1
+ record_event("copy","Shared Burden action complete: return from %s to %s’s original turn." % [unit_name(recipient),unit_name(active)],recipient,active)
+ return true
+func essence_decline() -> void:
+ if pending.get("kind","") in ["essence_remedy","essence_offering","essence_burden_source","essence_burden_ally"]:
+  var die: int = pending.die;pending = {};spend(die);note("Reward face declined; no further cost or effect.")
+func offer_evasive_step() -> void:
+ while pending.is_empty() and not evasive_due.is_empty() and outcome == "":
+  var entry: Dictionary = evasive_due.pop_front();var hero: int = entry.hero
+  if heroes[hero].hp == entry.hp and heroes[hero].hp > 0 and not heroes[hero].dead:pending = {"kind":"essence_evasive","hero":hero}
+func evasive_step(direction: Vector2i) -> bool:
+ if pending.get("kind","") != "essence_evasive":return false
+ var hero: int = pending.hero
+ if direction != Vector2i.ZERO:
+  if direction not in DIRS or heroes[hero].get("rooted",0) > 0 or not legal(hero,heroes[hero].pos+direction):return false
+  begin_action(hero,"Evasive Counter step");heroes[hero].pos += direction;report_changes()
+ pending = {};offer_evasive_step();return true

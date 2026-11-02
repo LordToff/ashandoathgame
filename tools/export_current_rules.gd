@@ -15,7 +15,7 @@ func _initialize():
  for def in B.Balance.DEFINITIONS:
   result.defaults[def.key] = B.Balance.value({},def.key,true)
   if B.Balance.value({},def.key,false) != result.defaults[def.key]:result.original[def.key] = B.Balance.value({},def.key,false)
- for id in range(60):result.faces.append({"id":id,"name":C.name_for(id),"type":C.classification(id),"description":copy.face(id)})
+ for id in range(C.FACE_COUNT):result.faces.append({"id":id,"name":C.name_for(id),"type":C.classification(id),"description":copy.face(id)})
  for entry in g.phase_upgrades():result.hollow.append({"name":entry[0],"description":g.default_boss_help(entry[0]),"upgrade":entry[1]})
  for entry in n.phase_upgrades():result.nugh.append({"name":entry[0],"description":n.default_boss_help(entry[0]),"upgrade":entry[1]})
  for entry in c.phase_upgrades():result.cantor.append({"name":entry[0],"description":c.default_boss_help(entry[0]),"upgrade":entry[1]})

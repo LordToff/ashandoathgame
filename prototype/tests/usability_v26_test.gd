@@ -65,7 +65,7 @@ func run():
  check(scene.page == "events","boss entry routes through events")
  scene.expedition.next_sortie();scene.enter_boss()
  check(scene.page == "events","unresolved event cannot enter boss")
- scene.expedition.stage = "resolved";scene.expedition.selected = 1;scene.enter_boss()
+ scene.expedition.stage = "resolved";scene.expedition.selected = 1;scene.gifts = [[34,47],[34,47],[34,47]];scene.builds = [B.bonus_build([34,47]),B.bonus_build([34,47]),B.bonus_build([34,47])];scene.enter_boss()
  check(scene.page == "battle" and scene.expedition.stage == "boss","resolved event permits boss and is consumed")
  scene.start_expedition();check(scene.page == "events" and scene.expedition.stage == "idle","next boss needs a new event")
  scene.begin();scene.game.active = 0;scene.game.pending = {};scene.game.apply_poison(3,0,1);scene.game.tick_poison(0);scene.rebuild()

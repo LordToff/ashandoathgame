@@ -1,5 +1,7 @@
 class_name AshCatalog
 extends RefCounted
+const Essence = preload("res://prototype/essence.gd")
+const FACE_COUNT = 69
 # Playable catalog variants. Draft ambiguities are resolved here for this prototype,
 # and printed on the offer card rather than silently altering the source document.
 const EXTRA = [
@@ -54,16 +56,19 @@ const MOVEMENT = [["Ashstep","Movement","Slip through ash: move up to 2 orthogon
 static func extended_ids() -> Array:
  return range(9,54) + [57,58,59]
 static func name_for(id: int) -> String:
+ if id >= 60 and id < FACE_COUNT:return Essence.FACES[id-60][0]
  if id == 59:return "Summon Nu’gh"
  if id < 9: return ["Blank","Strike","Step","Stride","Guard","Reaction","Focus","First Aid","Shove"][id]
  if id >= 57: return MOVEMENT[id-57][0]
  return EXTRA[id-9][0] if id < 54 else GENERATED[id-54][0]
 static func category(id: int) -> String:
+ if id >= 60 and id < FACE_COUNT:return Essence.FACES[id-60][1]
  if id == 59:return "Skill"
  if id < 9: return ["Blank","Attack","Movement","Movement","Defense","Defense","Skill","Skill","Skill"][id]
  if id >= 57: return "Movement"
  return EXTRA[id-9][1] if id < 54 else GENERATED[id-54][1]
 static func text(id: int) -> String:
+ if id >= 60 and id < FACE_COUNT:return Essence.FACES[id-60][2]
  if id == 59:return "Summon one friendly Nu’gh on an adjacent empty tile: 1 HP, Move 2, bite range 1, Numeric 1,1,0,0,0,0. HP damage applies Poison 1. Acts after its owner’s turn. While alive, all copies become Command Nu’gh: activate it immediately as well. One worm per hero."
  if id in [25,31,49]: return EXTRA[id-9][2] + " Prototype limit: one active Channel per hero; a second cannot replace it."
  if id >= 57: return MOVEMENT[id-57][2]
@@ -71,7 +76,7 @@ static func text(id: int) -> String:
 static func draft_ids() -> Array:
  return range(1,54) + [57,58,59]
 static func is_reaction(id: int) -> bool:
- return id in [5,28,44,45,46,48]
+ return id in [5,28,44,45,46,48,68]
 static func is_attack(id: int) -> bool:
  return category(id) == "Attack"
 static func can_copy(id: int) -> bool:

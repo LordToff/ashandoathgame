@@ -169,7 +169,7 @@ func boss_step() -> void:
     var spawned := spawn_worms(v("nugh.command_empty"));last_boss_result = "Devour: no worms → summon %d." % spawned
    else:
     worms.sort_custom(func(a,b):return distance(3,a)<distance(3,b))
-    var id: int = worms[0];unit_data(id).hp = 0;unit_data(id).dead = true
+    var id: int = worms[0];unit_data(id).hp = 0;harvest_death(id);unit_data(id).dead = true
     record_event("minion_death","Nu’gh devours "+unit_name(id)+" (no Soul Link).",3,id)
     var restored := heal_boss(v("nugh.devour_heal")+(v("nugh.devour_heal_bonus") if phase_two else 0),"Devour Brood")
     last_boss_result = "Devour: consumes one worm; heals %d HP." % restored
@@ -195,7 +195,7 @@ func check_end() -> void:
  super.check_end()
  if outcome != "":brood_queue.clear();command_active = false
  if outcome == "victory":
-  for id in living_minions():unit_data(id).hp = 0;unit_data(id).dead = true
+  for id in living_minions():unit_data(id).hp = 0;harvest_death(id);unit_data(id).dead = true
 func default_boss_help(action: String) -> String:
  match action:
   "Brood turn":return "After Nu’gh’s three dice, each worm moves up to %d toward a standing hero, then bites if adjacent.\n\nDie: %s. HP loss applies Poison %d (next activation: damage equal to total Poison, then reduce by 1; applications stack). Reactions apply.\n\nThis is extra to Brood Command." % [v("nugh.command_move")+(v("nugh.command_move_bonus") if phase_two else 0),", ".join(worm_faces()),v("nugh.poison")]
