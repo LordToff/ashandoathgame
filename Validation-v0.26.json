@@ -1,0 +1,150 @@
+{
+  "scripts": [
+    {
+      "script": "balance",
+      "passed": true,
+      "checks": 51
+    },
+    {
+      "script": "boss_v13",
+      "passed": true,
+      "checks": 47
+    },
+    {
+      "script": "brood_v21",
+      "passed": true,
+      "checks": 2414
+    },
+    {
+      "script": "bug_sweep_v222",
+      "passed": true,
+      "checks": 14
+    },
+    {
+      "script": "bugfix_v15",
+      "passed": true,
+      "checks": 18
+    },
+    {
+      "script": "cantor_v20",
+      "passed": true,
+      "checks": 34
+    },
+    {
+      "script": "catalog",
+      "passed": true,
+      "checks": 180
+    },
+    {
+      "script": "encounter_v18",
+      "passed": true,
+      "checks": 358
+    },
+    {
+      "script": "encounter_v19",
+      "passed": true,
+      "checks": 358
+    },
+    {
+      "script": "events_v25",
+      "passed": true,
+      "checks": 355
+    },
+    {
+      "script": "events_v25_ui",
+      "passed": true,
+      "checks": 24
+    },
+    {
+      "script": "lab",
+      "passed": true,
+      "checks": 329
+    },
+    {
+      "script": "loadout_v14",
+      "passed": true,
+      "checks": 836
+    },
+    {
+      "script": "numeric_v21",
+      "passed": true,
+      "checks": 52
+    },
+    {
+      "script": "playtest_v12",
+      "passed": true,
+      "checks": 51
+    },
+    {
+      "script": "polish",
+      "passed": true,
+      "checks": 12
+    },
+    {
+      "script": "presentation",
+      "passed": true,
+      "checks": 2269
+    },
+    {
+      "script": "preset_v15",
+      "passed": true,
+      "checks": 31
+    },
+    {
+      "script": "reliability",
+      "passed": true,
+      "checks": 10
+    },
+    {
+      "script": "rules",
+      "passed": true,
+      "checks": 41
+    },
+    {
+      "script": "soul",
+      "passed": true,
+      "checks": 14
+    },
+    {
+      "script": "summons_v22",
+      "passed": true,
+      "checks": 269
+    },
+    {
+      "script": "trial_regression",
+      "passed": true,
+      "checks": 12
+    },
+    {
+      "script": "update",
+      "passed": true,
+      "checks": 28
+    },
+    {
+      "script": "usability_v26",
+      "passed": true,
+      "checks": 69
+    },
+    {
+      "script": "warden_v24",
+      "passed": true,
+      "checks": 38
+    },
+    {
+      "script": "worm_path_v221",
+      "passed": true,
+      "checks": 75
+    }
+  ],
+  "browser": {
+    "normal_flow": "passed",
+    "fixture_ui": "passed",
+    "errors": []
+  },
+  "browser_fixture_scope": "Deterministic local-only fixture uses unchanged production UI code; normal event-to-boss navigation also tested on the normal export.",
+  "limitations": [
+    "Inherited native shutdown resource warnings.",
+    "No human balance study."
+  ],
+  "deployment": "Verified separately after package publication"
+}
