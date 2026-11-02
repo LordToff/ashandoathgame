@@ -25,16 +25,19 @@ static func render(app) -> void:
  for hero in range(3):
   app.button(["Vesper","Rook","Wren"][hero],Vector2(805+hero*187,391),Vector2(175,40),func():app.camp_hero = hero;app.rebuild(),app.COLORS[hero] if app.camp_hero == hero else app.MUTED)
  if selected.has("face") and app.expedition.camp.unlocked.has(app.camp_recipe):
-  app.label_at("REFIT · choose a die square to place one owned copy",Vector2(803,448),15,app.GOLD,555)
+  app.label_at("REFIT · choose a die square",Vector2(803,448),15,app.GOLD,380)
+  app.button("Unequip mode: "+("ON" if app.camp_remove_mode else "OFF"),Vector2(1195,439),Vector2(166,34),func():app.camp_remove_mode = not app.camp_remove_mode;app.rebuild(),app.GOLD if app.camp_remove_mode else app.MUTED).add_theme_font_size_override("font_size",12)
   for die in range(3):
    for side in range(6):
     var face: int = app.builds[app.camp_hero][die][side]
-    var square = app.button("%s%d\n%s" % [["I","II","III"][die],side+1,app.Catalog.name_for(face)],Vector2(804+side*94,485+die*72),Vector2(87,65),func():app.camp_place(selected.face,app.camp_hero,die,side),app.color_for_face(face))
+    var square = app.button("%s%d\n%s" % [["I","II","III"][die],side+1,app.Catalog.name_for(face)],Vector2(804+side*94,485+die*72),Vector2(87,65),func():
+     if app.camp_remove_mode:app.camp_remove(app.camp_hero,die,side)
+     else:app.camp_place(selected.face,app.camp_hero,die,side),app.color_for_face(face))
     square.tooltip_text = app.Catalog.display_name(face)+"\n"+app.Catalog.text(face)
     square.add_theme_font_size_override("font_size",11);square.name = "CampSlot%d_%d" % [die,side]
   app.label_at("Body/category limits and 2+ Blanks per die still apply.\nCopies are shared across all three heroes; unequipped copies stay owned.",Vector2(803,712),14,app.MUTED,555,false,true)
  elif not selected.has("face") and app.expedition.camp.unlocked.has(app.camp_recipe):
-  app.button("Equip Memory on "+["Vesper","Rook","Wren"][app.camp_hero],Vector2(804,488),Vector2(555,48),func():app.expedition.camp.equip_memory(app.camp_hero);app.expedition.save();app.camp_message = "Memory transferred during refitting. It remains permanently owned.";app.rebuild())
+  app.button(("Unequip Memory from " if app.expedition.camp.memories[app.camp_hero] == "memory_loss" else "Equip Memory on ")+["Vesper","Rook","Wren"][app.camp_hero],Vector2(804,488),Vector2(555,48),func():app.expedition.camp.equip_memory(-1 if app.expedition.camp.memories[app.camp_hero] == "memory_loss" else app.camp_hero);app.expedition.save();app.camp_message = "Memory refitted. It remains permanently owned in the shared collection.";app.rebuild())
   app.label_at("One physical Memory of Loss is shared. Equipping it here removes it from its previous holder. This is a Camp refit, not a combat swap.",Vector2(805,558),17,app.MUTED,550,false,true)
  var other: Array[String] = []
  for type in app.expedition.camp.bank:

@@ -59,6 +59,7 @@ var harvest_claimed: Dictionary = {}
 var harvest_revealed: Dictionary = {}
 var harvest_run := ""
 var burden_interrupt: Dictionary = {}
+var resuming_friendly_attack := false
 var evasive_due: Array = []
 var evasive_targets: Dictionary = {}
 var phase_two := false
@@ -604,6 +605,7 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
  if h.used[d] or (forced_die >= 0 and forced_die != d): return false
  var f := face(active,d)
  if f == 6 and focus_reason(d,target) != "":return false
+ if not resuming_friendly_attack and prepare_friendly_evasive(d,target,destination):return true
  begin_action(active,action_name(active,f),target if f != 6 else -1,d)
  if f >= 60:return essence_action(d,target,destination)
  if f >= 9: return catalog_action(d,target,destination)
@@ -983,7 +985,7 @@ func action_reroll(d: int) -> bool:
 
 func boss_help(action: String) -> String:
  var base := default_boss_help(action)
- if balance.is_empty():return base
+ if not balance.keys().any(func(key):return Balance.INDEX.has(key)):return base
  var group := "Boss · "+action
  var values := Balance.summary(balance,group,tuned)
  return "ACTIVE VALUES\n"+values+"\n\nRules reference (default numbers; active values above take precedence):\n"+base
@@ -1081,6 +1083,7 @@ func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: boo
   pierce += h.mods[d].get("pierce",0); repeats += h.mods[d].get("repeat",0)
  var lost := 0
  for n in range(repeats):
+  if n == 1 and offered > 0 and not numeric_attack:value = maxi(0,value-offered)
   if outcome != "" or h.hp <= 0 or h.dead: break
   if unit_data(target).get("dead",false): break
   if distance(active,target) > face_range(face(active,d)): break
@@ -1980,3 +1983,29 @@ func evasive_step(direction: Vector2i) -> bool:
   if direction not in DIRS or heroes[hero].get("rooted",0) > 0 or not legal(hero,heroes[hero].pos+direction):return false
   begin_action(hero,"Evasive Counter step");heroes[hero].pos += direction;report_changes()
  pending = {};offer_evasive_step();return true
+
+func prepare_friendly_evasive(die: int, target: int, destination: Vector2i) -> bool:
+ var f := face(active,die)
+ if f not in [1,34,35,36,37,38,39,40,41] or target not in range(3) or target == active:return false
+ if heroes[target].hp <= 0 or heroes[target].dead or distance(active,target) > face_range(f):return false
+ if f == 35 and not sight(active,target,face_range(f)):return false
+ var choices: Array = heroes[target].reaction.filter(func(index):return face(target,index) == 68)
+ if choices.is_empty():return false
+ pending = {"kind":"essence_friendly_evasive","hero":target,"attacker":active,"die":die,"target":target,"destination":destination,"choices":choices,"index":0,"used":0,"hp_before":heroes[target].hp,"attack_face":f}
+ record_event("action","%s targets %s with %s. Evasive Counter may be spent before this friendly Attack resolves." % [unit_name(active),unit_name(target),FACES[f]],active,target)
+ return true
+func friendly_evasive_react(use: bool) -> bool:
+ if pending.get("kind","") != "essence_friendly_evasive":return false
+ var p := pending.duplicate(true);var hero: int = p.hero;var reaction_die: int = p.choices[p.index]
+ if use:
+  heroes[hero].reaction.erase(reaction_die);heroes[hero].block += 1;p.used += 1
+  record_event("reaction",unit_name(hero)+" spends Evasive Counter: +1 Block before the friendly Attack.",hero,hero,1)
+ else:record_event("reaction",unit_name(hero)+" holds Evasive Counter for this friendly Attack.",hero,hero)
+ p.index += 1
+ if p.index < p.choices.size():pending = p;return true
+ pending = {};resuming_friendly_attack = true
+ var resolved := hero_action(p.die,p.target,p.destination)
+ resuming_friendly_attack = false
+ if resolved and heroes[hero].hp == p.hp_before and heroes[hero].hp > 0 and not heroes[hero].dead:
+  for i in range(p.used):evasive_due.append({"hero":hero,"hp":p.hp_before})
+ offer_evasive_step();return resolved

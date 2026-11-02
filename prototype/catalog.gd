@@ -80,7 +80,7 @@ static func is_reaction(id: int) -> bool:
 static func is_attack(id: int) -> bool:
  return category(id) == "Attack"
 static func can_copy(id: int) -> bool:
- return id in [1,2,3,4,7,8,19,20,21,22,34,35,36,37,38,39,40,42,43,47,50,51,52,53,54,55,57,58,59]
+ return id in [1,2,3,4,7,8,19,20,21,22,34,35,36,37,38,39,40,42,43,47,50,51,52,53,54,55,57,58,59,60,61,62,63,64,66,67]
 
 static func readiness(id: int) -> String:
  if id in [9,11]: return "LIMITED · see effect notes"

@@ -145,10 +145,15 @@ section('19. Soundtrack and interface', 'The original score and shared interface
 section('20. Essence harvesting and Camp Forge', 'Implemented from Essence Harvesting & Prototype Enemies v1. Creature names and combat AI remain provisional. This section is the complete design reference; the in-game Forge hides exact reward text until first crafting.', [])
 implementation=(ROOT/'docs'/'Essence-Implementation-v0.27.md').read_text()
 for block in implementation.split('\n\n'):
+ if block.startswith('| '):
+  for row in block.splitlines()[2:]:
+   fields=[v.strip() for v in row.strip('|').split('|')]
+   if len(fields)==4:sections[-1][2].append((fields[1]+' — '+fields[0],fields[2]+'; cost '+fields[3]+' matching Essence.'))
+  continue
  if block.strip() and not block.startswith('# '):
   heading='Camp rules'
   if block.startswith('## '):heading=block[3:].strip();text=''
-  else:text=block.replace('\n',' ').replace('**','').replace('`','')
+  else:text=block.replace('\n',' ').replace('**','').replace('`','').strip()
   sections[-1][2].append((heading,text))
 section('21. Crafted reward face catalog', 'All nine are permanently crafted rewards, not free initial bonus picks. Copies are shared; construction/category caps still apply.', [(D['faces'][i]['name']+' · '+D['faces'][i]['type'],D['faces'][i]['description']) for i in range(60,69)])
 styles=getSampleStyleSheet()

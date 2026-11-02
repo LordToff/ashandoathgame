@@ -33,6 +33,7 @@ func run():
  check(e.craft("memory_loss") == "" and e.bank.support_creature == 16,"Memory costs four")
  check(e.craft("memory_loss") != "" and e.bank.support_creature == 16,"Memory permanent unlock cannot be bought twice")
  check(e.equip_memory(0) and e.equip_memory(2) and e.memories == ["","","memory_loss"],"Memory shared copy can transfer at refitting")
+ check(e.equip_memory(-1) and e.memories == ["","",""] and e.unlocked.has("memory_loss"),"Memory can stay unequipped without losing ownership")
  check(e.grant_soul(1,"test_soul") and not e.equip_soul(0,"test_soul") and e.equip_soul(1,"test_soul"),"Soul binds to recipient and cannot trade")
  e = E.new();e.bank.bone_creature = 1;e.bank.support_creature = 10
  check(e.craft("bone_strike") != "" and e.bank.bone_creature == 1 and e.bank.support_creature == 10,"cannot mix Essence types for a purchase")
@@ -152,6 +153,17 @@ func run():
  g.heroes[1].used[0] = true;g.heroes[1].results[0] = 5;g.heroes[1].reaction = [0]
  check(g.burden_ally(1,0) and g.heroes[1].reaction.is_empty() and not g.heroes[1].used[0],"held unspent Reaction may pay Shared Burden; old latch is removed")
  check(g.hero_action(0) and g.return_from_burden(),"copied action resolves after paying a held Reaction")
+ g = fresh(11);g.heroes[1].results[1] = 62;g.hero_action(0)
+ check(C.can_copy(62) and g.catalog_pick(1,1) and g.face(0,0) == 62,"existing Conjure supports immediate earned faces without allowing Shared Burden loops")
+ check(not C.can_copy(65) and not C.can_copy(68),"copy/setup and held-Reaction restrictions remain on Conjure")
+ g = fresh(61);g.heroes[0].bone_count = 1;g.heroes[0].offering_boost = 1;g.heroes[0].mods[0] = {"repeat":1};bhp = g.boss.hp
+ g.strike(0,3,1);check(g.boss.hp == bhp-3,"Sorrow next-Attack bonus is spent on first hit rather than repeated forever")
+ g = fresh(1);g.heroes[1].results[0] = 68;g.heroes[1].used[0] = true;g.heroes[1].reaction = [0]
+ check(g.hero_action(0,1) and g.pending.kind == "essence_friendly_evasive" and not g.heroes[0].used[0],"friendly Attack pauses for Evasive before paying/resolving the Attack")
+ check(g.friendly_evasive_react(true) and g.heroes[1].hp == 6 and g.heroes[0].used[0],"Evasive Block also mitigates a friendly Attack and consumes the attacking die exactly once")
+ check(g.pending.kind == "essence_evasive" and g.evasive_step(Vector2i.UP),"friendly Attack offers the same post-Attack Move 1")
+ g = fresh(1);g.heroes[1].results[0] = 68;g.heroes[1].used[0] = true;g.heroes[1].reaction = [0];g.hero_action(0,1)
+ check(g.friendly_evasive_react(false) and g.heroes[1].hp == 5 and g.heroes[1].reaction == [0],"holding Evasive against friendly fire preserves the face and takes normal damage")
  var app = load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
  app.expedition.camp = E.new();app.expedition.camp.bank.bone_creature = 10;app.open_camp()
  check(app.page == "camp" and app.ui.get_node_or_null("Craft_bone_growth") != null,"Camp Forge renders with real crafting control")
@@ -161,6 +173,8 @@ func run():
  check(app.builds[0][2][1] == 60,"owned face refits into legal starter slot")
  var before_build: Array = app.builds[1].duplicate(true);app.camp_place(60,1,2,1)
  check(app.builds[1] == before_build,"one party copy cannot be equipped on two heroes")
+ app.camp_remove(0,2,1);app.camp_place(60,1,2,1)
+ check(app.builds[0][2][1] == 0 and app.builds[1][2][1] == 60 and app.expedition.camp.owned(60) == 1,"Camp unequips/trades the actual shared copy without loss or refund")
  app.page = "battle";app.game = group();app.game.damage(3,99,true);app.game.damage(4,99,true);app.show_enemy_cards = true;app.rebuild()
  check(app.show_enemy_cards,"defeated cards and token text can render after the outcome")
  app.queue_free();await process_frame

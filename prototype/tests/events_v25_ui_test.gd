@@ -8,11 +8,12 @@ func _initialize():call_deferred("run")
 func run():
  var scene = load("res://prototype/prototype.tscn").instantiate();root.add_child(scene)
  await process_frame
- scene.draft_modal = false;scene.open_setup()
+ scene.draft_modal = false;scene.gifts = [[34,47],[34,47],[34,47]]
+ scene.builds = [scene.Model.bonus_build([34,47]),scene.Model.bonus_build([34,47]),scene.Model.bonus_build([34,47])];scene.open_setup()
  check(scene.ui.get_node_or_null("EncounterBugh") != null,"fourth boss preserved")
  var launch: Button
  for child in scene.ui.get_children():
-  if child is Button and child.text == "Expedition events":launch = child
+  if child is Button and child.name == "StartEncounter":launch = child
  check(launch != null,"event entry on boss review")
  launch.pressed.emit()
  for id in range(1,7):check(scene.ui.get_node_or_null("EventSlot%d" % id) != null,"visible numbered slot")

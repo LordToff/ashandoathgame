@@ -95,9 +95,10 @@ func profile(base: Dictionary) -> Dictionary:
  for hero in range(3):result["memory.loss."+str(hero)] = memories[hero] == "memory_loss"
  return result
 func equip_memory(hero: int) -> bool:
- if hero not in range(3) or not unlocked.has("memory_loss"):return false
+ if hero not in [-1,0,1,2] or not unlocked.has("memory_loss"):return false
  for i in range(3):memories[i] = ""
- memories[hero] = "memory_loss";return true
+ if hero >= 0:memories[hero] = "memory_loss"
+ return true
 func equip_soul(hero: int, soul: String) -> bool:
  if hero not in range(3) or (soul != "" and soul not in souls[hero]):return false
  equipped_souls[hero] = soul;return true

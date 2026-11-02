@@ -12,7 +12,7 @@ The dedicated repository retains source history and the previous Pages history. 
 
 A GitHub repository backs up committed source and published files. It cannot guarantee that a cloud runtime never fails. Commit and push completed work; ignored caches, running processes and uncommitted files are not repository backups.
 
-Current source for v0.26 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
+Current source for v0.27 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
 
 ## Recover in a new environment
 
@@ -50,7 +50,7 @@ Preserve other local work. Prepare a separate clone of `gh-pages` for publicatio
 
 For future gameplay releases, run `godot --headless --path . --script res://tools/export_current_rules.gd` followed by `python3 tools/make_current_rules.py` after updating the version and reviewed rules prose in that generator. Its optional copy destination `/workspace/outputs` must exist.
 
-Enable GitHub Pages in the dedicated repository's **Settings → Pages → Build and deployment → Deploy from a branch → gh-pages → /(root)**. This setting is separate from pushing the branch. The new browser URL is https://lordtoff.github.io/ashandoathgame/?v=0.25 only after deployment succeeds. Until then, the previous verified live URL remains https://lordtoff.github.io/Godot-Game-Template/?v=0.25.
+Pages is already enabled. If recovering in a new repository, enable GitHub Pages in that repository's **Settings → Pages → Build and deployment → Deploy from a branch → gh-pages → /(root)**. This setting is separate from pushing the branch. The new browser URL is https://lordtoff.github.io/ashandoathgame/?v=0.25 only after deployment succeeds. Until then, the previous verified live URL remains https://lordtoff.github.io/Godot-Game-Template/?v=0.25.
 
 Check the repository's public Actions page for the Pages run and match its commit. If direct live-site access is blocked by the environment, state that limitation and test the exact release package locally; do not claim to have browsed the public deployment.
 

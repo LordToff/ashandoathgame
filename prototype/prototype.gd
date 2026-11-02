@@ -28,6 +28,7 @@ const CREATURE_SPRITES = {"bone_creature":preload("res://prototype/assets/bone_c
 var camp_type := "bone_creature"
 var camp_recipe := "bone_growth"
 var camp_hero := 0
+var camp_remove_mode := false
 var camp_message := "Defeat creatures, bank their Essence after victory, then craft and refit here."
 var show_enemy_cards := false
 var event_soul_hero := 0
@@ -567,11 +568,11 @@ func face_help(f: int) -> String:
   return text
  var base := default_face_help(f)
  var profile := active_balance()
- if profile.is_empty():return base
+ if f >= 60 or not profile.keys().any(func(key):return Balance.INDEX.has(key)):return base+reward_live_notes(f)
  var values := Balance.summary(profile,Balance.face_group(f),game.tuned if page == "battle" else balanced)
  if Balance.INDEX.has("face%d.numeric_multiplier" % f) or f in [17,20]:values += "\n\nShared Numeric die:\n"+Balance.summary(profile,"Numeric die",game.tuned if page == "battle" else balanced)
  if f == 0:values = Balance.summary(profile,"Soul · Blank movement",balanced)
- return "CUSTOM BALANCE · ACTIVE VALUES\n"+values+"\n\nRules reference (default numbers; active values above take precedence):\n"+base
+ return "CUSTOM BALANCE · ACTIVE VALUES\n"+values+"\n\nRules reference (default numbers; active values above take precedence):\n"+base+reward_live_notes(f)
 
 func default_face_help(f: int) -> String:
  if f >= 9: return Catalog.text(f) + (" Numeric die: 2, 2, 1, 1, 1, 0 by default." if f in range(34,43) or f in [15,17,19,50,51,55] else "")
@@ -1438,11 +1439,12 @@ func lab_setup_ui() -> void:
 
 func soul_toggle(at: Vector2, in_lab: bool, width: float = 0) -> void:
  var toggle := CheckButton.new();toggle.name = "TestSoulToggle"
- toggle.text = "Soul: Blank → Move %d · " % balance_number("soul.move") + ("ON" if (game.reward if in_lab else reward_soul) else "OFF")
+ var override_on: bool = game.reward if in_lab and (lab or training) else reward_soul
+ toggle.text = ("Test Soul: " if lab or training else "Sandbox override: ")+"Blank → Move %d · " % balance_number("soul.move") + ("ON" if override_on else "OFF")
  toggle.position = at;toggle.size = Vector2(width if width > 0 else (380 if in_lab else 430),30 if in_lab else 44)
  toggle.add_theme_font_size_override("font_size",14)
- toggle.button_pressed = game.reward if in_lab else reward_soul
- toggle.tooltip_text = "Each hero may spend %d rolled Blanks as Move %d per own turn. Toggling does not refill uses." % [balance_number("soul.uses"),balance_number("soul.move")]
+ toggle.button_pressed = override_on
+ toggle.tooltip_text = "Sandbox only: each hero may spend %d rolled Blanks as Move %d per own turn. Toggling does not refill uses. Equipped Souls remain bound to their heroes; refit at Camp." % [balance_number("soul.uses"),balance_number("soul.move")]
  toggle.toggled.connect(func(enabled):
   set_soul_enabled(enabled,in_lab))
  ui.add_child(toggle)
@@ -1451,8 +1453,10 @@ func soul_toggle(at: Vector2, in_lab: bool, width: float = 0) -> void:
 func set_soul_enabled(enabled: bool, live: bool = true) -> void:
  reward_soul = enabled
  if live and page == "battle":
-  game.reward = enabled or expedition.camp.equipped_souls.any(func(id):return id != "")
-  for hero in range(3):game.balance["soul.eligible."+str(hero)] = enabled or expedition.camp.equipped_souls[hero] != ""
+  game.reward = enabled if lab or training else enabled or expedition.camp.equipped_souls.any(func(id):return id != "")
+  for hero in range(3):
+   if lab or training:game.balance.erase("soul.eligible."+str(hero))
+   else:game.balance["soul.eligible."+str(hero)] = enabled or expedition.camp.equipped_souls[hero] != ""
   game.record_event("info","Blank → Move %d " % game.v("soul.move") + ("enabled: %d conversions per hero turn." % game.v("soul.uses") if enabled else "disabled: Blanks have no movement effect."))
  hint = "Blank → Move %d is " % balance_number("soul.move") + ("ON. Select a rolled Blank, then a highlighted cell. %d conversions per hero turn." % balance_number("soul.uses") if enabled else "OFF. Rolled Blanks cannot be spent for movement.")
  rebuild()
@@ -1460,8 +1464,8 @@ func set_soul_enabled(enabled: bool, live: bool = true) -> void:
 func options_ui() -> void:
  overlay()
  label_at("GAME OPTIONS",Vector2(399,258),28,GOLD,600,true)
- var enabled: bool = game.reward if page == "battle" else reward_soul
- button("Blank → Move %d: " % balance_number("soul.move") + ("ON  ·  click to turn OFF" if enabled else "OFF  ·  click to turn ON"),Vector2(399,303),Vector2(575,39),func(): set_soul_enabled(not enabled),Color("82c8b9"))
+ var enabled: bool = game.reward if page == "battle" and (lab or training) else reward_soul
+ button("Sandbox Blank → Move %d: " % balance_number("soul.move") + ("ON  ·  click to turn OFF" if enabled else "OFF  ·  click to turn ON"),Vector2(399,303),Vector2(575,39),func(): set_soul_enabled(not enabled),Color("82c8b9"))
  label_at("ON: %d Blank conversions per hero turn, each Move %d.\nOFF disables conversion. Switching off/on does not refill uses." % [balance_number("soul.uses"),balance_number("soul.move")],Vector2(399,350),15,Color("dce6ee"),575,false,true)
  button("Balance workshop · edit ability & passive values",Vector2(399,401),Vector2(575,37),open_balance_editor,Color("82c8b9"))
  button("Action Rerolls: "+("ANY TIME" if balance_number("hero.reroll_anytime") else "OPENING ONLY"),Vector2(399,447),Vector2(575,40),func():
@@ -1720,7 +1724,7 @@ func short_face_help(f: int) -> String:
  if Balance.INDEX.has(key):
   var multiplier: int = balance_number(key);var bonus: int = balance_number("face%d.numeric_bonus" % f)
   if multiplier != 1 or bonus != 0:text += "\n\nCustom value: roll ×%d, then +%d." % [multiplier,bonus]
- return text
+ return text+reward_live_notes(f)
 
 func select_combat_die(d: int) -> void:
  var h: Dictionary = game.heroes[game.active]
@@ -1903,7 +1907,7 @@ func setup_ui() -> void:
  button("Tuned numbers"+(" ✓" if balanced else ""),Vector2(510,205),Vector2(400,43),func():balanced = true;rebuild(),GOLD if balanced else MUTED)
  button("Original numbers"+(" ✓" if not balanced else ""),Vector2(930,205),Vector2(430,43),func():balanced = false;rebuild(),GOLD if not balanced else MUTED)
  label_at("Original changes The Hollow’s baseline. Nu’gh, Veyl and Bu’gh use their own boss values.",Vector2(512,259),15,MUTED,838,false,true)
- label_at("ROLLED BLANK MOVEMENT",Vector2(512,312),16,GOLD,840)
+ label_at("SANDBOX BLANK MOVEMENT OVERRIDE",Vector2(512,312),16,GOLD,840)
  for index in range(3):
   var chosen: bool = not reward_soul if index == 0 else reward_soul and balance_number("soul.move") == index
   var option := button(["OFF · Blank has no movement","ON · Blank → Move 1","ON · Blank → Move 2"][index]+(" ✓" if chosen else ""),Vector2(510+index*286,348),Vector2(278,46),func():
@@ -1911,7 +1915,7 @@ func setup_ui() -> void:
    if index > 0:balance_values["soul.move"] = index
    rebuild(),Color("83cec1") if chosen else MUTED)
   option.name = "SetupSoul%d" % index;option.add_theme_font_size_override("font_size",14)
- label_at("%d conversion(s) per hero’s own turn. Switching this setting never grants extra dice." % balance_number("soul.uses"),Vector2(512,407),15,MUTED,838)
+ label_at("Sandbox rule only. Earned Souls are bound/equipped at Camp. %d conversion(s) per own turn." % balance_number("soul.uses"),Vector2(512,407),15,MUTED,838)
  var boss_hp: int = balance_number("bugh.hp") if encounter == "bugh" else balance_number("cantor.hp") if encounter == "cantor" else (balance_number("nugh.hp") if encounter == "nugh" else balance_number("boss.hp"))
  label_at("Heroes: %d HP · %d starting reroll(s) (bank cap %d)\nBoss: %d HP · every ability upgrades at %d%% HP\nDice: minimum %d Blanks per die\nPer hero across all 3 dice: Movement %d · Defense %d · Skill %d" % [balance_number("hero.hp"),balance_number("hero.rerolls"),balance_number("hero.reroll_cap"),boss_hp,balance_number("boss.phase.percent"),balance_number("body.blanks"),balance_number("body.Movement"),balance_number("body.Defense"),balance_number("body.Skill")],Vector2(512,458),18,Color("e2e8ed"),838,false,true)
  label_at("YOUR PARTY",Vector2(512,579),16,GOLD,600)
@@ -2082,9 +2086,9 @@ func start_expedition() -> void:
  open_events()
 
 func enter_boss() -> void:
+ if expedition.stage != "resolved":open_events();return
  if gifts.any(func(choices):return choices.size() != 2):
   hint = "Choose two distinct bonus designs per hero before entering a boss.";page = "forge";draft_modal = true;rebuild();return
- if expedition.stage != "resolved":open_events();return
  expedition.stage = "boss";expedition.save();begin()
 
 func restart_to_menu() -> void:
@@ -2124,7 +2128,7 @@ func camp_place(face: int, hero: int, die: int, side: int) -> void:
 func craft_recipe(key: String) -> void:
  var error: String = expedition.camp.craft(key)
  camp_message = error if error != "" else "Crafted "+expedition.camp.reward_name(key)+". Exact effect revealed. Additional face copies cost the same amount."
- if error == "":expedition.save()
+ if error == "":camp_remove_mode = false;expedition.save()
  rebuild()
 func open_camp() -> void:
  show_menu = false;show_options = false;show_enemy_cards = false;draft_modal = false
@@ -2152,13 +2156,22 @@ func enemy_cards_ui() -> void:
   var type: String = game.essence_type(id);var unit: Dictionary = game.unit_data(id)
   var description: String = game.unit_name(id)+" · %d/%d HP · %d Block\n" % [unit.hp,unit.max_hp,unit.block]+game.harvest_card(id)
   if game.encounter_id == "event" and game.prototype_pack:
-   description += "\nProvisional AI · public dice: "+str(game.creature_dice(type))+"\nThis round: "+str(unit.get("creature_rolls",game.boss_rolls))
+   description += "\nProvisional AI · public dice"
+   var printed: Array = game.creature_dice(type)
+   for die in range(3):description += "\nDie %s: %s" % [["I","II","III"][die]," · ".join(printed[die])]
+   description += "\nThis round: "+" · ".join(unit.get("creature_rolls",game.boss_rolls))
   var revealed: bool = expedition.camp.discovered(type) or game.harvest_claimed.has(id)
   description += "\nRewards: "+(" · ".join(Essence.RECIPES.values().filter(func(recipe):return recipe.enemy == type).map(func(recipe):return recipe.category+" — %d Essence" % recipe.cost)) if revealed else "HIDDEN until first defeat.")
-  text.text = description;text.add_theme_font_size_override("font_size",18);column.add_child(text)
+  text.text = description;text.add_theme_font_size_override("font_size",18)
+  var card := PanelContainer.new();card.add_theme_stylebox_override("panel",style(Color("19232e"),Color("354653")));column.add_child(card);card.add_child(text)
  button("Back to battle",Vector2(1000,825),Vector2(380,45),func():show_enemy_cards = false;rebuild())
 func essence_pending_ui(p: Dictionary) -> void:
- if p.kind == "essence_evasive":
+ if p.kind == "essence_friendly_evasive":
+  label_at("Friendly Attack · Evasive Counter",Vector2(399,306),25,GOLD,600,true)
+  label_at(game.unit_name(p.attacker)+" targets "+game.unit_name(p.hero)+" with "+Catalog.name_for(p.attack_face)+". Gain 1 Block before the Attack; if it removes no HP, optionally Move 1 afterwards. Numeric damage rolls on resolution.",Vector2(399,360),18,MUTED,570,false,true)
+  button("Use Evasive Counter",Vector2(399,510),Vector2(275,48),func():game.friendly_evasive_react(true);rebuild())
+  button("Hold",Vector2(689,510),Vector2(275,48),func():game.friendly_evasive_react(false);rebuild(),MUTED)
+ elif p.kind == "essence_evasive":
   label_at("Evasive Counter · no HP lost",Vector2(399,306),25,GOLD,600,true)
   label_at("After the Attack resolved: optionally Move 1. Rooted still prevents voluntary movement.",Vector2(399,360),18,MUTED,570,false,true)
   for i in range(4):
@@ -2198,7 +2211,21 @@ func resume_creatures() -> void:
 
 func enemy_pool(field: String) -> int:
  if game.encounter_id != "event":return int(game.boss[field])
- var total: int = int(game.boss[field])
+ var total: int = int(game.boss[field]) if field != "block" or game.boss.hp > 0 else 0
  for id in range(4,game.unit_count()):
-  if not game.friendly(id):total += int(game.unit_data(id)[field])
+  if not game.friendly(id) and (field != "block" or game.unit_data(id).hp > 0):total += int(game.unit_data(id)[field])
  return total
+
+func reward_live_notes(face: int) -> String:
+ if page != "battle" or game.active not in [0,1,2]:return ""
+ var h: Dictionary = game.heroes[game.active];var text := ""
+ if face in [60,61,62]:text += "\n\nThis turn: %d Bone result(s) rolled, including spent results." % h.get("bone_count",0)
+ if face == 67:text += "\n\nMoved this turn: %d space(s)." % h.get("moved_turn",0)
+ if face in [15,19,63] and game.balance.get("memory.loss."+str(game.active),false):text += "\n\nMemory of Loss: ally healing range is %d. First self-heal bonus %s." % [game.face_range(face),"spent" if h.get("memory_self_used",false) else "available"]
+ return text
+
+func camp_remove(hero: int, die: int, side: int) -> void:
+ var face: int = builds[hero][die][side]
+ if face < 60:camp_message = "Only crafted faces return to the collection here; edit starter/bonus faces in the dice forge."
+ else:builds[hero][die][side] = 0;camp_message = Catalog.name_for(face)+" returned to the shared collection. It stays permanently owned; no Essence refund."
+ rebuild()
