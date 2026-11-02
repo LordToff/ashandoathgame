@@ -5,12 +5,14 @@
 - Repository: https://github.com/LordToff/ashandoathgame.git
 - Development source: `main` (the default branch for this dedicated repository).
 - Tested browser releases: `gh-pages`.
-- Current gameplay release: **v0.25**, source `34fb8c2cee35ad2bea8f8a935d587edc0055134e`.
+- Previous gameplay release: **v0.25**, source `34fb8c2cee35ad2bea8f8a935d587edc0055134e`.
 - Original tested browser commit: `00cf7f43394f9e18dff0a2939a3ed2d33fb1c7a7`.
 
 The dedicated repository retains source history and the previous Pages history. The original game lived on `LordToff/Godot-Game-Template`, branch `ash-and-oath-prototype`. Keep it as historical backup; new development belongs here. Migration adds documentation only; gameplay and the v0.25 pack are unchanged.
 
 A GitHub repository backs up committed source and published files. It cannot guarantee that a cloud runtime never fails. Commit and push completed work; ignored caches, running processes and uncommitted files are not repository backups.
+
+Current source for v0.26 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
 
 ## Recover in a new environment
 

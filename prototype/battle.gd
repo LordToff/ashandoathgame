@@ -145,8 +145,6 @@ func record_event(kind: String, text: String, source: int = -1, target: int = -1
  event_id += 1
  event_log.append({"id":event_id,"round":round_no,"kind":kind,"text":text,"source":source,"target":target,"value":value,"action":action_label})
  log_lines.append("R%02d  %s" % [round_no,text])
- if event_log.size() > 2000: event_log.pop_front()
- if log_lines.size() > 2000: log_lines.pop_front()
 
 func note(text: String) -> void:
  record_event("info",text,action_owner)
@@ -342,12 +340,16 @@ func activate() -> void:
 
 func tick_poison(id: int) -> void:
  var h: Dictionary = unit_data(id)
- var amount: int = h.get("poison",0)
- h.poison = 0
+ var amount: int = int(h.get("poison",0))
  if amount <= 0 or h.hp <= 0 or h.get("dead",false):return
- action_owner = int(h.get("poison_source",3));action_label = "Poison"
- record_event("poison","%s: Poison %d triggers at own turn start, bypassing Block, then expires." % [unit_name(id),amount],action_owner,id,amount)
- damage(id,amount,true,"Poison")
+ var before: int = h.hp
+ var source: int = int(h.get("poison_source",3))
+ h.poison = maxi(0,amount-1)
+ action_owner = source;action_label = "Poison"
+ damage(id,amount,true,"Poison",source)
+ record_event("poison_tick","%s: Poison %d deals %d unavoidable HP damage (HP %d → %d); Poison %d → %d. Block is bypassed." % [unit_name(id),amount,before-h.hp,before,h.hp,amount,h.get("poison",0)],source,id,before-h.hp)
+ event_log[-1].merge({"hp_before":before,"hp_after":h.hp,"poison_before":amount,"poison_after":h.get("poison",0)})
+
 func finish_turn() -> void:
  if outcome != "" or not pending.is_empty(): return
  forced_die = -1
@@ -599,6 +601,7 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
    var old_face: int = face(active,target)
    var old_side: int = h.rolls[target]
    spend(d)
+   h.reaction.erase(target);h.smoke.erase(target);h.used[target] = false
    roll_context = "Focus · Action Die reroll"
    roll_serial += 1
    h.rolls[target] = rng.randi_range(0,5)
@@ -816,8 +819,7 @@ func continue_attack() -> void:
   damage(t,maxi(0,amount-(boss_weakness() if boss.weak and source == 3 else 0)),false,"",source)
   last_boss_result = "%s · %s → %s: %d HP lost (%d incoming)." % [action,unit_name(source),unit_name(t),hp_before-unit_data(t).hp,amount]
   if action == "Worm Bite" and hp_before > unit_data(t).hp and unit_data(t).hp > 0 and v("nugh.poison") > 0:
-   unit_data(t).poison = maxi(unit_data(t).get("poison",0),v("nugh.poison"));unit_data(t).poison_source = source
-   record_event("poison","%s poisons %s: Poison %d. At next own turn start lose that much HP, bypass Block, then clear. Further bites refresh; do not stack." % [unit_name(source),unit_name(t),unit_data(t).poison],source,t,unit_data(t).poison)
+   apply_poison(source,t,v("nugh.poison"))
   if hp_before > unit_data(t).hp and unit_data(t).hp > 0:
    on_enemy_bite(source,t,action)
   if outcome != "": return
@@ -851,6 +853,7 @@ func react(use: bool, dir: Vector2i = Vector2i.ZERO) -> void:
  var f: int = face(t,die)
  if use:
   h.reaction.erase(die)
+  var block_before: int = h.block
   begin_action(t,"Reaction: "+FACES[f],victim,die)
   match f:
    28:
@@ -869,8 +872,10 @@ func react(use: bool, dir: Vector2i = Vector2i.ZERO) -> void:
       if not legal(t,h.pos+dir):break
       h.pos += dir
     h.smoke.erase(die)
+  record_event("reaction","%s uses %s: Block %d → %d (+%d) before %s. The incoming hit consumes Block before HP; zero Block afterwards does not mean no Block was granted." % [unit_name(t),FACES[f],block_before,h.block,h.block-block_before,pending.action],t,t,h.block-block_before)
   report_changes()
   action_owner = source; action_label = pending.action; action_before = {}
+ if not use:record_event("reaction","%s holds %s; no Block or other reaction effect is gained for this hit." % [unit_name(t),FACES[f]],t,t)
  pending.reacted.append(str(t)+":"+str(die)); pending.kind = "attack"; continue_attack()
 
 func fracture(d: int, side: int) -> void:
@@ -925,6 +930,7 @@ func action_reroll(d: int) -> bool:
  var h: Dictionary = heroes[active]
  var old_face := face(active,d)
  var old_side: int = h.rolls[d]
+ h.reaction.erase(d);h.smoke.erase(d);h.used[d] = false
  h.rerolls -= v("hero.reroll_cost")
  action_owner = active; action_label = "Action Reroll"; action_before = {}
  h.rolls[d] = rng.randi_range(0,5)
@@ -1299,13 +1305,14 @@ func catalog_pick(hero: int, d: int, side: int = -1) -> bool:
   if not Catalog.can_copy(copy): return false
   h.results[source] = copy; pending = {}; forced_die = source
   note("Conjure copies " + FACES[copy] + ". Resolve it now."); return true
- if hero != active: return false
  if f == 16:
-  if d == source or h.used[d] or side < 0 or h.build[d][side] == 56: return false
-  spend(source); h.rolls[d] = side; h.results[d] = h.build[d][side]; pending = {}; roll_serial += 1
-  if Catalog.is_reaction(h.results[d]): h.reaction.append(d); h.used[d] = true
-  else: forced_die = d
-  on_roll(h,d); present_action_roll(active,[d],"Borrow Shape · chosen face"); return true
+  if not borrow_eligible(hero,d):return false
+  var copy: int = face(hero,d)
+  h.opening = false;h.results[source] = copy;pending = {};forced_die = source
+  record_event("action","%s uses Borrow Shape: copies %s’s face-up Die %s (%s), even if spent or held. Only the Borrow Shape die is consumed when its copied result resolves." % [unit_name(active),unit_name(hero),["I","II","III"][d],FACES[copy]],active,hero)
+  if Catalog.is_reaction(copy):h.reaction.append(source);h.used[source] = true;forced_die = -1
+  on_roll(h,source);return true
+ if hero != active:return false
  if f == 23:
   if p.stage == 0:
    if d == source or h.used[d] or face(active,d) == 0: return false
@@ -1414,7 +1421,7 @@ func turn_explanation() -> String:
  var available := 0
  for used in h.used:
   if not used: available += 1
- return "%s TURN: old Block expires (Stonewake can preserve it); temporary defenses end. Reroll first if you want to use your saved charge (%d left). Resolve up to %d available dice in any order, choosing board targets or Resolve. Stored reactions wait for attacks. End hero turn when finished; unused immediate results are lost at the next shared roll. Next round rolls all heroes together, not at each hero turn." % [unit_name(active),h.rerolls,available]
+ return "%s TURN: old Block expires (Stonewake can preserve it); temporary defenses end. Action Rerolls: %d charge(s) left; use any time this turn by default (Opening only can be selected in Options). Resolve up to %d available dice in any order, choosing board targets or Resolve. Stored reactions wait for attacks. End hero turn when finished; unused immediate results are lost at the next shared roll. Next round rolls all heroes together, not at each hero turn." % [unit_name(active),h.rerolls,available]
 
 
 func present_action_roll(id: int, dice: Array, kind: String) -> void:
@@ -1532,7 +1539,7 @@ func reroll_window_reason() -> String:
  var h: Dictionary = heroes[active]
  if h.dead or h.hp <= 0:return "This hero is incapacitated. End the turn or revive them before taking actions."
  if forced_die >= 0:return "Resolve the forced result before using an Action Reroll."
- if not h.opening:return "Opening window closed: an action has already resolved. Saved charges are usable next own turn; Focus is a separate ability."
+ if v("hero.reroll_anytime") == 0 and not h.opening:return "Opening window closed: an action has already resolved. Saved charges are usable next own turn; Focus is a separate ability."
  if h.rerolls < v("hero.reroll_cost"):return "Not enough Action Rerolls. The starting charge does not refill each round."
  return ""
 
@@ -1541,25 +1548,25 @@ func reroll_reason(d: int) -> String:
  if window != "":return window
  if d not in range(3):return "Select a die first."
  var h: Dictionary = heroes[active]
- if h.used[d]:return "This die is already spent or held as a reaction / Channel."
+ if h.used[d] and d not in h.reaction:return "This die is already spent or held as a Channel."
  return reroll_face_reason(face(active,d))
 
 func focus_reason(source: int, target: int) -> String:
  if active not in [0,1,2] or source not in range(3) or target not in range(3):return "Choose another die."
  var h: Dictionary = heroes[active]
  if target == source:return "Focus cannot reroll itself. Choose another READY die."
- if h.used[target]:return "That die is spent or held. Choose another READY die."
+ if h.used[target] and target not in h.reaction:return "That die is spent or channelled. Choose a ready die or held Reaction."
  return reroll_face_reason(face(active,target))
 
 func status_description(id: int) -> String:
  var h: Dictionary = unit_data(id)
  if id >= 4:return summon_description(id)
  var lines: Array[String] = []
- if id == 3 and h.get("poison",0) > 0:lines.append("Poison %d: unavoidable HP damage at next boss activation, then clears." % h.poison)
+ if id == 3 and h.get("poison",0) > 0:lines.append("Poison %d: unavoidable HP damage at next boss activation, then decreases by 1." % h.poison)
  if id < 3:
   if h.dead:lines.append("Dead: cannot act or be revived.")
   elif h.hp == 0:lines.append("Downed: heal to revive with Broken.")
-  if h.get("poison",0) > 0:lines.append("Poison %d: unavoidable HP loss at next own turn start, then expires; does not stack." % h.poison)
+  if h.get("poison",0) > 0:lines.append("Poison %d: unavoidable HP loss at next own turn start, then decreases by 1; additional applications stack." % h.poison)
   if h.broken:lines.append("Broken: the next Downing is lethal.")
   if hero_weakness(h) > 0:lines.append("Weakness −%d Attack damage." % hero_weakness(h))
   if h.dr > 0:lines.append("Damage Reduction %d after Block; ends at own turn." % h.dr)
@@ -1758,8 +1765,9 @@ func move_friendly_summon(id: int, steps: int) -> void:
 func apply_poison(source: int, target: int, amount: int) -> void:
  var victim := unit_data(target)
  if victim.hp <= 0 or victim.get("dead",false) or amount <= 0:return
- victim.poison = maxi(int(victim.get("poison",0)),amount);victim.poison_source = source
- record_event("poison","%s applies Poison %d to %s: unavoidable HP damage at next activation, then clear; refresh, never stack." % [unit_name(source),victim.poison,unit_name(target)],source,target,victim.poison)
+ var before: int = int(victim.get("poison",0))
+ victim.poison = before+amount;victim.poison_source = source
+ record_event("poison","%s applies +%d Poison to %s: %d → %d. At activation, take damage equal to Poison, then reduce it by 1." % [unit_name(source),amount,unit_name(target),before,victim.poison],source,target,amount)
 func activate_friendly(id: int) -> void:
  if unit_data(id).dead or outcome != "":return
  tick_poison(id)
@@ -1784,7 +1792,10 @@ func summon_description(id: int) -> String:
  var text := "Friendly · owner: "+unit_name(unit.owner)+". Acts after owner’s turn; Command grants an extra activation. Bite HP damage applies Poison." if friendly(id) else "Enemy summon."
  if unit.get("rooted",0) > 0:text += " Rooted %d: no voluntary movement until next boss turn." % unit.rooted
  if unit.get("weak",0) > 0:text += " Weakness %d: bite damage reduced until next boss turn." % int(unit.weak)
- if unit.get("poison",0) > 0:text += " Poison %d: HP loss at next activation, then clear." % unit.poison
+ if unit.get("poison",0) > 0:text += " Poison %d: HP loss at next activation, then reduce Poison by 1." % unit.poison
  return text
 func action_name(owner: int, f: int) -> String:
  return "Command Nu’gh" if f == 59 and owned_worm(owner) >= 0 else FACES[f]
+
+func borrow_eligible(hero: int, d: int) -> bool:
+ return hero in range(3) and d in range(3) and heroes[hero].results.size() == 3 and face(hero,d) not in [16,56]

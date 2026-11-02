@@ -1,6 +1,7 @@
 extends RefCounted
 # Every numeric balance field has a bounded, named schema entry. Structural die/party sizes stay fixed.
 const DEFINITIONS = [
+ {"key":"hero.reroll_anytime","group":"Heroes","label":"Action Rerolls: any time during own turn (0 = opening only)","default":1,"min":0,"max":1},
  {
   "key": "hero.hp",
   "group": "General & passives",

@@ -10,7 +10,7 @@ const EXTRA = [
  ["Clairvoyance","Skill","Prototype: when rolled, gain 1 Action Reroll (cap 1). The bank begins with 1, so save this for replenishment."],
  ["Forgotten Strength","Skill","Tabletop variant: your next Numeric damage this turn gets +1. No party-wide buff or backlash."],
  ["Passing Grace","Skill","Heal another hero within 3 for Numeric, then pass this face to a Blank on that hero. No self-target; the source becomes Blank."],
- ["Borrow Shape","Skill","Tabletop variant: rotate another unresolved die to one of its installed non-penalty faces and immediately resolve that result."],
+ ["Borrow Shape","Skill","Copy any hero’s face-up die result, even spent or held, onto this die and resolve it next. Borrow Shape and Red Tile cannot be copied."],
  ["Numeric Echo","Skill","Roll and store one ordinary Numeric value. It replaces your next Numeric roll. A second stored value is not allowed."],
  ["Lethargic Bind","Skill","Choose a boss die and face. Until your next turn, that face rolls as Bound (no action); you suffer 1 normal damage each time it triggers."],
  ["Restore","Skill","Heal another hero within 3 for Numeric, minimum 1. Cannot target yourself. Gambler x0 stays zero."],

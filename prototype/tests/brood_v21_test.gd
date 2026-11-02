@@ -41,8 +41,8 @@ func run():
  g.boss_step();check(g.active == 0,"reaction resumes brood then next hero")
  g = fresh();g.balance["nugh.worm_hit_faces"] = 6;g.boss_index = 0;g.boss_rolls = ["Brood Command","Bound","Bound"]
  g.boss_step();g.boss_step();g.boss_step();g.boss_step();g.boss_step()
- check(g.heroes[0].hp == 4 and g.heroes[0].poison == 1,"command plus autonomous bite, poison refreshes without stacking")
- g.boss_step();check(g.heroes[0].hp == 3 and g.heroes[0].poison == 0,"single poison tick after two bites")
+ check(g.heroes[0].hp == 4 and g.heroes[0].poison == 2,"command plus autonomous bite adds Poison to 2")
+ g.boss_step();check(g.heroes[0].hp == 2 and g.heroes[0].poison == 1,"Poison 2 deals two and decays to one")
  g = fresh();g.minions.clear();g.finish_turn();check(g.active == 0,"empty autonomous brood does not summon or stall")
  g = fresh();g.heroes[0].poison = 1;g.heroes[0].block = 10;g.tick_poison(0)
  check(g.heroes[0].hp == 5 and g.heroes[0].block == 10 and g.heroes[0].poison == 0,"Poison bypasses Block and clears")

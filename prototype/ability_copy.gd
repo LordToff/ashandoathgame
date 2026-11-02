@@ -14,7 +14,7 @@ func face(f: int) -> String:
   3:return "Move up to %d spaces in a straight line. No turning or passing through units." % n("face3.move")
   4:return "Gain %d Block. Unspent Block expires at your next turn." % n("face4.block")
   5:return "When personally attacked, gain %d Block before the hit. No movement." % n("face5.block")
-  6:return "Click another READY die to reroll it. Resolve its new result next, or decline it.\n\nWorks after other actions. Uses this Focus face, not a reroll charge. Locked faces cannot be rerolled."
+  6:return "Click another ready die or held Reaction to reroll it. Resolve its new result next, or decline it.\n\nWorks after other actions. Uses this Focus face, not a reroll charge. Locked faces cannot be rerolled."
   7:return "Heal yourself or an ally within %d for %d HP. A Downed ally revives as Broken." % [n("face7.range"),n("face7.heal")]
   8:return "Push %s up to %d spaces away. No collision damage." % [reach(f),n("face8.move")]
   9:return "First use: arm Numeric ×0 / ×%d. Next use: gain %d Gold and turn this face Blank.\n\nNon-rerollable. Gold has no shop in this encounter." % [n("face9.multiplier"),n("face9.gold")]
@@ -24,7 +24,7 @@ func face(f: int) -> String:
   13:return "When rolled, gain %d Action Reroll, up to the bank cap of %d. A full bank gains nothing." % [n("face13.rerolls"),n("hero.reroll_cap")]
   14:return "Your next rolled damage this turn gets +%d." % n("face14.boost")
   15:return "Heal another hero within %d for a rolled value. Move this face to a Blank on that hero.\n\nCannot heal yourself. Non-rerollable." % n("face15.range")
-  16:return "Choose an unresolved die and one of its installed faces. Turn it to that face and resolve it next. Red Tiles are unavailable."
+  16:return "Choose any of the nine face-up hero dice, including spent or held results. Copy its result onto this die and resolve it next (or hold its Reaction). The source die is unchanged. Borrow Shape and Red Tile are excluded to prevent loops and copying a locked penalty."
   17:return "Roll and store one ordinary value. Use it instead of your next Numeric roll. Only one value can be stored."
   18:return "Bind a chosen boss die and face until your next turn. Each matching roll is skipped, but you take %d normal damage." % n("face18.backlash")
   19:return "Heal another hero within %d for a rolled value, at least %d. Clear sight required. Gambler ×0 stays zero." % [n("face19.range"),n("face19.minimum")]

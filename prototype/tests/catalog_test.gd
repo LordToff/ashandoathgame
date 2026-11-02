@@ -25,7 +25,7 @@ func run():
  check(g.heroes.all(func(h):return h.rerolls == 1),"each hero begins with one Action Reroll")
  check(g.action_reroll(0) and g.heroes[0].rerolls == 0,"one charge is spent")
  check(not g.action_reroll(1),"no second free reroll")
- g = fresh();g.hero_action(1)
+ g = fresh();g.balance["hero.reroll_anytime"] = 0;g.hero_action(1)
  check(not g.action_reroll(0),"ordinary resolution closes reroll opening")
  g = fresh();g.damage(0,100)
  check(g.heroes[0].rerolls == 0,"Downed clears the reroll bank")
@@ -61,7 +61,7 @@ func run():
      "catalog_choice":
       match id:
        11:check(g.catalog_pick(1,0),"Conjure picks an immediate face")
-       16:check(g.catalog_pick(0,1,0),"Borrow Shape rotates a die")
+       16:check(g.catalog_pick(0,1,0),"Borrow Shape copies a face-up die")
        23:
         check(g.catalog_pick(0,1),"Second Chance skips a die")
         check(not g.catalog_pick(0,1),"skipped die cannot count as already resolved")

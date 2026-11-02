@@ -46,7 +46,7 @@ func run():
  g.activate_friendly(worm)
  check(g.boss.hp == hp-1 and g.boss.poison == 1,"friendly bite damages and poisons boss")
  g.apply_poison(worm,3,1);g.boss.block = 9;hp = g.boss.hp;g.tick_poison(3)
- check(g.boss.hp == hp-1 and g.boss.poison == 0 and g.boss.block == 9,"refresh no stack; poison bypasses Block then clears")
+ check(g.boss.hp == hp-2 and g.boss.poison == 1 and g.boss.block == 9,"stacked Poison deals two through Block then decays to one")
  g = fresh(N);worm = g.spawn_friendly(0,g.summon_cells(0)[0]);var pressure: int = g.pressure()
  check(g.living_minions().size() == 2 and g.living_minions("all").size() == 3,"faction-separated brood count")
  hp = g.boss.hp;g.action_owner = 0;g.damage(worm,99)

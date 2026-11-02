@@ -1,18 +1,19 @@
-# Ash & Oath v0.25 — playable prototype
+# Ash & Oath v0.26 — playable prototype
 
 **Canonical source:** [LordToff/ashandoathgame](https://github.com/LordToff/ashandoathgame), branch `main`.
 **Recovery and publishing:** [docs/RECOVERY.md](docs/RECOVERY.md). The browser package is on `gh-pages`.
 
-The previous verified live release remains [available here](https://lordtoff.github.io/Godot-Game-Template/?v=0.25). The dedicated repository’s browser address will be https://lordtoff.github.io/ashandoathgame/ once Pages is enabled.
+[**Play Ash & Oath v0.26 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.26)
 
+v0.26 adds stacking Poison and visible ticks, face-up Borrow Shape, selectable reroll timing, explicit full logs, a main-menu restart and required pre-boss events. See [release notes](docs/Changes-v0.26.md).
 
 v0.25 adds the six-slot Ash Road event system, two ordinary monster encounters, saved reward claims and usable supplies. See [v0.25 changes](docs/Changes-v0.25.md). Four bosses and face building remain.
 
 v0.24 replaces Bu’gh’s cocoon encounter with the Iron Warden: guard or evade his marked sweep to break Bulwark, then counterattack. Includes original pixel sprites, soundtrack and polished UI. See [release notes and validation](docs/Changes-v0.24.md). Difficulty remains provisional. The Windows download is an older release.
 
-[**Play in your browser**](https://lordtoff.github.io/Godot-Game-Template/?v=0.25) — no installation required.
+[**Play in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.26) — no installation required.
 
-[**Current rules: timing, abilities and bosses**](docs/current-rules.html) · [Download PDF](docs/AshAndOath-Current-Rules-v0.25.pdf). One consolidated v0.25 reference.
+[**Current rules: timing, abilities and bosses**](docs/current-rules.html) · [Download PDF](docs/AshAndOath-Current-Rules-v0.26.pdf). One consolidated v0.26 reference.
 
 [**Historical v0.16 playtest report**](https://lordtoff.github.io/Godot-Game-Template/playtest-report.html) · [Download the polished Excel workbook](downloads/Ash-and-Oath-Playtest-v0.16.xlsx). Includes plain-language team descriptions, each hero’s abilities, dice layouts, win rates and the test method.
 
