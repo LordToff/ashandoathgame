@@ -145,7 +145,7 @@ func run():
  check(g.heroes[1].moved_turn == 0,"borrowed action does not reuse last normal turn's movement")
  g.decline(0);g.return_from_burden();check(g.heroes[1].moved_turn == 3,"borrowed action restores previous turn scope without giving a new full turn")
  var ledger = preload("res://prototype/expedition.gd").new();ledger.fragments = 3
- check(ledger.unlock_soul(2) and ledger.camp.souls[2] == ["ashroad"] and ledger.camp.souls[0].is_empty(),"event Soul binds only to specified recipient")
+ check(ledger.unlock_soul(2) and "ashroad" in ledger.camp.souls[2] and "ashroad" not in ledger.camp.souls[0],"event Soul binds only to specified recipient")
  check(not ledger.camp.equip_soul(0,"ashroad"),"event Soul cannot be traded")
  var scoped: Dictionary = ledger.camp.profile({});scoped["soul.eligible.0"] = false;scoped["soul.eligible.1"] = false;scoped["soul.eligible.2"] = true
  g = fresh(0,scoped);check(g.reward and g.soul_remaining(0) == 0 and g.soul_remaining(2) == 1,"equipped Soul grants Blank conversion only to its bound hero")
@@ -168,7 +168,9 @@ func run():
  app.expedition.camp = E.new();app.expedition.camp.bank.bone_creature = 10;app.open_camp()
  check(app.page == "camp" and app.ui.get_node_or_null("Craft_bone_growth") != null,"Camp Forge renders with real crafting control")
  app.ui.get_node("Craft_bone_growth").pressed.emit()
- check(app.expedition.camp.owned(60) == 1 and app.ui.get_node_or_null("CampSlot0_0") != null,"craft reveals effect and refit slots")
+ check(app.expedition.camp.owned(60) == 1 and app.ui.get_node("CampRecipeDetails").text.contains("Move 1"),"craft reveals effect")
+ app.camp_tab = 1;app.rebuild()
+ check(app.ui.has_node("CampSlot0_0"),"dedicated refit tab exposes die slots")
  app.camp_place(60,0,2,1)
  check(app.builds[0][2][1] == 60,"owned face refits into legal starter slot")
  var before_build: Array = app.builds[1].duplicate(true);app.camp_place(60,1,2,1)

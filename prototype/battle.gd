@@ -329,6 +329,7 @@ func activate() -> void:
  else:
   var h: Dictionary = heroes[active]
   h.moved_turn = 0
+  h.damaged_enemy_turn = false;h.dagger_used = false
   h.event_salve_used = false
   if h.dead or h.hp == 0 or active in replaced:
    cursor += 1; activate(); return
@@ -406,6 +407,7 @@ func finish_turn() -> void:
   replaced.append(active); recovery_active = true
   heroes[active].block = 0
   heroes[active].moved_turn = 0
+  heroes[active].damaged_enemy_turn = false;heroes[active].dagger_used = false
   heroes[active].event_salve_used = false
   heroes[active].opening = true; reset_soul_allowance(active)
   roll_context = "Recovery · fresh Action Dice"
@@ -557,6 +559,7 @@ func damage(id: int, amount: int, unavoidable: bool = false, reason: String = ""
    h.defy = false;h.black_oath = false;h.echo_due = false;h.mods = {};h.smoke = {}
 
  var lost: int = initial_hp-h.hp
+ credit_enemy_damage(id,lost)
  var label: String = reason if reason != "" else (action_label if action_label != "" else "Damage")
  var result := "%s — %s → %s: %d incoming; %d blocked" % [label,unit_name(action_owner),unit_name(id),incoming,absorbed]
  if reduction > 0: result += "; %d reduced" % reduction
@@ -613,9 +616,9 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
   0:
    if destination.x != -99 and not reward:return false
    if reward and destination.x != -99:
-    if soul_remaining(active) <= 0 or not reachable(active,v("soul.move"),false).has(destination): return false
-    h.pos = destination; h.soul_moves_used = int(h.get("soul_moves_used",0))+1; h.soul_move_used = h.soul_moves_used >= v("soul.uses")
-    record_event("soul","%s uses the first reward Soul: spends one rolled Blank as Move %d. Soul conversion %d/%d used this hero turn; installed face remains Blank." % [unit_name(active),v("soul.move"),h.soul_moves_used,v("soul.uses")],active,active)
+    if soul_remaining(active) <= 0 or not reachable(active,soul_distance(active),false).has(destination): return false
+    h.pos = destination; h.soul_moves_used = int(h.get("soul_moves_used",0))+1; h.soul_move_used = h.soul_moves_used >= soul_limit(active)
+    record_event("soul","%s uses their equipped Soul: spends one rolled Blank as Move %d. Soul conversion %d/%d used this hero turn; installed face remains Blank." % [unit_name(active),soul_distance(active),h.soul_moves_used,soul_limit(active)],active,active)
   1:
    if target < 0 or target == active or distance(active,target) > face_range(f): return false
    strike(d,target,v("face1.damage"))
@@ -1069,8 +1072,10 @@ func modified_value(d: int, value: int) -> int:
 
 func attack_bonus(_target: int) -> int:return 0
 
-func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: bool = false) -> int:
+func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: bool = false, weapon_attack: bool = false) -> int:
  var h: Dictionary = heroes[active]
+ var attack_face: int = -1 if weapon_attack else face(active,d)
+ var reach: int = 1 if weapon_attack else face_range(attack_face)
  var offered: int = int(h.get("offering_boost",0))
  if offered > 0:
   h.offering_boost = 0
@@ -1086,8 +1091,8 @@ func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: boo
   if n == 1 and offered > 0 and not numeric_attack:value = maxi(0,value-offered)
   if outcome != "" or h.hp <= 0 or h.dead: break
   if unit_data(target).get("dead",false): break
-  if distance(active,target) > face_range(face(active,d)): break
-  if face(active,d) == 35 and not sight(active,target,face_range(35)): break
+  if distance(active,target) > reach: break
+  if attack_face == 35 and not sight(active,target,face_range(35)): break
   if n > 0:
    var next_base: int = numeric_attack_base(d,target) if numeric_attack else base
    value = maxi(0,modified_value(d,next_base+attack_bonus(target))-hero_weakness(h))
@@ -1098,23 +1103,23 @@ func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: boo
   var marked: bool = target == 3 and boss.mark and unit.block == 0 and value > 0
   var bargained: bool = target == 3 and not boss.bargain.is_empty() and boss.bargain.get("charges",0) > 0 and not (numeric_attack and h.numeric_zero)
   var power := v("face27.damage") if bargained else 0
-  var shot_mark := v("face21.damage") if marked and face(active,d) == 35 else 0
+  var shot_mark := v("face21.damage") if marked and attack_face == 35 else 0
   var bypass := mini(unit.block,pierce)
   unit.block -= bypass
-  record_event("attack","%s attacks %s with %s for %d damage%s." % [unit_name(active),unit_name(target),action_label,mini(v("face35.cap"),value+power+shot_mark) if face(active,d) == 35 else value+power," (Pierce %d)" % pierce if pierce > 0 else ""],active,target,value+power)
-  damage(target,mini(v("face35.cap"),value+power+shot_mark) if face(active,d) == 35 else value+power)
+  record_event("attack","%s attacks %s with %s for %d damage%s." % [unit_name(active),unit_name(target),action_label,mini(v("face35.cap"),value+power+shot_mark) if attack_face == 35 else value+power," (Pierce %d)" % pierce if pierce > 0 else ""],active,target,value+power)
+  damage(target,mini(v("face35.cap"),value+power+shot_mark) if attack_face == 35 else value+power)
   if target == 3 or (unit.hp > 0 and not unit.dead): unit.block += bypass
   var hit_loss: int = maxi(0,before-unit.hp)
   lost += hit_loss
   # Personal on-hit rewards also resolve on a killing hit; no further damage follows victory.
-  if face(active,d) == 36 and hit_loss >= v("face36.threshold"): h.block += hit_loss*v("face36.multiplier")
-  if face(active,d) == 41 and hit_loss > 0: engrave_copy(d)
+  if attack_face == 36 and hit_loss >= v("face36.threshold"): h.block += hit_loss*v("face36.multiplier")
+  if attack_face == 41 and hit_loss > 0: engrave_copy(d)
   if outcome != "": break
-  if face(active,d) == 38 and target >= 3:cleave_splash(target)
-  if face(active,d) == 40 and target == 3 and hit_had_block and unit.block == 0 and hit_loss > 0: delay_boss_once()
+  if attack_face == 38 and target >= 3:cleave_splash(target)
+  if attack_face == 40 and target == 3 and hit_had_block and unit.block == 0 and hit_loss > 0: delay_boss_once()
   if marked and before > unit.hp:
    boss.mark = false
-   if face(active,d) != 35: damage(3,v("face21.damage"))
+   if attack_face != 35: damage(3,v("face21.damage"))
   if bargained and outcome == "":
    boss.bargain.charges -= 1
    if boss.bargain.charges == 0:
@@ -1523,11 +1528,11 @@ func soul_remaining(id: int) -> int:
  if not balance.get("soul.eligible."+str(id),true):return 0
  var h: Dictionary = heroes[id]
  var used: int = int(h.get("soul_moves_used",0))
- return maxi(0,v("soul.uses")-used)
+ return maxi(0,soul_limit(id)-used)
 func move_steps(f: int) -> int:
  if f == 60:return 1
  if f == 66:return 2
- return v("soul.move") if f == 0 else v("face%d.move" % f)
+ return soul_distance(active) if f == 0 else v("face%d.move" % f)
 func face_range(f: int) -> int:
  if f in [63,64,65]:return 2+(1 if f == 63 and balance.get("memory.loss."+str(active),false) else 0)
  if f in [60,61,62,66,67,68]:return 1
@@ -1701,7 +1706,7 @@ func smoking_fire(target: int) -> void:
 func reset_soul_allowance(id: int) -> void:
  heroes[id].soul_moves_used = 0
  heroes[id].soul_move_used = false
- if reward:record_event("soul_refresh","%s refreshes Blank movement: %d/%d uses available for this own turn." % [unit_name(id),v("soul.uses"),v("soul.uses")],id,id)
+ if reward:record_event("soul_refresh","%s refreshes Blank movement: %d/%d uses available for this own turn." % [unit_name(id),soul_limit(id),soul_limit(id)],id,id)
 
 static func valid_face_number(value: Variant) -> bool:
  return (value is int or value is float) and is_finite(float(value)) and float(value) == floor(float(value)) and value >= 0 and value < Catalog.FACE_COUNT
@@ -1721,6 +1726,7 @@ func damage_minion(id: int, amount: int, unavoidable: bool = false, reason: Stri
  var absorbed := 0 if unavoidable else mini(worm.block,maxi(0,amount))
  worm.block -= absorbed
  var old: int = worm.hp;worm.hp = maxi(0,worm.hp-maxi(0,amount-absorbed))
+ credit_enemy_damage(id,old-worm.hp)
  if old > 0 and worm.hp == 0:harvest_death(id)
  record_event("damage" if worm.hp < old else "block","%s — %s → %s: %d blocked; %d HP lost. HP %d/%d, Block %d." % [action_label,unit_name(action_owner),unit_name(id),absorbed,old-worm.hp,worm.hp,worm.max_hp,worm.block],action_owner,id,old-worm.hp)
  if worm.hp == 0:
@@ -2009,3 +2015,38 @@ func friendly_evasive_react(use: bool) -> bool:
  if resolved and heroes[hero].hp == p.hp_before and heroes[hero].hp > 0 and not heroes[hero].dead:
   for i in range(p.used):evasive_due.append({"hero":hero,"hp":p.hp_before})
  offer_evasive_step();return resolved
+
+
+func credit_enemy_damage(target: int, lost: int) -> void:
+ if lost > 0 and active in [0,1,2] and action_owner == active and burden_interrupt.is_empty() and enemies(active,target):
+  heroes[active].damaged_enemy_turn = true
+
+func poke_reason() -> String:
+ if active not in [0,1,2] or outcome != "":return "Poke is available only during a living hero’s turn."
+ var h: Dictionary = heroes[active]
+ if h.dead or h.hp <= 0:return "Downed or dead heroes cannot Poke."
+ if not balance.get("weapon.dagger."+str(active),false):return "Equip a Dagger at Camp."
+ if not pending.is_empty() or forced_die >= 0 or not burden_interrupt.is_empty():return "Finish the pending action first."
+ if h.get("dagger_used",false):return "Poke has already been used this turn."
+ if not h.get("damaged_enemy_turn",false):return "First deal actual HP damage to an enemy this turn. Blocked hits and friendly fire do not qualify."
+ return ""
+func poke_targets() -> Array:
+ var result: Array = []
+ if poke_reason() != "":return result
+ for target in range(3,unit_count()):
+  if enemies(active,target) and unit_data(target).hp > 0 and not unit_data(target).get("dead",false) and distance(active,target) == 1:result.append(target)
+ return result
+func poke(target: int) -> bool:
+ if target not in poke_targets():return false
+ begin_action(active,"Dagger · Poke",target)
+ heroes[active].dagger_used = true;heroes[active].opening = false
+ record_event("weapon","Dagger: once-per-turn Poke. Earlier enemy HP damage met its requirement. No Action Die or reroll is spent.",active,target)
+ strike(-1,target,1,0,false,true)
+ after_weapon_attack()
+ report_changes();return true
+func after_weapon_attack() -> void:pass
+
+func soul_distance(id: int) -> int:
+ return int(balance.get("soul.distance."+str(id),v("soul.move")))
+func soul_limit(id: int) -> int:
+ return int(balance.get("soul.allowance."+str(id),v("soul.uses")))

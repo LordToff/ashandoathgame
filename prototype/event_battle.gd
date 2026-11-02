@@ -2,11 +2,12 @@ extends "res://prototype/battle.gd"
 ## Two ordinary one-cell monsters. Slot 3 shares existing enemy-turn controls.
 var hard := false
 var prototype_pack := false
+var creature_types: Array = []
 const DICE = [["Scuttle","Scuttle","Bite","Bite","Guard","Bite"],["Scuttle","Bite","Guard","Bite","Scuttle","Bite"],["Bite","Guard","Scuttle","Bite","Guard","Scuttle"]]
 func prepare_encounter() -> void:
  encounter_id = "event"
  if prototype_pack:
-  var types: Array = ["support_creature","movement_creature","movement_creature"] if hard else ["bone_creature","bone_creature"]
+  var types: Array = creature_types if not creature_types.is_empty() else (["support_creature","movement_creature","movement_creature"] if hard else ["bone_creature","bone_creature"])
   boss.essence_type = types[0];boss.hp = Essence.TYPES[types[0]].hp;boss.max_hp = boss.hp;boss.pos = Vector2i(3,4)
   for i in range(1,types.size()):
    var type: String = types[i];var hp: int = Essence.TYPES[type].hp
@@ -16,7 +17,7 @@ func prepare_encounter() -> void:
   minions.append({"name":boss_name()+" II","essence_type":boss.essence_type,"hp":boss.hp,"max_hp":boss.hp,"pos":Vector2i(5,4),"block":0,"dead":false,"faction":"enemy","weak":0,"rooted":0,"poison":0})
 
 func boss_name() -> String:
- if prototype_pack:return Essence.type_name("support_creature" if hard else "bone_creature")
+ if prototype_pack:return Essence.type_name(str(boss.get("essence_type","bone_creature")))
  return "Cinder Mite" if hard else "Ash Scavenger"
 func cells(id: int, at: Vector2i = Vector2i(-99,-99)) -> Array:
  return [at if at.x != -99 else unit_data(id).pos]

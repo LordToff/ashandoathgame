@@ -22,6 +22,14 @@ const NUGH_PHASE = preload("res://prototype/assets/pixel_nugh_phase2.png")
 const WORM_SPRITE = preload("res://prototype/assets/pixel_screaming_worm.png")
 const DIE_Y = 205
 const DIE_STEP = 98
+const HubUI = preload("res://prototype/hub_ui.gd")
+var camp_tab := 0
+var equipment_slot := "weapon"
+var forge_die := 0
+var forge_side := 0
+var queued_creature := -1
+var creature_fight := false
+var choosing_poke := false
 const CampUI = preload("res://prototype/camp_ui.gd")
 const Essence = preload("res://prototype/essence.gd")
 const CREATURE_SPRITES = {"bone_creature":preload("res://prototype/assets/bone_creature.png"),"support_creature":preload("res://prototype/assets/support_creature.png"),"movement_creature":preload("res://prototype/assets/movement_creature.png")}
@@ -80,7 +88,7 @@ const LESSON_FACES = [2,1,4,7,5,31,0,57]
 const LESSONS = ["Move: select Die I (Step), then a highlighted empty cell.","Attack: select Die I (Strike), then click the boss. Allies need a second click to confirm friendly fire.","Block: select Die I (Guard), then Resolve. Watch Block and the blue shield.","Heal: select Die I (First Aid), then an injured adjacent hero.","Reaction: press Boss hits, then choose Block + stay. This held die reacts before damage.","Channel: select Die I (Stonewake), then Resolve. Watch the persistent blue ring; Next turn opens maintain / release.","Reward Soul: select Die I (Blank), then move up to two cells. Only one Blank per hero turn may convert.","Escape danger: select Die I (Ashstep), then move outside the marked square before the next boss turn."]
 const Tray = preload("res://prototype/dice_tray.gd")
 var builds: Array = [Model.default_build(),Model.default_build(),Model.default_build()]
-var page := "forge"
+var page := "main"
 var build_hero := 0
 var selected := -1
 var shove_target := -1
@@ -282,6 +290,12 @@ func panel(rect: Rect2, color: Color = Color("161d28"), border: Color = Color("3
 func rebuild() -> void:
  sync_presentation()
  for c in ui.get_children(): ui.remove_child(c); c.queue_free()
+ if page in ["main","camp","forge"]:
+  if page == "main":HubUI.main_menu(self)
+  elif page == "camp":CampUI.render(self)
+  elif draft_modal:draft_ui()
+  else:forge_ui()
+  hub_overlays();queue_redraw();return
  if page == "camp":
   CampUI.render(self);soundtrack_ui();queue_redraw();return
  if page == "events":
@@ -300,7 +314,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.27",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.28",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -325,57 +339,12 @@ func rebuild() -> void:
  if show_supplies:supplies_ui()
  if show_soundtrack:soundtrack_settings_ui()
  if show_enemy_cards:enemy_cards_ui()
- if not combat_notices.is_empty():notice_ui()
+ if choosing_poke and rolling_time <= 0:poke_ui()
+ if not combat_notices.is_empty() and rolling_time <= 0:notice_ui()
  queue_redraw()
 
 func forge_ui() -> void:
- label_at("Shape what remains.",Vector2(68,110),38,Color("ece6d9"),1000,true)
- label_at(hint,Vector2(70,165),16,MUTED)
- for i in range(3):
-  button(("◆ " if i == build_hero else "") + ["01  VESPER","02  ROOK","03  WREN"][i],Vector2(70+i*216,215),Vector2(202,48),func(): build_hero = i; rebuild(),COLORS[i])
- label_at("THE DICE FORGE",Vector2(72,295),13,GOLD)
- label_at("Unfolded dice · click a square to edit that side.",Vector2(72,324),14,MUTED)
- for d in range(3):
-  label_at("DIE " + ["I","II","III"][d],Vector2(85+d*240,342),15,GOLD,220)
-  for side in range(6):
-   var f: int = builds[build_hero][d][side]
-   var o := OptionButton.new(); o.clip_text = true; o.position = Vector2(85+d*240,370)+Vector2(NET[side])*72; o.size = Vector2(70,70)
-   o.add_theme_font_size_override("font_size",12)
-   o.add_theme_icon_override("arrow",ImageTexture.new());o.alignment = HORIZONTAL_ALIGNMENT_CENTER
-   o.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; o.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-   o.name = "ForgeDie%dSide%d" % [d,side]
-   for id in range(9): o.add_item(Catalog.display_name(id),id)
-   for id in range(60,69):
-    if expedition.camp.owned(id) > 0:o.add_item(Catalog.display_name(id),id)
-   for id in gifts[build_hero]: o.add_item(Catalog.display_name(id),id)
-   o.select(o.get_item_index(f));o.text = Model.FACES[f]; o.add_theme_stylebox_override("normal",style(Color("202938"),Color(color_for_face(f),0.55)))
-   o.get_theme_stylebox("normal").content_margin_left = 4;o.get_theme_stylebox("normal").content_margin_right = 4
-   o.add_theme_color_override("font_color",color_for_face(f))
-   o.item_selected.connect(func(index): builds[build_hero][d][side] = o.get_item_id(index); rebuild())
-   o.get_popup().min_size = Vector2i(440,0)
-   o.tooltip_text = "SIDE %d · " % (side+1)+Catalog.display_name(f) + "\n" + face_help(f); ui.add_child(o)
-   o.set_drag_forwarding(func(_at):return face_drag_data(o,f,d,side),func(_at,data):return face_drop_allowed(d,side,data),func(_at,data):place_dragged_face(d,side,data))
- var error := Model.validate(builds[build_hero],gifts[build_hero],expedition.camp.profile(balance_values))
- label_at("✓ Legal build · %d/%d ability faces" % [18-builds[build_hero].reduce(func(a,d): return a+d.count(0),0),18-3*balance_number("body.blanks")] if error == "" else error,Vector2(75,706),14,COLORS[build_hero] if error == "" else Color("ef8e87"),730)
- button("Guided practice",Vector2(350,811),Vector2(200,40),start_training,Color("82c8b9"))
- button("Save build preset",Vector2(75,811),Vector2(245,40),save_preset,MUTED)
- button("Load preset",Vector2(560,811),Vector2(220,40),load_preset,MUTED)
- soul_toggle(Vector2(350,756),false)
- button("Restore balanced build",Vector2(75,756),Vector2(245,46),restore_hero_build,MUTED)
- label_at("YOUR INHERITANCE",Vector2(886,300),13,GOLD)
- label_at("Memory / "+("Memory of Loss" if expedition.camp.memories[build_hero] == "memory_loss" else "Empty")+"\nSoul / "+str({"hollow":"Hollow","ashroad":"Ash Road"}.get(expedition.camp.equipped_souls[build_hero],"None equipped"))+"\nBody / Broken Body\n%d HP · %d+ Blanks per die" % [balance_number("hero.hp"),balance_number("body.blanks")],Vector2(886,335),16,Color("d2d8df"))
- label_at("OWNED FACE POOL",Vector2(886,445),12,GOLD)
- label_at("%d Strike · %d Step · %d Stride\n%d Guard · %d Reaction\n%d Focus · %d First Aid · %d Shove" % [balance_number("owned.1"),balance_number("owned.2"),balance_number("owned.3"),balance_number("owned.4"),balance_number("owned.5"),balance_number("owned.6"),balance_number("owned.7"),balance_number("owned.8")],Vector2(886,474),15,MUTED)
- label_at("Two bonus designs per hero. At most %d equipped faces.\nBody caps: %d Movement, %d Defense, %d Skill.\nBlank → Move %d is " % [18-3*balance_number("body.blanks"),balance_number("body.Movement"),balance_number("body.Defense"),balance_number("body.Skill"),balance_number("soul.move")] + ("ON." if reward_soul else "OFF."),Vector2(886,559),13,MUTED)
- button("Balance: " + ("Tuned tutorial" if balanced else "Original rulebook"),Vector2(884,645),Vector2(400,35),func(): balanced = not balanced; rebuild(),GOLD)
- label_at("Boss HP %d · Strike %d · Brace %d\n%d starting Action Rerolls (cap %d).\nLocal play · three heroes · open 9×9 arena." % [balance_number("boss.hp"),balance_number("face1.damage"),balance_number("boss.brace.block"),mini(balance_number("hero.rerolls"),balance_number("hero.reroll_cap")),balance_number("hero.reroll_cap")],Vector2(886,692),13,MUTED)
-
- button("Bonus faces: %d / 2 · browse full pool" % gifts[build_hero].size(),Vector2(884,601),Vector2(400,35),func(): draft_modal = true; rebuild(),Color("be9bdf"))
- var legal_builds := true
- for i in range(3):
-  if Model.validate(builds[i],gifts[i],expedition.camp.profile(balance_values)) != "" or gifts[i].size() != 2: legal_builds = false
- button("Camp Forge · refit rewards",Vector2(884,833),Vector2(400,35),open_camp,Color("82c8b9"))
- button("Review rules & choose boss →",Vector2(884,773),Vector2(400,55),open_setup,GOLD,not legal_builds)
+ HubUI.forge(self)
 
 func retry(with_soul: bool = false) -> void:
  get_tree().root.set_meta("ash_restart", {"builds":builds.duplicate(true),"soul":with_soul or reward_soul,"muted":muted,"balanced":balanced,"combat_effects":combat_effects,"encounter":encounter,"balance":balance_values.duplicate(true),"gifts":gifts,"offers":offers})
@@ -385,7 +354,7 @@ func open_setup() -> void:
  draft_modal = false;page = "setup";show_menu = false;selected = -1;rebuild()
 
 func begin() -> void:
- event_fight = false
+ event_fight = false;creature_fight = false
  var allocation := camp_allocation_error(builds)
  if allocation != "":hint = allocation;page = "forge";rebuild();return
  combat_notices.clear();choosing_reroll = false
@@ -449,7 +418,7 @@ func battle_ui() -> void:
    var f: int = game.face(game.active,d)
    var state: String = "CHANNEL HELD" if not h.channel.is_empty() and h.channel.die == d else ("REACTION HELD" if d in h.reaction else ("SPENT" if h.used[d] else ("RESOLVE NEXT" if game.forced_die == d else "READY")))
    var available_soul: bool = f == 0 and game.reward and game.soul_remaining(game.active) > 0
-   var name_text: String = "Blank → Move %d" % game.v("soul.move") if available_soul else game.action_name(game.active,f)
+   var name_text: String = "Blank → Move %d" % game.soul_distance(game.active) if available_soul else game.action_name(game.active,f)
    var kind: String = "(Movement)" if available_soul else ("("+Catalog.classification(f)+")" if f != 0 else "")
    if selected >= 0 and game.face(game.active,selected) == 6 and d != selected and game.focus_reason(selected,d) == "":state = "FOCUS TARGET"
    if game.reroll_face_reason(f) != "":kind += " · NO REROLL"
@@ -492,7 +461,11 @@ func battle_ui() -> void:
   combat_reroll_ui()
 
   button("Return to "+game.unit_name(game.burden_interrupt.owner)+" →" if not game.burden_interrupt.is_empty() else "End hero turn   →",Vector2(760,682),Vector2(328,54),func():game.finish_turn();selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
-  label_at(("Blank moves %d/%d · " % [game.soul_remaining(game.active),game.v("soul.uses")] if game.reward else "")+"%d dice available" % h.used.count(false),Vector2(760,750),13,MUTED,328)
+  var poke_error: String = game.poke_reason()
+  var poke_targets: Array = game.poke_targets()
+  var poke_button := button("Dagger · Poke 1" if poke_error == "" else ("Dagger · Poke used" if h.get("dagger_used",false) else "Dagger · damage an enemy first"),Vector2(760,746),Vector2(328,34),func():choosing_poke = true;rebuild(),GOLD,poke_error != "" or poke_targets.is_empty())
+  poke_button.name = "DaggerPoke";poke_button.add_theme_font_size_override("font_size",13)
+  poke_button.tooltip_text = poke_error if poke_error != "" else ("No adjacent enemy." if poke_targets.is_empty() else "Once per turn. 1 normal Attack damage to an adjacent enemy. No die spent.")
   var tags: Array[String] = []
   for tag in game.status_map(game.active):
    if game.status_map(game.active)[tag]:tags.append("Weak Point READY" if tag == "Backstab" else tag)
@@ -525,15 +498,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.27 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
- if game.encounter_id == "event":goal = "ORDINARY MONSTERS · Defeat all creatures. Scuttle 2 / Bite 1 / Guard 1. No phase or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.27 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.27 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ var goal := "v0.28 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
+ if game.encounter_id == "nugh":goal = "v0.28 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.28 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.27 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.28 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.27 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.28 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -560,10 +533,10 @@ func open_audio_settings() -> void:
 
 func face_help(f: int) -> String:
  if f == 0:
-  var count := balance_number("soul.uses");var distance := balance_number("soul.move")
+  var count: int = game.soul_limit(game.active) if page == "battle" and game.active < 3 else balance_number("soul.uses");var distance: int = game.soul_distance(game.active) if page == "battle" and game.active < 3 else balance_number("soul.move")
   var text := "Blank: with Soul ON, spend %s rolled Blank%s per hero turn as Move %d. Your allowance refreshes at every own turn, including recovery turns. The die stays Blank and can roll again next round." % ["ONE" if count == 1 else str(count),"" if count == 1 else "s",distance]
   if page == "battle":
-   text += "\n\n"+("Soul is OFF: Blanks do not grant movement." if not game.reward else ("%d/%d Blank moves remain this turn." % [game.soul_remaining(game.active),game.v("soul.uses")] if game.active < 3 else "Wait for a hero turn."))
+   text += "\n\n"+("Soul is OFF: Blanks do not grant movement." if not game.reward else ("%d/%d Blank moves remain this turn." % [game.soul_remaining(game.active),game.soul_limit(game.active)] if game.active < 3 else "Wait for a hero turn."))
    if game.active < 3 and game.heroes[game.active].get("rooted",0) > 0:text += "\nRooted currently prevents voluntary movement until the boss’s next turn."
   return text
  var base := default_face_help(f)
@@ -625,6 +598,14 @@ func overlay() -> void:
 
 func outcome_ui() -> void:
  overlay()
+ if creature_fight:
+  settle_essence()
+  var won: bool = game.outcome == "victory"
+  label_at("CREATURE VICTORY" if won else "PARTY DEFEATED",Vector2(399,272),28,GOLD,575,true)
+  CampUI.detail(self,camp_message+"\n\nDirect creature fights award Essence only. They do not roll or resolve an Ash Road event, or grant Gold, supplies or boss Souls.",Rect2(399,340,575,185),18)
+  button("Camp · craft & refit",Vector2(399,553),Vector2(575,46),func():creature_fight = false;open_camp())
+  button("Defeated cards · Essence tokens",Vector2(399,612),Vector2(575,32),func():show_enemy_cards = true;rebuild(),MUTED)
+  return
  if event_fight:
   settle_essence()
   expedition.finish_combat(game.outcome == "victory")
@@ -721,12 +702,13 @@ func _unhandled_key_input(event: InputEvent) -> void:
  if not combat_notices.is_empty():return
  if event.is_action_pressed("ui_cancel"):
   if is_instance_valid(balance_editor):balance_editor.queue_free();balance_editor = null
+  choosing_poke = false
   selected = -1; shove_target = -1; show_active_effects = false; show_soundtrack = false; show_options = false; show_menu = false; show_lab_tools = false; show_help = false; inspect_action = "";combat_inspected = -1; show_supplies = false; show_history = false; show_changes = false; show_dice = false; show_turn = false; show_lab_setup = false; rebuild()
 
 func _draw() -> void:
  draw_texture_rect(CHAMBER,Rect2(0,0,1440,900),false)
  draw_line(Vector2(24,76),Vector2(1408,76),Color("303846"))
- if page in ["setup","events","camp"]:return
+ if page in ["main","forge","setup","events","camp"]:return
  if page == "forge":
   panel(Rect2(68,351,736,336)); panel(Rect2(850,278,472,563))
  else:
@@ -883,13 +865,18 @@ func sync_presentation() -> void:
    if event.target >= 0:
     effects.append({"kind":kind,"source":event.source,"target":event.target,"life":1.05,"length":1.05,"action":event.action})
  if roll_seen > game.roll_presentations.size(): roll_seen = 0
- var numeric_batches: Array = []
+ var batches: Array = []
+ var action_rows: Array = []
  while roll_seen < game.roll_presentations.size():
   var presentation: Dictionary = game.roll_presentations[roll_seen]
   roll_seen += 1
-  if str(presentation.kind).begins_with("Numeric"):numeric_batches.append(presentation)
- if not numeric_batches.is_empty() and is_instance_valid(dice_tray):
-  dice_tray.play(numeric_batches);rolling_time = 1.0
+  if str(presentation.kind).begins_with("Numeric"):
+   if not action_rows.is_empty():batches.append({"rows":action_rows});action_rows = []
+   batches.append(presentation)
+  else:action_rows.append(presentation)
+ if not action_rows.is_empty():batches.append({"rows":action_rows})
+ if not batches.is_empty() and is_instance_valid(dice_tray):
+  dice_tray.play(batches);rolling_time = 1.0
  if dice_tray.busy:queued_hit_sound = maxi(queued_hit_sound,hit_sound)
  else:play_hit_sound(hit_sound)
  seen_roll = game.roll_serial
@@ -1040,7 +1027,7 @@ func confirm_gifts() -> void:
  for i in range(3):
   if gifts[i].size() != 2:next = i;break
  if next >= 0:build_hero = next;draft_search = "";draft_scroll = 0
- else:open_setup();return
+ else:finish_party_selection();return
  rebuild()
 
 func draft_ui() -> void:
@@ -1118,8 +1105,8 @@ func draft_ui() -> void:
  button("Remove this face" if chosen else "Equip this face",Vector2(700,748),Vector2(310,38),func():choose_gift(inspected_gift),color_for_face(inspected_gift),not chosen and (gifts[build_hero].size() >= 2 or inspected_gift not in Catalog.extended_ids())).name = "GiftEquipButton"
  label_at("%d/2 selected · drag equipped squares to rearrange" % gifts[build_hero].size(),Vector2(1025,757),12,MUTED,350)
  var complete: bool = gifts.all(func(list):return list.size() == 2)
- button("Choose boss & rules →" if complete else "Next hero →",Vector2(950,810),Vector2(430,44),func():
-  if complete:open_setup()
+ button(("Fight selected creatures →" if queued_creature >= 0 else "Choose boss & rules →") if complete else "Next hero →",Vector2(950,810),Vector2(430,44),func():
+  if complete:finish_party_selection()
   else:confirm_gifts(),GOLD,gifts[build_hero].size() != 2)
  button("Guided practice",Vector2(60,810),Vector2(260,42),start_training,Color("82c8b9"))
  button("Game options",Vector2(335,810),Vector2(260,42),open_settings,MUTED)
@@ -1255,13 +1242,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.27 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.28 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.27",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.28",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1308,7 +1295,7 @@ func turn_ui() -> void:
  else:
   var h: Dictionary = game.heroes[game.active]
   text.text += "Choose a bright, unspent die. Hover it to read its description beside the arena. Movement needs an empty highlighted cell; attacks and healing need a legal unit; setup effects use Resolve. Grey dice are spent, held as reactions or channelled. You may End turn without using every die."
-  if game.reward: text.text += "\n\nReward Soul: " + ("%d/%d" % [game.soul_remaining(game.active),game.v("soul.uses")]) + " Blank-to-Move-%d conversions remain this hero turn.\n" % game.v("soul.move")
+  if game.reward: text.text += "\n\nReward Soul: " + ("%d/%d" % [game.soul_remaining(game.active),game.soul_limit(game.active)]) + " Blank-to-Move-%d conversions remain this hero turn.\n" % game.soul_distance(game.active)
   text.text += "\n\nReroll timing: " + ("Any time during own turn" if game.v("hero.reroll_anytime") else ("Opening OPEN" if h.opening else "Opening CLOSED after first action")) + " · saved charges: " + str(h.rerolls) + ". A starting charge does not refill each round."
  text.text += "\n\n[b]Initiative[/b]\n"+" → ".join(game.order.map(func(id):return game.unit_name(id)))
  text.text += "\n\n[b]Between turns[/b]\nInitiative stays fixed for this encounter. New round = everyone rolls available dice together. Your next turn start clears old Block and temporary defenses; Channels can pause for maintain / release. HP damage, mitigation and expiry are recorded in the chronicle."
@@ -1370,7 +1357,7 @@ func explain_invalid(f: int, target: int, cell: Vector2i) -> String:
  if game.heroes[actor].used[selected]:return "This die is spent. Select another ready die; all available dice roll again next round."
  if f == 59:return "Summon Nu’gh needs an adjacent empty tile. While your worm lives, use Resolve to Command it."
  if f == 0 and not game.reward:return "Soul is OFF. Enable Blank movement above your dice or in Game options."
- if f == 0 and game.v("soul.move") <= 0:return "Blank movement is set to 0 in the balance workshop."
+ if f == 0 and game.soul_distance(game.active) <= 0:return "Blank movement is set to 0 in the balance workshop."
  if f == 0 and game.reward and game.soul_remaining(actor) <= 0:return "Blank movement used for this turn. It refreshes at this hero’s next own turn."
  if f in [2,3,53,54,57,0]: return "No legal path to that cell. Occupied cells block normal movement; Stride must stay straight."
  if target < 0:return "Choose a unit, not an empty cell, for this face."
@@ -1456,8 +1443,12 @@ func set_soul_enabled(enabled: bool, live: bool = true) -> void:
   game.reward = enabled if lab or training else enabled or expedition.camp.equipped_souls.any(func(id):return id != "")
   for hero in range(3):
    if lab or training:game.balance.erase("soul.eligible."+str(hero))
-   else:game.balance["soul.eligible."+str(hero)] = enabled or expedition.camp.equipped_souls[hero] != ""
-  game.record_event("info","Blank → Move %d " % game.v("soul.move") + ("enabled: %d conversions per hero turn." % game.v("soul.uses") if enabled else "disabled: Blanks have no movement effect."))
+   else:
+    var soul: String = expedition.camp.equipped_souls[hero]
+    game.balance["soul.eligible."+str(hero)] = enabled or soul != ""
+    game.balance["soul.distance."+str(hero)] = balance_number("soul.move") if enabled or soul != "beginning" else 1
+    game.balance["soul.allowance."+str(hero)] = balance_number("soul.uses") if enabled or soul != "beginning" else 1
+  game.record_event("info","Blank → Move %d " % game.soul_distance(game.active) + ("enabled: %d conversions per hero turn." % game.v("soul.uses") if enabled else "sandbox disabled; equipped Soul effects remain."))
  hint = "Blank → Move %d is " % balance_number("soul.move") + ("ON. Select a rolled Blank, then a highlighted cell. %d conversions per hero turn." % balance_number("soul.uses") if enabled else "OFF. Rolled Blanks cannot be spent for movement.")
  rebuild()
 
@@ -1466,7 +1457,7 @@ func options_ui() -> void:
  label_at("GAME OPTIONS",Vector2(399,258),28,GOLD,600,true)
  var enabled: bool = game.reward if page == "battle" and (lab or training) else reward_soul
  button("Sandbox Blank → Move %d: " % balance_number("soul.move") + ("ON  ·  click to turn OFF" if enabled else "OFF  ·  click to turn ON"),Vector2(399,303),Vector2(575,39),func(): set_soul_enabled(not enabled),Color("82c8b9"))
- label_at("ON: %d Blank conversions per hero turn, each Move %d.\nOFF disables conversion. Switching off/on does not refill uses." % [balance_number("soul.uses"),balance_number("soul.move")],Vector2(399,350),15,Color("dce6ee"),575,false,true)
+ label_at("ON: %d Blank conversions per hero turn, each Move %d.\nOFF restores equipped Soul rules. Switching does not refill uses." % [balance_number("soul.uses"),balance_number("soul.move")],Vector2(399,350),15,Color("dce6ee"),575,false,true)
  button("Balance workshop · edit ability & passive values",Vector2(399,401),Vector2(575,37),open_balance_editor,Color("82c8b9"))
  button("Action Rerolls: "+("ANY TIME" if balance_number("hero.reroll_anytime") else "OPENING ONLY"),Vector2(399,447),Vector2(575,40),func():
   var value := 0 if balance_number("hero.reroll_anytime") else 1
@@ -1476,7 +1467,7 @@ func options_ui() -> void:
  button("Sound: " + ("OFF" if muted else "ON"),Vector2(399,496),Vector2(275,35),func(): muted = not muted; score.set_muted(muted); rebuild(),MUTED)
  button("Soundtrack & volume",Vector2(689,496),Vector2(285,35),func():show_soundtrack = true;rebuild(),GOLD)
  button("Combat impact effects: "+("ON" if combat_effects else "OFF"),Vector2(399,538),Vector2(575,34),func():combat_effects = not combat_effects;rebuild(),MUTED)
- button("Main menu · restart from face selection",Vector2(399,580),Vector2(575,34),restart_to_menu,MUTED)
+ button("Main menu · restart party",Vector2(399,580),Vector2(575,34),restart_to_menu,MUTED)
  button("Back to game",Vector2(399,623),Vector2(575,32),func(): show_options = false; rebuild())
 
 
@@ -1522,7 +1513,7 @@ func menu_ui() -> void:
  button("What changed",Vector2(399,388),Vector2(275,45),func():show_menu = false;show_changes = true;rebuild())
  button("Rules",Vector2(689,388),Vector2(285,45),func():show_menu = false;show_help = true;rebuild(),MUTED)
  button("Game options",Vector2(399,451),Vector2(275,45),func():show_menu = false;open_settings(),MUTED)
- button("Rebuild / restart",Vector2(689,451),Vector2(285,45),func():show_menu = false;page = "forge";selected = -1;rebuild(),MUTED)
+ button("Main menu",Vector2(689,451),Vector2(285,45),go_main,MUTED)
  button("Expedition supplies",Vector2(399,510),Vector2(575,43),func():show_menu = false;show_supplies = true;rebuild(),GOLD)
  button("Enemy cards · harvesting",Vector2(399,570),Vector2(575,43),func():show_menu = false;show_enemy_cards = true;rebuild(),app_gold())
  button("Return to battle",Vector2(399,625),Vector2(575,46),func():show_menu = false;rebuild())
@@ -1671,7 +1662,7 @@ func selected_die_help(die: int) -> String:
   if h.get("rooted",0) > 0:return "ROOTED: no voluntary movement until the boss’s next turn. Your Blank allowance is not consumed."
   if not game.reward:return "Blank movement is OFF. Turn Soul ON above the dice to enable it."
   if game.soul_remaining(game.active) <= 0:return "No eligible equipped Soul / Blank movement used this turn. It refreshes at this hero’s next own turn."
-  return "Blank → Move %d. Click a highlighted empty cell. %d/%d uses remain this own turn." % [game.v("soul.move"),game.soul_remaining(game.active),game.v("soul.uses")]
+  return "Blank → Move %d. Click a highlighted empty cell. %d/%d uses remain this own turn." % [game.v("soul.move"),game.soul_remaining(game.active),game.soul_limit(game.active)]
  return short_face_help(face)
 
 func draw_hero_debuffs(id: int, center: Vector2) -> void:
@@ -1727,6 +1718,7 @@ func short_face_help(f: int) -> String:
  return text+reward_live_notes(f)
 
 func select_combat_die(d: int) -> void:
+ choosing_poke = false
  var h: Dictionary = game.heroes[game.active]
  friendly_confirm = -1;show_active_effects = false;detailed_ability = false;inspect_action = ""
  if selected >= 0 and game.face(game.active,selected) == 6 and selected != d and not h.used[selected]:
@@ -1987,7 +1979,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.27",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.28",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2009,6 +2001,7 @@ func open_events() -> void:
  event_fight = false;show_menu = false;show_supplies = false;page = "events";rebuild()
 
 func event_choice(option: int) -> void:
+ creature_fight = false
  var allocation := camp_allocation_error(builds)
  if allocation != "":camp_message = allocation;open_camp();return
  if not expedition.choose(option):return
@@ -2092,21 +2085,28 @@ func enter_boss() -> void:
  expedition.stage = "boss";expedition.save();begin()
 
 func restart_to_menu() -> void:
+ choosing_poke = false
  if event_fight:expedition.finish_combat(false)
- event_fight = false;lab = false;training = false;page = "forge";build_hero = 0
+ event_fight = false;creature_fight = false;lab = false;training = false;page = "main";build_hero = 0
  gifts = [[],[],[]];builds = [Model.default_build(balance_values),Model.default_build(balance_values),Model.default_build(balance_values)]
  game = Model.new();selected = -1;choosing_reroll = false;combat_notices.clear()
  show_training = false;show_lab_tools = false;show_enemy_cards = false;training_step = 0
  show_options = false;show_menu = false;show_soundtrack = false;show_supplies = false;show_help = false;show_changes = false;show_history = false;show_dice = false;show_lab_setup = false;show_turn = false
  combat_inspected = -1;inspect_action = "";roll_feedback = {};show_active_effects = false
  effects.clear();snapshots.clear();visual_positions.clear();movement_tracks.clear()
+ queued_creature = -1
+ if is_instance_valid(dice_tray):dice_tray.cancel()
  draft_modal = true;make_offers();rebuild()
 
 
 func app_gold() -> Color:return GOLD
 func camp_battle_profile() -> Dictionary:
  var result: Dictionary = expedition.camp.profile(balance_values)
- for hero in range(3):result["soul.eligible."+str(hero)] = reward_soul or expedition.camp.equipped_souls[hero] != ""
+ for hero in range(3):
+  var soul: String = expedition.camp.equipped_souls[hero]
+  result["soul.eligible."+str(hero)] = reward_soul or soul != ""
+  result["soul.distance."+str(hero)] = balance_number("soul.move") if reward_soul or soul != "beginning" else 1
+  result["soul.allowance."+str(hero)] = balance_number("soul.uses") if reward_soul or soul != "beginning" else 1
  return result
 func camp_allocation_error(candidate: Array) -> String:
  var used := {}
@@ -2131,6 +2131,7 @@ func craft_recipe(key: String) -> void:
  if error == "":camp_remove_mode = false;expedition.save()
  rebuild()
 func open_camp() -> void:
+ if page == "battle" and game.outcome == "":abandon_encounter()
  show_menu = false;show_options = false;show_enemy_cards = false;draft_modal = false
  if page == "battle" and game.outcome != "" and not lab and not training:settle_essence()
  page = "camp";rebuild()
@@ -2229,3 +2230,83 @@ func camp_remove(hero: int, die: int, side: int) -> void:
  if face < 60:camp_message = "Only crafted faces return to the collection here; edit starter/bonus faces in the dice forge."
  else:builds[hero][die][side] = 0;camp_message = Catalog.name_for(face)+" returned to the shared collection. It stays permanently owned; no Essence refund."
  rebuild()
+
+
+func hub_overlays() -> void:
+ soundtrack_ui()
+ if show_help:help_ui()
+ if show_changes:changes_ui()
+ if show_dice:dice_ui()
+ if show_options:options_ui()
+ if show_soundtrack:soundtrack_settings_ui()
+
+func open_forge(bonus: bool = false) -> void:
+ if page == "battle":abandon_encounter()
+ page = "forge";draft_modal = bonus;show_options = false;rebuild()
+
+func party_build_error() -> String:
+ var error := camp_allocation_error(builds)
+ if error != "":return error
+ for hero in range(3):
+  if gifts[hero].size() != 2:return "Choose two bonus faces for each hero before fighting."
+  error = Model.validate(builds[hero],gifts[hero],expedition.camp.profile(balance_values))
+  if error != "":return ["Vesper","Rook","Wren"][hero]+": "+error
+  if not gifts[hero].all(func(id):return builds[hero].any(func(die):return id in die)):return "Keep each hero’s two chosen bonus designs equipped."
+ return ""
+
+func forge_replace(face: int) -> void:
+ var next: Array = builds.duplicate(true);next[build_hero][forge_die][forge_side] = face
+ var error := Model.validate(next[build_hero],gifts[build_hero],expedition.camp.profile(balance_values))
+ if error == "":error = camp_allocation_error(next)
+ if error == "" and not gifts[build_hero].all(func(id):return next[build_hero].any(func(die):return id in die)):error = "Keep your two bonus designs equipped. Change them through Choose bonus faces."
+ if error != "":hint = error
+ else:builds = next;hint = "Equipped "+Catalog.name_for(face)+". Select another square to continue."
+ rebuild()
+
+func finish_party_selection() -> void:
+ if queued_creature >= 0:start_creature_encounter(queued_creature)
+ else:open_setup()
+
+func abandon_encounter() -> void:
+ choosing_poke = false
+ if page != "battle":return
+ if game.outcome != "" and not lab and not training:settle_essence()
+ elif not lab and not training:camp_message = "Encounter left. Unbanked tokens discarded; your previous bank and owned rewards are safe."
+ if event_fight and expedition.stage == "combat":expedition.finish_combat(false)
+ event_fight = false;creature_fight = false;lab = false;training = false
+ if is_instance_valid(dice_tray):dice_tray.cancel()
+ rolling_time = 0;combat_notices.clear();effects.clear()
+
+func go_main() -> void:
+ abandon_encounter();page = "main";queued_creature = -1
+ show_menu = false;show_options = false;show_help = false;show_changes = false;show_enemy_cards = false;show_history = false;show_soundtrack = false;show_dice = false;show_supplies = false
+ rebuild()
+
+func start_creature_encounter(group: int) -> void:
+ if group not in range(3):return
+ if party_build_error() != "":
+  queued_creature = group;hint = party_build_error();build_hero = 0;open_forge(true);return
+ abandon_encounter();queued_creature = -1
+ game = EventBattle.new();game.prototype_pack = true
+ game.creature_types = [["bone_creature","bone_creature"],["support_creature","movement_creature","movement_creature"],["movement_creature","movement_creature"]][group]
+ game.start(builds,0,reward_soul,balanced,camp_battle_profile());game.harvest_revealed = expedition.camp.defeated.duplicate()
+ creature_fight = true;event_fight = false;lab = false;training = false;draft_modal = false;page = "battle"
+ show_enemy_cards = false;show_menu = false;show_options = false;show_dice = false;show_help = false;show_changes = false
+ seen_event = 0;seen_roll = 0;roll_seen = 0;selected = -1;shove_target = -1;choosing_reroll = false;combat_notices.clear()
+ inspect_action = "";combat_inspected = -1;inspect_actor = -1;roll_feedback = {};show_active_effects = false
+ effects.clear();snapshots.clear();visual_positions.clear();movement_tracks.clear()
+ hint = "Defeat all creatures to bank their Essence. View enemy cards from Menu for individual dice."
+ rebuild()
+
+func poke_ui() -> void:
+ if game.poke_reason() != "":choosing_poke = false;return
+ overlay()
+ label_at("DAGGER · POKE",Vector2(399,268),28,GOLD,575,true)
+ CampUI.detail(self,"Choose an adjacent enemy. Base damage 1; normal Attack modifiers, Block and armor apply. Once per own turn. No Action Die spent.",Rect2(399,319,575,82),17)
+ var targets: Array = game.poke_targets()
+ var scroll := ScrollContainer.new();scroll.position = Vector2(399,420);scroll.size = Vector2(575,145);ui.add_child(scroll)
+ var column := VBoxContainer.new();column.custom_minimum_size.x = 550;column.add_theme_constant_override("separation",10);scroll.add_child(column)
+ for target in targets:
+  var choice := Button.new();choice.text = game.unit_name(target)+" · %d HP · %d Block" % [game.unit_data(target).hp,game.unit_data(target).block];choice.custom_minimum_size = Vector2(550,48)
+  choice.pressed.connect(func():game.poke(target);choosing_poke = false;rebuild());column.add_child(choice)
+ button("Cancel",Vector2(399,598),Vector2(575,44),func():choosing_poke = false;rebuild(),MUTED)

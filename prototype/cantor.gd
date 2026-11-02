@@ -118,3 +118,6 @@ func status_description(id: int) -> String:
   text = text.replace("Phase II: 3×3 Cinder Brand, Rooted Ashen Chain and Furnace Roar unlocked.","Grand Peal: all six Cantor abilities upgraded.")
   text += "\nResonance %d/%d. Toll damage now %d. Chime damage now %d.\nCore: %s" % [resonance,v("cantor.resonance_cap"),toll_damage(),chime_damage(),"OPEN: hero Attack hits +%d until next boss turn." % core_bonus() if core_open else "closed."]
  return text
+
+func after_weapon_attack() -> void:
+ if outcome == "":change_resonance(v("cantor.attack_charge"),unit_name(active)+" resolves Dagger Poke",active)

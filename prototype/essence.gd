@@ -44,15 +44,21 @@ var seen: Dictionary = {}
 var defeated: Dictionary = {}
 var settled: Dictionary = {}
 var memories: Array = ["","",""]
-var souls: Array = [[],[],[]]
-var equipped_souls: Array = ["","",""]
+var souls: Array = [["beginning"],["beginning"],["beginning"]]
+var equipped_souls: Array = ["beginning","beginning","beginning"]
+var weapons: Array = ["dagger","dagger","dagger"]
+var bodies: Array = ["broken_body","broken_body","broken_body"]
 func encode() -> Dictionary:
- return {"bank":bank,"unlocked":unlocked,"copies":copies,"seen":seen,"defeated":defeated,"settled":settled,"memories":memories,"souls":souls,"equipped_souls":equipped_souls}
+ return {"bank":bank,"unlocked":unlocked,"copies":copies,"seen":seen,"defeated":defeated,"settled":settled,"memories":memories,"souls":souls,"equipped_souls":equipped_souls,"weapons":weapons,"bodies":bodies}
 func decode(data: Dictionary):
  for key in ["bank","unlocked","copies","seen","defeated","settled"]:
   if data.get(key) is Dictionary:set(key,data[key].duplicate(true))
  for key in ["memories","souls","equipped_souls"]:
   if data.get(key) is Array and data[key].size() == 3:set(key,data[key].duplicate(true))
+ for hero in range(3):
+  if "beginning" not in souls[hero]:souls[hero].push_front("beginning")
+  if data.get("weapons") is Array and data.weapons.size() == 3 and data.weapons[hero] in ["","dagger"]:weapons[hero] = data.weapons[hero]
+  if data.get("bodies") is Array and data.bodies.size() == 3 and data.bodies[hero] == "broken_body":bodies[hero] = "broken_body"
 func discovered(type: String) -> bool:return TYPES.get(type,{}).get("rank","normal") == "normal" or defeated.has(type)
 func recipes_for(type: String) -> Array:
  var result: Array = []
@@ -92,7 +98,9 @@ func settle(run_id: String, victory: bool, tokens: Array, deaths: Array, encount
 func profile(base: Dictionary) -> Dictionary:
  var result := base.duplicate(true)
  for face in range(60,69):result["earned."+str(face)] = owned(face)
- for hero in range(3):result["memory.loss."+str(hero)] = memories[hero] == "memory_loss"
+ for hero in range(3):
+  result["memory.loss."+str(hero)] = memories[hero] == "memory_loss"
+  result["weapon.dagger."+str(hero)] = weapons[hero] == "dagger"
  return result
 func equip_memory(hero: int) -> bool:
  if hero not in [-1,0,1,2] or not unlocked.has("memory_loss"):return false
@@ -116,3 +124,10 @@ static func eligible(unit: Dictionary, condition: String) -> bool:
 func grant_soul(hero: int, soul: String) -> bool:
  if hero not in range(3) or soul == "" or soul in souls[hero]:return false
  souls[hero].append(soul);return true
+
+func equip_weapon(hero: int, weapon: String) -> bool:
+ if hero not in range(3) or weapon not in ["","dagger"]:return false
+ weapons[hero] = weapon;return true
+func equip_body(hero: int, body: String) -> bool:
+ if hero not in range(3) or body != "broken_body":return false
+ bodies[hero] = body;return true
