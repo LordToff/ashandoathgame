@@ -363,7 +363,7 @@ func forge_ui() -> void:
  soul_toggle(Vector2(350,756),false)
  button("Restore balanced build",Vector2(75,756),Vector2(245,46),restore_hero_build,MUTED)
  label_at("YOUR INHERITANCE",Vector2(886,300),13,GOLD)
- label_at("Memory   /   Empty\nSoul          /   %d HP · %d+ Blanks per die\nBody         /   Broken Body" % [balance_number("hero.hp"),balance_number("body.blanks")],Vector2(886,335),16,Color("d2d8df"))
+ label_at("Memory / "+("Memory of Loss" if expedition.camp.memories[build_hero] == "memory_loss" else "Empty")+"\nSoul / "+str({"hollow":"Hollow","ashroad":"Ash Road"}.get(expedition.camp.equipped_souls[build_hero],"None equipped"))+"\nBody / Broken Body\n%d HP · %d+ Blanks per die" % [balance_number("hero.hp"),balance_number("body.blanks")],Vector2(886,335),16,Color("d2d8df"))
  label_at("OWNED FACE POOL",Vector2(886,445),12,GOLD)
  label_at("%d Strike · %d Step · %d Stride\n%d Guard · %d Reaction\n%d Focus · %d First Aid · %d Shove" % [balance_number("owned.1"),balance_number("owned.2"),balance_number("owned.3"),balance_number("owned.4"),balance_number("owned.5"),balance_number("owned.6"),balance_number("owned.7"),balance_number("owned.8")],Vector2(886,474),15,MUTED)
  label_at("Two bonus designs per hero. At most %d equipped faces.\nBody caps: %d Movement, %d Defense, %d Skill.\nBlank → Move %d is " % [18-3*balance_number("body.blanks"),balance_number("body.Movement"),balance_number("body.Defense"),balance_number("body.Skill"),balance_number("soul.move")] + ("ON." if reward_soul else "OFF."),Vector2(886,559),13,MUTED)
