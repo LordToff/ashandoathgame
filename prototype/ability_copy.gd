@@ -9,7 +9,7 @@ func reach(f: int) -> String:
 func face(f: int) -> String:
  if f >= 60 and f < 69:return preload("res://prototype/essence.gd").FACES[f-60][2]
  match f:
-  0:return "No ordinary effect. With the test Soul ON, spend a Blank as Move %d; at most %d per hero turn." % [n("soul.move"),n("soul.uses")]
+  0:return "Beginning Soul: spend one rolled Blank as Move 1, once per own turn. Earned Souls grant Move 2. No equipped Soul: no ordinary effect. The separate sandbox can test Move %d with %d use(s)." % [n("soul.move"),n("soul.uses")]
   1:return "Deal %d damage to %s." % [n("face1.damage"),reach(f)]
   2:return "Move up to %d orthogonal spaces. Occupied cells block the path." % n("face2.move")
   3:return "Move up to %d spaces in a straight line. No turning or passing through units." % n("face3.move")

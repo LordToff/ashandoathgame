@@ -97,6 +97,7 @@ func run():
  check(app.expedition.camp.weapons[app.camp_hero] == "","UI unequips Dagger")
  app.ui.get_node("Equipment_weapon").item_selected.emit(1)
  check(app.expedition.camp.weapons[app.camp_hero] == "dagger","UI equips Dagger")
+ check(app.ui.get_node("EquipmentSprite_beginning").size == Vector2(132,134),"sprite stays within its equipment cell")
  check(app.ui.has_node("EquipmentSprite_beginning") and app.ui.has_node("EquipmentSprite_memory_loss"),"soul and Memory sprite regions render")
  app.open_forge(false);check(app.ui.has_node("ForgeFacePicker") and app.ui.has_node("ForgeDie2Side5"),"roomy forge editor renders all dice")
  var before: Array = app.builds.duplicate(true);app.forge_die = 0;app.forge_side = 4;app.forge_replace(1)

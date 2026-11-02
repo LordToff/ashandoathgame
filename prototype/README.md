@@ -250,3 +250,8 @@ Bu’gh and friendly Summon Nu’gh were reconstructed from the handoff at sourc
 
 ## v0.27 Essence and Camp
 See [implementation](../docs/Essence-Implementation-v0.27.md) for fixed PDF rules and provisional timing/AI choices. `essence.gd` owns the shared ledger and recipes; `camp_ui.gd` renders Camp. Nine earned faces are IDs 60–68; the 48-choice initial bonus pool is unchanged. Run `prototype/tests/essence_v27_test.gd` for the focused progression/ability suite. No spendable Bone resource or candidate service effects were invented.
+
+
+## v0.28 navigation and equipment
+
+The main menu now opens first. Camp separates Essence Forge, Refit dice, Equipment and Creature encounters. Equipment has Body, Weapon, Soul and Memory selectors per hero. New parties start with Beginning Soul (one rolled Blank → Move 1 per own turn) and Dagger (after actual enemy HP damage, one adjacent base-1 Poke per own turn, no die cost). Saved earned Souls and empty selections are preserved; earned Move 2 and sandbox options remain separate. Direct creature groups award Essence only and leave the pre-boss event requirement intact. See [v0.28 notes](../docs/Changes-v0.28.md) for complete conditions. Earlier starting-Soul/no-movement descriptions above are historical.

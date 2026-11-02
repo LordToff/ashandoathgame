@@ -68,7 +68,7 @@ func run():
  scene.expedition.stage = "resolved";scene.expedition.selected = 1;scene.gifts = [[34,47],[34,47],[34,47]];scene.builds = [B.bonus_build([34,47]),B.bonus_build([34,47]),B.bonus_build([34,47])];scene.enter_boss()
  check(scene.page == "battle" and scene.expedition.stage == "boss","resolved event permits boss and is consumed")
  scene.start_expedition();check(scene.page == "events" and scene.expedition.stage == "idle","next boss needs a new event")
- scene.begin();scene.game.active = 0;scene.game.pending = {};scene.game.apply_poison(3,0,1);scene.game.tick_poison(0);scene.rebuild()
+ scene.begin();scene.game.active = 0;scene.game.pending = {};scene.game.apply_poison(3,0,1);scene.game.tick_poison(0);scene.rebuild();scene.dice_tray.finish();scene.rebuild()
  check(scene.ui.get_node_or_null("AcknowledgeCombatNotice") != null,"Poison damage has acknowledgement window")
  var count: int = scene.combat_notices.size();scene.rebuild();check(scene.combat_notices.size() == count,"redraw does not duplicate notices")
  scene.ui.get_node("AcknowledgeCombatNotice").pressed.emit();check(scene.combat_notices.is_empty(),"tick window acknowledges")
@@ -77,7 +77,7 @@ func run():
  scene.game.heroes[0].results = [6,5,0];scene.game.heroes[0].used = [false,true,false];scene.game.heroes[0].reaction = [1];scene.selected = 0;scene.select_combat_die(1)
  check(scene.combat_notices.any(func(n):return n.title.contains("FOCUS")),"selecting Focus then another die shows the result")
  scene.restart_to_menu()
- check(scene.page == "forge" and scene.draft_modal and scene.gifts == [[],[],[]],"main menu restarts from first face selection")
+ check(scene.page == "main" and scene.draft_modal and scene.gifts == [[],[],[]],"restart opens actual main menu and clears party choices")
  check(not scene.show_options and scene.combat_notices.is_empty(),"restart clears combat overlays")
  scene.queue_free();await process_frame
  print("V0.26 usability: %d checks, %d failures" % [checks,failures]);quit(1 if failures else 0)

@@ -12,8 +12,12 @@ static func detail(app, text: String, rect: Rect2, size_px: int = 18) -> RichTex
  return node
 
 static func art(app, texture: Texture2D, rect: Rect2) -> void:
- var image := TextureRect.new();image.texture = texture;image.position = rect.position;image.size = rect.size
- image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+ var image := TextureRect.new();image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+ if texture in app.CREATURE_SPRITES.values():
+  var frame := AtlasTexture.new();frame.atlas = texture;frame.region = Rect2(0,0,16,16);image.texture = frame
+ else:image.texture = texture
+ image.position = rect.position;image.size = rect.size
+ image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
  image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;image.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(image)
 
 static func render(app) -> void:
@@ -49,8 +53,10 @@ static func crafting(app) -> void:
  var recipes: Array = app.expedition.camp.recipes_for(app.camp_type)
  for i in range(recipes.size()):
   var key: String = recipes[i];var recipe: Dictionary = E.RECIPES[key];var y := 270+i*110
-  var card = app.button(app.expedition.camp.reward_name(key)+"\n\n",Vector2(350,y),Vector2(388,92),func():app.camp_recipe = key;app.rebuild(),app.GOLD if key == app.camp_recipe else app.MUTED)
+  var card = app.button(app.expedition.camp.reward_name(key),Vector2(350,y),Vector2(388,92),func():app.camp_recipe = key;app.rebuild(),app.GOLD if key == app.camp_recipe else app.MUTED)
   card.name = "Recipe_"+key;card.alignment = HORIZONTAL_ALIGNMENT_LEFT;card.add_theme_font_size_override("font_size",17)
+  for color_name in ["font_color","font_hover_color","font_pressed_color","font_focus_color","font_disabled_color","font_hover_pressed_color"]:card.add_theme_color_override(color_name,Color(0,0,0,0))
+  app.label_at(app.expedition.camp.reward_name(key),Vector2(368,y+17),17,app.GOLD if key == app.camp_recipe else Color("d5dedf"),350).mouse_filter = Control.MOUSE_FILTER_IGNORE
   var copies: String = "Owned %d" % app.expedition.camp.owned(recipe.face) if recipe.has("face") else ("Owned · permanent" if app.expedition.camp.unlocked.has(key) else "One-time Memory")
   app.label_at("%d Essence  ·  %s" % [recipe.cost,copies],Vector2(368,y+53),14,app.MUTED,350).mouse_filter = Control.MOUSE_FILTER_IGNORE
  app.setup_panel(Rect2(774,210,618,534))
@@ -145,7 +151,7 @@ static func inheritance(app) -> void:
   var key: String = icons[index]
   var owned: bool = key in app.expedition.camp.souls[hero] if index < 3 else app.expedition.camp.unlocked.has(key)
   var texture := AtlasTexture.new();texture.atlas = ITEM_ART;texture.region = Rect2(index*543,0,543,724)
-  var image := TextureRect.new();image.name = "EquipmentSprite_"+key;image.texture = texture;image.position = Vector2(764+index*148,352);image.size = Vector2(132,134)
+  var image := TextureRect.new();image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;image.name = "EquipmentSprite_"+key;image.texture = texture;image.position = Vector2(764+index*148,352);image.size = Vector2(132,134)
   image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED;image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;image.mouse_filter = Control.MOUSE_FILTER_IGNORE
   image.modulate = Color.WHITE if owned else Color(0.22,0.26,0.3,0.7);app.ui.add_child(image)
   app.label_at(["Beginning","Hollow","Ash Road","Memory"][index] if owned else "Undiscovered",Vector2(764+index*148,492),14,app.GOLD if owned else app.MUTED,136)

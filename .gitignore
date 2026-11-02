@@ -27,3 +27,6 @@ Exports/
 # Plugin specific
 addons/script-ide/
 addons/ef_ds_uids/
+
+# Python verifier caches
+__pycache__/

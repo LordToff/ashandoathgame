@@ -231,7 +231,7 @@ func _process(delta: float) -> void:
     visual_positions[id] = track.path[segment].lerp(track.path[segment+1],smoothstep(0.0,1.0,part))
     if progress >= 1:visual_positions[id] = track.to
  rolling_time = 1.0 if dice_tray and dice_tray.busy else 0.0
- if page == "battle":
+ if page == "battle" and rolling_time <= 0:
   var current_hover := inspection_at_mouse()
   if current_hover != hover_key:
    hover_key = current_hover
@@ -463,7 +463,7 @@ func battle_ui() -> void:
   button("Return to "+game.unit_name(game.burden_interrupt.owner)+" →" if not game.burden_interrupt.is_empty() else "End hero turn   →",Vector2(760,682),Vector2(328,54),func():game.finish_turn();selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
   var poke_error: String = game.poke_reason()
   var poke_targets: Array = game.poke_targets()
-  var poke_button := button("Dagger · Poke 1" if poke_error == "" else ("Dagger · Poke used" if h.get("dagger_used",false) else "Dagger · damage an enemy first"),Vector2(760,746),Vector2(328,34),func():choosing_poke = true;rebuild(),GOLD,poke_error != "" or poke_targets.is_empty())
+  var poke_button := button("Weapon · no Dagger equipped" if not game.balance.get("weapon.dagger."+str(game.active),false) else "Dagger · Poke 1" if poke_error == "" else ("Dagger · Poke used" if h.get("dagger_used",false) else "Dagger · damage an enemy first"),Vector2(760,746),Vector2(328,34),func():choosing_poke = true;rebuild(),GOLD,poke_error != "" or poke_targets.is_empty())
   poke_button.name = "DaggerPoke";poke_button.add_theme_font_size_override("font_size",13)
   poke_button.tooltip_text = poke_error if poke_error != "" else ("No adjacent enemy." if poke_targets.is_empty() else "Once per turn. 1 normal Attack damage to an adjacent enemy. No die spent.")
   var tags: Array[String] = []
@@ -533,12 +533,19 @@ func open_audio_settings() -> void:
 
 func face_help(f: int) -> String:
  if f == 0:
-  var count: int = game.soul_limit(game.active) if page == "battle" and game.active < 3 else balance_number("soul.uses");var distance: int = game.soul_distance(game.active) if page == "battle" and game.active < 3 else balance_number("soul.move")
-  var text := "Blank: with Soul ON, spend %s rolled Blank%s per hero turn as Move %d. Your allowance refreshes at every own turn, including recovery turns. The die stays Blank and can roll again next round." % ["ONE" if count == 1 else str(count),"" if count == 1 else "s",distance]
+  var actor: int = game.active if page == "battle" else build_hero
+  if actor not in [0,1,2]:return "Blank: check the acting hero’s equipped Soul and remaining conversion allowance."
+  var scoped: Dictionary = game.balance if page == "battle" else camp_battle_profile()
+  var enabled: bool = (game.reward if page == "battle" else true) and scoped.get("soul.eligible."+str(actor),true)
+  if not enabled:return "Blank: no movement for this hero. Equip a Soul at Camp or enable the sandbox override. You may still spend this result without effect."
+  var count: int = game.soul_limit(actor) if page == "battle" else int(scoped["soul.allowance."+str(actor)])
+  var distance: int = game.soul_distance(actor) if page == "battle" else int(scoped["soul.distance."+str(actor)])
+  var text := "Blank: spend %d rolled Blank(s) per own turn as Move %d. The installed side stays Blank. Invalid destinations do not spend the result or allowance. Rerolls do not refill it." % [count,distance]
   if page == "battle":
-   text += "\n\n"+("Soul is OFF: Blanks do not grant movement." if not game.reward else ("%d/%d Blank moves remain this turn." % [game.soul_remaining(game.active),game.soul_limit(game.active)] if game.active < 3 else "Wait for a hero turn."))
-   if game.active < 3 and game.heroes[game.active].get("rooted",0) > 0:text += "\nRooted currently prevents voluntary movement until the boss’s next turn."
+   text += "\n\n%d/%d conversions remain this turn. Normal and full recovery turns refresh the allowance." % [game.soul_remaining(actor),count]
+   if game.heroes[actor].get("rooted",0) > 0:text += "\nRooted prevents voluntary movement."
   return text
+
  var base := default_face_help(f)
  var profile := active_balance()
  if f >= 60 or not profile.keys().any(func(key):return Balance.INDEX.has(key)):return base+reward_live_notes(f)
@@ -549,7 +556,7 @@ func face_help(f: int) -> String:
 
 func default_face_help(f: int) -> String:
  if f >= 9: return Catalog.text(f) + (" Numeric die: 2, 2, 1, 1, 1, 0 by default." if f in range(34,43) or f in [15,17,19,50,51,55] else "")
- return ["Blank: no starting effect. First reward Soul: spend at most ONE rolled Blank per hero turn as Move 2. This does not permanently change the installed face.","Strike: %d damage to one adjacent unit. Weakness subtracts 1. Allies are legal targets." % balance_number("face1.damage"),"Step: move up to 1 orthogonal space.","Stride: move up to 3 spaces in one straight orthogonal direction; no turning.","Guard: gain 1 Block. Block expires at your next turn start.","Reaction: stored when rolled. On being targeted, gain 2 Block before the hit. No movement.","Focus: select another unresolved die to reroll it. Keep and resolve its new face.","First Aid: heal yourself or an adjacent hero for 1. Revives Downed heroes with Broken.","Shove: choose an adjacent unit, then a directly-away direction. Moves the full boss footprint. No collision penalty."][f]
+ return ["Blank: no starting effect. Beginning Soul spends one rolled Blank as Move 1 per own turn; earned Souls use Move 2. This does not permanently change the installed face.","Strike: %d damage to one adjacent unit. Weakness subtracts 1. Allies are legal targets." % balance_number("face1.damage"),"Step: move up to 1 orthogonal space.","Stride: move up to 3 spaces in one straight orthogonal direction; no turning.","Guard: gain 1 Block. Block expires at your next turn start.","Reaction: stored when rolled. On being targeted, gain 2 Block before the hit. No movement.","Focus: select another unresolved die to reroll it. Keep and resolve its new face.","First Aid: heal yourself or an adjacent hero for 1. Revives Downed heroes with Broken.","Shove: choose an adjacent unit, then a directly-away direction. Moves the full boss footprint. No collision penalty."][f]
 
 func pending_ui() -> void:
  overlay()
@@ -1453,23 +1460,28 @@ func set_soul_enabled(enabled: bool, live: bool = true) -> void:
  rebuild()
 
 func options_ui() -> void:
- overlay()
- label_at("GAME OPTIONS",Vector2(399,258),28,GOLD,600,true)
+ var shade := ColorRect.new();shade.color = Color(0.02,0.03,0.05,0.9);shade.size = Vector2(1440,900);ui.add_child(shade)
+ setup_panel(Rect2(158,92,1124,716),GOLD)
+ label_at("GAME OPTIONS",Vector2(194,128),34,GOLD,1040,true)
+ label_at("Choose your rules and presentation. Earned equipment stays in Camp.",Vector2(196,188),18,MUTED,1040)
+ setup_panel(Rect2(190,242,520,428));setup_panel(Rect2(734,242,516,428))
+ label_at("COMBAT RULES",Vector2(214,264),14,GOLD,470)
  var enabled: bool = game.reward if page == "battle" and (lab or training) else reward_soul
- button("Sandbox Blank → Move %d: " % balance_number("soul.move") + ("ON  ·  click to turn OFF" if enabled else "OFF  ·  click to turn ON"),Vector2(399,303),Vector2(575,39),func(): set_soul_enabled(not enabled),Color("82c8b9"))
- label_at("ON: %d Blank conversions per hero turn, each Move %d.\nOFF restores equipped Soul rules. Switching does not refill uses." % [balance_number("soul.uses"),balance_number("soul.move")],Vector2(399,350),15,Color("dce6ee"),575,false,true)
- button("Balance workshop · edit ability & passive values",Vector2(399,401),Vector2(575,37),open_balance_editor,Color("82c8b9"))
- button("Action Rerolls: "+("ANY TIME" if balance_number("hero.reroll_anytime") else "OPENING ONLY"),Vector2(399,447),Vector2(575,40),func():
+ button("Sandbox Blank movement: "+("ON" if enabled else "OFF"),Vector2(214,310),Vector2(472,52),func():set_soul_enabled(not enabled),Color("82c8b9")).name = "OptionsSoulOverride"
+ CampUI.detail(self,"ON: %d Blank conversion(s) per turn, each Move %d. OFF uses each hero’s equipped Soul. Switching never refills spent uses." % [balance_number("soul.uses"),balance_number("soul.move")],Rect2(214,382,472,76),16)
+ button("Action Rerolls: "+("ANY TIME" if balance_number("hero.reroll_anytime") else "OPENING ONLY"),Vector2(214,482),Vector2(472,52),func():
   var value := 0 if balance_number("hero.reroll_anytime") else 1
   balance_values["hero.reroll_anytime"] = value
   if page == "battle":game.balance["hero.reroll_anytime"] = value
-  rebuild(),GOLD)
- button("Sound: " + ("OFF" if muted else "ON"),Vector2(399,496),Vector2(275,35),func(): muted = not muted; score.set_muted(muted); rebuild(),MUTED)
- button("Soundtrack & volume",Vector2(689,496),Vector2(285,35),func():show_soundtrack = true;rebuild(),GOLD)
- button("Combat impact effects: "+("ON" if combat_effects else "OFF"),Vector2(399,538),Vector2(575,34),func():combat_effects = not combat_effects;rebuild(),MUTED)
- button("Main menu · restart party",Vector2(399,580),Vector2(575,34),restart_to_menu,MUTED)
- button("Back to game",Vector2(399,623),Vector2(575,32),func(): show_options = false; rebuild())
-
+  rebuild(),GOLD).name = "OptionsRerollTiming"
+ button("Advanced balance workshop",Vector2(214,574),Vector2(472,52),open_balance_editor,MUTED)
+ label_at("PRESENTATION",Vector2(758,264),14,GOLD,468)
+ button("All sound: "+("OFF" if muted else "ON"),Vector2(758,310),Vector2(468,52),func():muted = not muted;score.set_muted(muted);rebuild(),MUTED)
+ button("Soundtrack & volume",Vector2(758,382),Vector2(468,52),func():show_soundtrack = true;rebuild(),GOLD)
+ button("Combat impacts: "+("ON" if combat_effects else "OFF"),Vector2(758,454),Vector2(468,52),func():combat_effects = not combat_effects;rebuild(),MUTED)
+ button("Restart party · Main menu",Vector2(758,546),Vector2(468,52),restart_to_menu,MUTED).name = "OptionsRestart"
+ label_at("Resets party choices; banked rewards stay yours.",Vector2(760,617),14,MUTED,464)
+ button("Back to game",Vector2(902,720),Vector2(324,50),func():show_options = false;rebuild(),GOLD).name = "OptionsBack"
 
 func portrait_region(id: int) -> Rect2:
  var half := Vector2(PORTRAITS.get_size())/2.0
@@ -1660,7 +1672,7 @@ func selected_die_help(die: int) -> String:
  if face == 59:return "Command Nu’gh: Resolve for an immediate extra activation; it still acts after your turn." if game.owned_worm(game.active) >= 0 else "Summon Nu’gh: click a highlighted adjacent empty tile. One friendly worm per hero."
  if face == 0:
   if h.get("rooted",0) > 0:return "ROOTED: no voluntary movement until the boss’s next turn. Your Blank allowance is not consumed."
-  if not game.reward:return "Blank movement is OFF. Turn Soul ON above the dice to enable it."
+  if not game.reward or not game.balance.get("soul.eligible."+str(game.active),true):return "Blank movement is OFF for this hero. Turn Soul ON above the dice to enable it."
   if game.soul_remaining(game.active) <= 0:return "No eligible equipped Soul / Blank movement used this turn. It refreshes at this hero’s next own turn."
   return "Blank → Move %d. Click a highlighted empty cell. %d/%d uses remain this own turn." % [game.v("soul.move"),game.soul_remaining(game.active),game.soul_limit(game.active)]
  return short_face_help(face)
@@ -1709,6 +1721,7 @@ func restore_hero_build() -> void:
  rebuild()
 
 func short_face_help(f: int) -> String:
+ if f == 0:return face_help(0)
  var copy := AbilityCopy.new();copy.values = active_balance();copy.tuned = game.tuned if page == "battle" else balanced
  var text: String = copy.face(f)
  var key := "face%d.numeric_multiplier" % f
