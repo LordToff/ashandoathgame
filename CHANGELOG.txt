@@ -1,3 +1,24 @@
+# Ash & Oath v0.27 — Essence and the Camp Forge
+
+The supplied Essence Harvesting & Prototype Enemies v1 is now implemented as a playable progression prototype. [Full implementation and clarifications](Essence-Implementation-v0.27.md) · [original design PDF](design/Essence-Harvesting-and-Prototype-Enemies-v1.pdf).
+
+- Every eligible individual enemy death creates one enemy-specific Essence token on its defeated card. Victory banks the tokens; defeat discards only the current encounter’s tokens. Banked Essence is safe until voluntarily spent. Claims cannot duplicate on redraw/reload.
+- Conditions check state at death, including before death cleanup. Normal eligibility is public; boss requirements and rewards reveal after first defeat. The three new creatures use regular harvesting. Existing boss mappings are provisionally regular until their specific requirements/recipes are defined.
+- Camp Forge has the exact nine reward faces and Memory of Loss from the PDF at their listed costs. Exact effects/names reveal on first craft, which grants copy one. Additional face copies cost the same, with no owned maximum or mutual exclusivity. Memory is a one-time permanent unlock. There is no dismantling/refund.
+- Refit crafted faces among heroes while retaining two Blanks per die, body/category limits, the two selected bonus designs, and actual shared copy counts. Unequipped faces remain owned. Saved build presets check owned copies and party-wide allocation.
+- Souls bind to recipients, can be swapped only among that hero’s owned Souls, and never trade. Tutorial Hollow awards its Soul to all three heroes. The Fragment event now binds its unlock to the chosen hero; older unlocks migrate without losing entitlements. The manual Blank-movement sandbox override remains clearly separate.
+- Event 4 introduces two Bone Creatures; event 5 introduces a Support Creature and two Movement Creatures. Stats, per-creature public dice and group compositions are explicitly provisional. Enemy cards show their current results and harvesting state. Three original pixel placeholders were added.
+- Bone results retain spent rolls in their count. Shared Remedy requires actual self-healing before its ally heal. Sorrow’s Offering pays HP for an ally buff. Shared Burden uses a documented immediate single-action ally interrupt and returns to the owner without extra activation/turn-start effects. Memory of Loss applies its Healing exceptions and once-per-combat self-heal bonus. Retreat checks every enemy; Momentum checks movement; Evasive Counter steps only after a fully resolved Attack removes no HP.
+
+The four bosses, initial 48-design bonus pool, original 60 face IDs, Blank progression, Summon/Command Nu’gh, stacking Poison, reroll timing choices, soundtrack and earlier systems remain. New earned face IDs are 60–68. Existing Gold, Salves, Seals and Fragments remain event rewards, but cannot substitute for Essence in crafting. Windows downloads are unchanged.
+
+Cleansing, Reforging, Restoration, Transmutation, Empowerment, Hunt scheduling and unique-boss Essence opportunities remain future content because their effects, unlocks or scheduling were not finalized in the PDF. No separate spendable Bone currency or invented universal pricing schedule was added. Enemy AI, Shared Burden timing and duplicate/Bone scaling are playtest implementations, not proof of balance.
+
+Current HTML, Markdown, PDF, in-game patch notes, source design reference, tests and reproducible local browser fixtures are included. Validation details are recorded separately.
+
+
+---
+
 # Ash & Oath v0.26 — combat clarity
 
 - **Poison stacks:** 1 + 1 = 2. At activation it deals damage equal to current Poison, bypassing Block, then decreases by one. For example, Poison 2 deals 2 damage, then the next activation Poison 1 deals 1. Downing/death still clears it. A Continue window shows actual HP damage, old/new HP and remaining Poison, including bosses and summons.

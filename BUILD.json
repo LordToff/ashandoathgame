@@ -1,51 +1,63 @@
 {
-  "version": "0.26",
-  "source_commit": "43f8985e7c1234d95100e5daba6d20db5afb5340",
+  "version": "0.27",
+  "source_commit": "b2040539a51ee48286b7fd3c1805f227302b5aba",
   "engine": "4.6.3.stable",
   "files": {
-    "AshAndOath-Current-Rules-v0.26.pdf": {
-      "sha256": "69dbc1720eab4fed69695e8326ad598386e0853fa2cd74437f241d25f6254d24",
-      "bytes": 113375
+    "AshAndOath-Current-Rules-v0.27.pdf": {
+      "sha256": "80a1bc573eb9b16a69d31f548522e120f79e46a4659efb31c49eb9e09c0a5be9",
+      "bytes": 125922
     },
     "CHANGELOG.txt": {
-      "sha256": "37cfebf2bafd5ba8d0d696c7617ffa0c443ee53db424501c582324c962ef3c93",
-      "bytes": 29242
+      "sha256": "8da7694ea245ae58187eaa32680d5f581eb891b8a9c7721f27654ef7f74e7e3c",
+      "bytes": 32822
     },
-    "CHANGES_v0.26.md": {
-      "sha256": "5bcd809d66afccfee15684bc65a8b034af89de9ebcb6d5653d9f04be2264398b",
-      "bytes": 3148
+    "CHANGES_v0.27.md": {
+      "sha256": "5dc161e3c705a1645b18bd53852a6158ed699ba85ee99bd13db225669b574536",
+      "bytes": 3573
     },
-    "Changes-v0.26.md": {
-      "sha256": "5bcd809d66afccfee15684bc65a8b034af89de9ebcb6d5653d9f04be2264398b",
-      "bytes": 3148
+    "Changes-v0.27.md": {
+      "sha256": "5dc161e3c705a1645b18bd53852a6158ed699ba85ee99bd13db225669b574536",
+      "bytes": 3573
     },
-    "Current-Rules-v0.26.md": {
-      "sha256": "52bbc9ef36a728c527d45f7df6e496ed4a5a817dd10238e4fdf987963c82d931",
-      "bytes": 59426
+    "Current-Rules-v0.27.md": {
+      "sha256": "b81c58ab6ff2ac8a44ccc0ca9c8de690fe311018edbc3e17a93560305a96e51a",
+      "bytes": 71190
+    },
+    "Essence-Implementation-v0.27.md": {
+      "sha256": "2cd51f56dd63a73ce791c75abc8120edd3289708941422c2dcb905a1ad5e31b1",
+      "bytes": 9695
     },
     "README.md": {
-      "sha256": "771e092c0b48ceebd9ba7e489efa8829f489fd2fd35e8137bb2fd7840c60eb68",
-      "bytes": 692
+      "sha256": "250ce4ab7303ece36462f89f623e86bd96d3dc0a0e0e08d0d4bb8b5b53aa763b",
+      "bytes": 999
+    },
+    "RECOVERY.md": {
+      "sha256": "b994477062c4eb4292ad210f53b09b74f49a534dcb7a11a87662d95c7e8e5c49",
+      "bytes": 4983
     },
     "SOURCE_COMMIT.txt": {
-      "sha256": "c0b2b31c70ac0bf0f009d1244cf6eb4fc63d65221deaebfbedfa43b7679c312e",
+      "sha256": "7b3241a72151b104ee22d480f51349e97a20429a40d416d5141775a710fe2032",
       "bytes": 41
     },
     "VERSION.txt": {
-      "sha256": "c2fe71c1b5eb616de3acbff6ee525b11366177694a55962aca262d46eb420ffb",
+      "sha256": "9d17b2f69ec988a83704642a012f7c6bf40ffceee90edb19c136cadcb41ba1ba",
       "bytes": 64
     },
-    "Validation-v0.26.json": {
-      "sha256": "a2e3b88dc4434ed4ac3d88940926c3e8fe5ac083b7c11ba374c6600bda9599b3",
-      "bytes": 2729
+    "Validation-v0.27.json": {
+      "sha256": "ea4025393c2a74ff4db4011fc52ee16e2ae6811d7f20ac1757d304bdc3820d7d",
+      "bytes": 4328
     },
-    "Validation-v0.26.md": {
-      "sha256": "bb11119932a2211f9abd0c24e9dda7e1a4c2bdf9e24affe2085ae2d492de1a47",
-      "bytes": 2519
+    "Validation-v0.27.md": {
+      "sha256": "c8b6df95b5028971ac4836c75b5172f7159f6e2aaa50077b14c0f3577e22756a",
+      "bytes": 3340
     },
     "current-rules.html": {
-      "sha256": "605201fb8e676f80d3e2a409fac2b659d6e6693701ca587e676a1c2ee6d1b7ee",
-      "bytes": 69529
+      "sha256": "bae4ee6db07448036c2581d2a0d96cd26955a86c3c6b101024ef2c92c3e75e5d",
+      "bytes": 82651
+    },
+    "design/Essence-Harvesting-and-Prototype-Enemies-v1.pdf": {
+      "sha256": "8a05d143e77c508017bdce9e20524a8d2c0388dbeba27db22aae16494a82dcfd",
+      "bytes": 77999
     },
     "index.apple-touch-icon.png": {
       "sha256": "2c620336a4002a1876393a448ff9efc810322568ab9e8f6bdf20cb419da781f1",
@@ -60,7 +72,7 @@
       "bytes": 7298
     },
     "index.html": {
-      "sha256": "579a64e48560eb1b864db84ee4d9671d805de5b82a66458de79dd2fa91d40392",
+      "sha256": "4f7854319cf3b17b5589a68135cb0e3e4c25479aaa5720dff8d29b7fb05b2f0f",
       "bytes": 5476
     },
     "index.icon.png": {
@@ -72,16 +84,16 @@
       "bytes": 315759
     },
     "index.pck": {
-      "sha256": "5281a7a0b594069cc1873c1a50fd30162ca53614a7aaf20f96a0861cdb6768f1",
-      "bytes": 3503504
+      "sha256": "7d640fdc14c323f1046adc3f25b724442149349aa76a9decb7bae08eaead9426",
+      "bytes": 3555472
     },
     "index.png": {
       "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e",
       "bytes": 21443
     },
-    "index.v0.26.pck": {
-      "sha256": "5281a7a0b594069cc1873c1a50fd30162ca53614a7aaf20f96a0861cdb6768f1",
-      "bytes": 3503504
+    "index.v0.27.pck": {
+      "sha256": "7d640fdc14c323f1046adc3f25b724442149349aa76a9decb7bae08eaead9426",
+      "bytes": 3555472
     },
     "index.wasm": {
       "sha256": "26b61ce95247012ab3dca3ff51e96d1cdbff44ee91a8c20a83e150afca83f1b6",
