@@ -1,11 +1,11 @@
-# Ash & Oath v0.27
+# Ash & Oath v0.28
 
-[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.27)
+[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.28)
 
-Enemy-specific Essence harvesting, victory banking, Camp Forge, nine crafted reward faces, Memory of Loss, bound Souls and three prototype creatures are implemented from the supplied design. AI/compositions and Shared Burden timing are documented as provisional. Candidate services, Hunts and unique-boss opportunities remain undefined rather than invented. Existing bosses, dice building, music and previous features remain; Windows is unchanged.
+Main menu, spacious Camp/Forge workspaces, Body/Weapon/Soul/Memory equipment, Beginning Soul (one rolled Blank as Move 1 per own turn), Dagger Poke, direct creature encounters and smooth model-recorded dice animations. Distinct item sprites identify owned Souls and Memory. Existing Essence, bosses, event rewards and bound ownership remain. Creature AI/compositions and Dagger starter/use choices are provisional. Windows downloads are unchanged.
 
-[Changes](CHANGES_v0.27.md) · [Rules](current-rules.html) · [PDF](AshAndOath-Current-Rules-v0.27.pdf) · [Design implementation](Essence-Implementation-v0.27.md) · [Validation](Validation-v0.27.md)
+[Changes](CHANGES_v0.28.md) · [Rules](current-rules.html) · [PDF](AshAndOath-Current-Rules-v0.28.pdf) · [Validation](Validation-v0.28.md)
 
-28 scripts passed with 8,103 checks, including 114 focused Essence/Camp checks. Chromium verified the actual event/Camp UI and deterministic progression/ability scenarios without console or page errors.
+29 scripts passed with 8,159 checks, including 55 focused v0.28 and 115 Essence checks. Chromium verified navigation, equipment saving, direct fights, Poke, Beginning Soul and the saved Essence/progression scenarios without console or page errors. This is not a human balance trial.
 
-Source: b2040539a51ee48286b7fd3c1805f227302b5aba
+Source: ef8f75815b84da79b4a926f7b2d4272559df960b
