@@ -12,7 +12,7 @@ The dedicated repository retains source history and the previous Pages history. 
 
 A GitHub repository backs up committed source and published files. It cannot guarantee that a cloud runtime never fails. Commit and push completed work; ignored caches, running processes and uncommitted files are not repository backups.
 
-Current source for v0.29 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
+Current source for v0.30 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
 
 ## Recover in a new environment
 
@@ -65,3 +65,7 @@ Run `prototype/tests/hub_v28_test.gd`, the current Essence/usability suites and 
 ## v0.29 Wilds checks
 
 New content data is in prototype/wilds.gd, creature tactics in event_battle.gd and bound Soul recipes in essence.gd. Run wilds_v29_test.gd and tools/verify_wilds_browser.py alongside the prior suites. Bind recipes to a chosen hero; never collapse bound ownership into a party unlock. New Souls use the existing per-hero Blank allowance and occupy the existing Soul slot. Creature/source/gallery pagination retains the old IDs and first page.
+
+## v0.30 sprite pipeline
+
+Run python tools/make_retro_sprites.py to reproduce the current 16-pixel tiles from the included human-authored Kenney CC0 source sheet and explicit palette variants. Do not restore the retired detailed generated pictures. Atlas dimensions are documented in ART_NOTES.md. Gameplay rules and saves remain v0.29. Verify actual browser artwork and the hub/Wilds UI suites after editing these assets.
