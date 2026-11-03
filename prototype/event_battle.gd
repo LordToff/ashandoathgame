@@ -69,7 +69,7 @@ func continue_monsters():
    if action == "Needle":candidates = candidates.filter(func(t):return sight(id,t,reach))
    var victim := nearest_attacked(id,candidates)
    if victim < 0:note(unit_name(id)+" has no legal target for "+action+"; holds.");continue
-   var weak: int = boss_weakness() if id == 3 and boss.weak else int(unit_data(id).get("weak",0)) if id >= 4 else 0
+   var weak: int = int(unit_data(id).get("weak",0)) if id >= 4 else 0
    pending = {"kind":"attack","action":action,"victims":[victim],"reacted":[],"amount":maxi(0,(2 if action == "Bash" else 1)-weak),"source":id,"range":reach,"needs_sight":action == "Needle","area":false}
    continue_attack()
   else:note(unit_name(id)+" holds.")

@@ -2,7 +2,7 @@
   "version": "0.29",
   "engine": "4.6.3.stable",
   "total_scripts": 30,
-  "total_checks": 8223,
+  "total_checks": 8225,
   "all_scripts_passed": true,
   "scripts": [
     {
@@ -181,7 +181,7 @@
     },
     {
       "script": "wilds_v29_test.gd",
-      "checks": 64,
+      "checks": 66,
       "passed": true,
       "exit_code": 0
     }
@@ -240,5 +240,6 @@
     "No human balance trial or Windows rebuild.",
     "Inherited native UI ObjectDB/resource warnings remain on some shutdowns; no script errors in passing tests or browser console/page errors.",
     "New enemy values, compositions and Soul costs/effects are provisional."
-  ]
+  ],
+  "build_revision": 2
 }

@@ -75,6 +75,10 @@ func run():
  check(g.heroes[0].hp == 6,"occupied line blocks Needle")
  g = monster("iron_husk");action(g,"Iron Guard");check(g.boss.block == 2,"Husk Iron Guard grants two")
  g = monster("iron_husk");action(g,"Bash");check(g.heroes[0].hp == 4,"Husk Bash deals two adjacent damage")
+ g = monster("iron_husk");g.boss.weak = true;g.boss.weak_amount = 1;action(g,"Bash")
+ check(g.heroes[0].hp == 5,"lead Husk Weakness is subtracted exactly once")
+ g = monster("mire_leech");g.boss.weak = true;g.boss.weak_amount = 1;action(g,"Venom Bite")
+ check(g.heroes[0].hp == 6 and g.heroes[0].get("poison",0) == 0,"weakened lead Leech deals zero and cannot Poison")
  check(g.creature_move("iron_husk") == 1 and g.creature_move("mire_leech") == 2,"distinct movement budgets")
  var app = load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
  app.expedition.camp = E.new()
