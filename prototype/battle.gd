@@ -614,9 +614,10 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
  if f >= 9: return catalog_action(d,target,destination)
  match f:
   0:
+   if soul_mode(active) in ["heal","block"] and reward and balance.get("soul.eligible."+str(active),true):return resolve_soul(d)
    if destination.x != -99 and not reward:return false
    if reward and destination.x != -99:
-    if soul_remaining(active) <= 0 or not reachable(active,soul_distance(active),false).has(destination): return false
+    if soul_remaining(active) <= 0 or not soul_cells(active).has(destination): return false
     h.pos = destination; h.soul_moves_used = int(h.get("soul_moves_used",0))+1; h.soul_move_used = h.soul_moves_used >= soul_limit(active)
     record_event("soul","%s uses their equipped Soul: spends one rolled Blank as Move %d. Soul conversion %d/%d used this hero turn; installed face remains Blank." % [unit_name(active),soul_distance(active),h.soul_moves_used,soul_limit(active)],active,active)
   1:
@@ -824,8 +825,9 @@ func continue_attack() -> void:
      pending.kind = "reaction"; pending.hero = actor; pending.die = die; pending.victim = victim
      return
  var victims: Array = pending.victims.duplicate()
- if not area and (unit_data(victims[0]).hp <= 0 or distance(source,victims[0]) > reach):
+ if not area and (unit_data(victims[0]).hp <= 0 or distance(source,victims[0]) > reach or (pending.get("needs_sight",false) and not sight(source,victims[0],reach))):
   var ts := attack_targets(source,reach)
+  if pending.get("needs_sight",false):ts = ts.filter(func(id):return sight(source,id,reach))
   if ts.is_empty():
    note(action + " has no legal adjacent target after Reactions; " + ("worm holds; bite ends." if source >= 4 else ("completed movement is kept, attack ends." if action == "Skirmish" else "attack is replaced by fallback.")))
    pending = {}
@@ -1525,6 +1527,7 @@ func boss_weakness() -> int:return int(boss.get("weak_amount",v("face51.weakness
 func hero_weakness(h: Dictionary) -> int:
  return maxi(int(h.get("weak_amount",v("boss.distort.weakness"))) if h.weak else 0,v("face47.weakness") if h.bulwark_weak else 0)
 func soul_remaining(id: int) -> int:
+ if soul_mode(id) != "move" and not burden_interrupt.is_empty():return 0
  if not balance.get("soul.eligible."+str(id),true):return 0
  var h: Dictionary = heroes[id]
  var used: int = int(h.get("soul_moves_used",0))
@@ -2050,3 +2053,28 @@ func soul_distance(id: int) -> int:
  return int(balance.get("soul.distance."+str(id),v("soul.move")))
 func soul_limit(id: int) -> int:
  return int(balance.get("soul.allowance."+str(id),v("soul.uses")))
+
+func soul_mode(id: int) -> String:
+ return str(balance.get("soul.mode."+str(id),"move"))
+func soul_label(id: int) -> String:
+ return {"heal":"Blank → Heal 1","block":"Blank → 2 Block","blink":"Blank → Blink 2"}.get(soul_mode(id),"Blank → Move %d" % soul_distance(id))
+func soul_cells(id: int) -> Array:
+ if soul_mode(id) in ["heal","block"] or soul_remaining(id) <= 0 or heroes[id].get("rooted",0) > 0:return []
+ if soul_mode(id) != "blink":return reachable(id,soul_distance(id),false)
+ var result: Array = []
+ for x in range(9):
+  for y in range(9):
+   var cell := Vector2i(x,y);var gap: int = absi(cell.x-heroes[id].pos.x)+absi(cell.y-heroes[id].pos.y)
+   if gap > 0 and gap <= soul_distance(id) and legal(id,cell):result.append(cell)
+ return result
+func resolve_soul(die: int) -> bool:
+ if soul_remaining(active) <= 0 or not burden_interrupt.is_empty():return false
+ var h: Dictionary = heroes[active];var mode := soul_mode(active)
+ if mode == "heal":
+  if h.hp >= h.max_hp:return false
+  heal(active,1)
+ elif mode == "block":h.block += modified_value(die,2)
+ else:return false
+ h.soul_moves_used = int(h.get("soul_moves_used",0))+1;h.soul_move_used = h.soul_moves_used >= soul_limit(active)
+ record_event("soul",unit_name(active)+" spends a rolled Blank through their equipped Soul: "+("heal self 1" if mode == "heal" else "+2 Block")+". Once-per-own-turn allowance consumed; installed side remains Blank.",active,active)
+ spend(die);return true

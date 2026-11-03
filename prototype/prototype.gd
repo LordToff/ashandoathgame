@@ -30,9 +30,13 @@ var forge_side := 0
 var queued_creature := -1
 var creature_fight := false
 var choosing_poke := false
+const Wilds = preload("res://prototype/wilds.gd")
+var creature_page := 0
+var essence_page := 0
+var soul_gallery_page := 0
 const CampUI = preload("res://prototype/camp_ui.gd")
 const Essence = preload("res://prototype/essence.gd")
-const CREATURE_SPRITES = {"bone_creature":preload("res://prototype/assets/bone_creature.png"),"support_creature":preload("res://prototype/assets/support_creature.png"),"movement_creature":preload("res://prototype/assets/movement_creature.png")}
+const CREATURE_SPRITES = {"mire_leech":preload("res://prototype/assets/mire_leech.tres"),"glasswing_moth":preload("res://prototype/assets/glasswing_moth.tres"),"iron_husk":preload("res://prototype/assets/iron_husk.tres"),"bone_creature":preload("res://prototype/assets/bone_creature.png"),"support_creature":preload("res://prototype/assets/support_creature.png"),"movement_creature":preload("res://prototype/assets/movement_creature.png")}
 var camp_type := "bone_creature"
 var camp_recipe := "bone_growth"
 var camp_hero := 0
@@ -244,6 +248,7 @@ func _process(delta: float) -> void:
  queue_redraw()
 
 func movement_track(id: int, origin: Vector2, destination: Vector2) -> Dictionary:
+ if id in [0,1,2] and game.soul_mode(id) == "blink" and game.action_label == "Blank":return {"from":origin,"to":destination,"elapsed":0.0,"path":[origin,destination],"duration":0.22}
  var start := Vector2i(origin.round());var goal := Vector2i(destination)
  var queue: Array = [[start,[]]];var visited := {start:true};var route: Array = []
  while not queue.is_empty():
@@ -314,7 +319,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.28",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.29",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -418,8 +423,8 @@ func battle_ui() -> void:
    var f: int = game.face(game.active,d)
    var state: String = "CHANNEL HELD" if not h.channel.is_empty() and h.channel.die == d else ("REACTION HELD" if d in h.reaction else ("SPENT" if h.used[d] else ("RESOLVE NEXT" if game.forced_die == d else "READY")))
    var available_soul: bool = f == 0 and game.reward and game.soul_remaining(game.active) > 0
-   var name_text: String = "Blank → Move %d" % game.soul_distance(game.active) if available_soul else game.action_name(game.active,f)
-   var kind: String = "(Movement)" if available_soul else ("("+Catalog.classification(f)+")" if f != 0 else "")
+   var name_text: String = game.soul_label(game.active) if available_soul else game.action_name(game.active,f)
+   var kind: String = ("(Soul · once per own turn)" if game.soul_mode(game.active) in ["heal","block"] else "(Movement)") if available_soul else ("("+Catalog.classification(f)+")" if f != 0 else "")
    if selected >= 0 and game.face(game.active,selected) == 6 and d != selected and game.focus_reason(selected,d) == "":state = "FOCUS TARGET"
    if game.reroll_face_reason(f) != "":kind += " · NO REROLL"
    var text: String = "DIE "+["I","II","III"][d]+" · "+("RESOLVE NEXT" if game.forced_die == d else ("SELECTED" if selected == d and not h.used[d] else state))+"\n"+name_text+"\n"+kind
@@ -453,10 +458,10 @@ func battle_ui() -> void:
   instruction_label.max_lines_visible = 2;instruction_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;instruction_label.tooltip_text = instruction
   if selected >= 0 and not h.used[selected]:
    var f: int = game.face(game.active,selected)
-   if (f == 59 and game.owned_worm(game.active) >= 0) or f in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65] or (f == 0 and (not game.reward or game.soul_remaining(game.active) <= 0)):
+   if (f == 59 and game.owned_worm(game.active) >= 0) or f in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65] or (f == 0 and (not game.reward or game.soul_remaining(game.active) <= 0 or game.soul_mode(game.active) in ["heal","block"])):
     button("Resolve selected face",Vector2(760,556),Vector2(211,44),func():
      if game.hero_action(selected):selected = -1;roll_feedback = {}
-     rebuild())
+     rebuild(),GOLD,f == 0 and game.soul_mode(game.active) == "heal" and h.hp >= h.max_hp)
    button("Decline",Vector2(981,556),Vector2(107,44),func():game.decline(selected);selected = -1;roll_feedback = {};rebuild(),MUTED)
   combat_reroll_ui()
 
@@ -498,15 +503,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.28 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.29 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.28 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.28 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.29 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.29 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.28 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.29 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.28 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.29 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -538,6 +543,11 @@ func face_help(f: int) -> String:
   var scoped: Dictionary = game.balance if page == "battle" else camp_battle_profile()
   var enabled: bool = (game.reward if page == "battle" else true) and scoped.get("soul.eligible."+str(actor),true)
   if not enabled:return "Blank: no movement for this hero. Equip a Soul at Camp or enable the sandbox override. You may still spend this result without effect."
+  var mode: String = str(scoped.get("soul.mode."+str(actor),"move"))
+  if mode != "move":
+   var soul_text: String = Wilds.SOULS.values().filter(func(definition):return definition.mode == mode)[0].effect
+   if page == "battle":soul_text += "\n\n%d use(s) left this own turn." % game.soul_remaining(actor)
+   return soul_text
   var count: int = game.soul_limit(actor) if page == "battle" else int(scoped["soul.allowance."+str(actor)])
   var distance: int = game.soul_distance(actor) if page == "battle" else int(scoped["soul.distance."+str(actor)])
   var text := "Blank: spend %d rolled Blank(s) per own turn as Move %d. The installed side stays Blank. Invalid destinations do not spend the result or allowance. Rerolls do not refill it." % [count,distance]
@@ -739,7 +749,8 @@ func draw_board() -> void:
  var highlights: Array = []
  if selected >= 0 and game.active < 3 and game.pending.is_empty():
   var f: int = game.face(game.active,selected)
-  if f in [2,3,54,60,66] or (f == 0 and game.reward and not game.soul_remaining(game.active) <= 0): highlights = game.reachable(game.active,game.move_steps(f),f == 3)
+  if f in [2,3,54,60,66]:highlights = game.reachable(game.active,game.move_steps(f),f == 3)
+  if f == 0 and game.reward:highlights = game.soul_cells(game.active)
   if f == 53: highlights = game.leap_cells(game.active)
   if f == 59 and game.owned_worm(game.active) < 0:highlights = game.summon_cells(game.active)
   if f == 57: highlights = game.reachable(game.active,game.move_steps(f),false)
@@ -1249,13 +1260,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.28 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.29 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.28",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.29",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1364,7 +1375,7 @@ func explain_invalid(f: int, target: int, cell: Vector2i) -> String:
  if game.heroes[actor].used[selected]:return "This die is spent. Select another ready die; all available dice roll again next round."
  if f == 59:return "Summon Nu’gh needs an adjacent empty tile. While your worm lives, use Resolve to Command it."
  if f == 0 and not game.reward:return "Soul is OFF. Enable Blank movement above your dice or in Game options."
- if f == 0 and game.soul_distance(game.active) <= 0:return "Blank movement is set to 0 in the balance workshop."
+ if f == 0 and game.soul_mode(game.active) not in ["heal","block"] and game.soul_distance(game.active) <= 0:return "Blank movement is set to 0 in the balance workshop."
  if f == 0 and game.reward and game.soul_remaining(actor) <= 0:return "Blank movement used for this turn. It refreshes at this hero’s next own turn."
  if f in [2,3,53,54,57,0]: return "No legal path to that cell. Occupied cells block normal movement; Stride must stay straight."
  if target < 0:return "Choose a unit, not an empty cell, for this face."
@@ -1453,8 +1464,9 @@ func set_soul_enabled(enabled: bool, live: bool = true) -> void:
    else:
     var soul: String = expedition.camp.equipped_souls[hero]
     game.balance["soul.eligible."+str(hero)] = enabled or soul != ""
-    game.balance["soul.distance."+str(hero)] = balance_number("soul.move") if enabled or soul != "beginning" else 1
-    game.balance["soul.allowance."+str(hero)] = balance_number("soul.uses") if enabled or soul != "beginning" else 1
+    game.balance["soul.mode."+str(hero)] = "move" if enabled else Wilds.SOULS.get(soul,{}).get("mode","move")
+    game.balance["soul.distance."+str(hero)] = balance_number("soul.move") if enabled else int(Wilds.SOULS[soul].distance) if Wilds.SOULS.has(soul) else (1 if soul == "beginning" else balance_number("soul.move"))
+    game.balance["soul.allowance."+str(hero)] = balance_number("soul.uses") if enabled or soul in ["hollow","ashroad",""] else 1
   game.record_event("info","Blank → Move %d " % game.soul_distance(game.active) + ("enabled: %d conversions per hero turn." % game.v("soul.uses") if enabled else "sandbox disabled; equipped Soul effects remain."))
  hint = "Blank → Move %d is " % balance_number("soul.move") + ("ON. Select a rolled Blank, then a highlighted cell. %d conversions per hero turn." % balance_number("soul.uses") if enabled else "OFF. Rolled Blanks cannot be spent for movement.")
  rebuild()
@@ -1497,7 +1509,10 @@ func portrait_at(id: int, at: Vector2, dimensions: Vector2) -> void:
 
 func draw_unit_sprite(id: int, rect: Rect2) -> void:
  if id == 3 and game.encounter_id == "event":
-  draw_texture_rect_region(CREATURE_SPRITES.get(game.essence_type(id),MITE_SPRITE),rect,Rect2(0,0,16,16));return
+  var creature: Texture2D = CREATURE_SPRITES.get(game.essence_type(id),MITE_SPRITE)
+  if creature is AtlasTexture:draw_texture_rect(creature,rect,false)
+  else:draw_texture_rect_region(creature,rect,Rect2(0,0,16,16))
+  return
  if id == 3 and page == "battle" and game.encounter_id == "cantor":
   draw_texture_rect(CANTOR_PHASE if game.phase_two else CANTOR_SPRITE,rect,false)
   var center := rect.get_center()
@@ -1674,7 +1689,7 @@ func selected_die_help(die: int) -> String:
   if h.get("rooted",0) > 0:return "ROOTED: no voluntary movement until the boss’s next turn. Your Blank allowance is not consumed."
   if not game.reward or not game.balance.get("soul.eligible."+str(game.active),true):return "Blank movement is OFF for this hero. Turn Soul ON above the dice to enable it."
   if game.soul_remaining(game.active) <= 0:return "No eligible equipped Soul / Blank movement used this turn. It refreshes at this hero’s next own turn."
-  return "Blank → Move %d. Click a highlighted empty cell. %d/%d uses remain this own turn." % [game.v("soul.move"),game.soul_remaining(game.active),game.soul_limit(game.active)]
+  return face_help(0)
  return short_face_help(face)
 
 func draw_hero_debuffs(id: int, center: Vector2) -> void:
@@ -1873,7 +1888,8 @@ func draw_worm(id: int) -> void:
  var frame := int(t*4+id)%2
  draw_circle(center+Vector2(0,18),18,Color(0.02,0.02,0.04,0.5))
  var sprite = FRIENDLY_SPRITE if game.friendly(id) else (CREATURE_SPRITES.get(game.essence_type(id),MITE_SPRITE) if game.encounter_id == "event" else COCOON_SPRITE if worm.get("kind","") == "cocoon" else (MITE_SPRITE if worm.get("kind","") == "mite" else WORM_SPRITE))
- draw_texture_rect_region(sprite,Rect2(center-Vector2(24,24),Vector2(48,48)),Rect2(frame*16,0,16,16))
+ if sprite is AtlasTexture:draw_texture_rect(sprite,Rect2(center-Vector2(28,28)+Vector2(0,sin(t*2+id)*2),Vector2(56,56)),false)
+ else:draw_texture_rect_region(sprite,Rect2(center-Vector2(24,24),Vector2(48,48)),Rect2(frame*16,0,16,16))
  draw_hp_dots(center+Vector2(-8 if worm.block > 0 else 0,29),worm.hp,worm.max_hp,Color("bed4ab"))
  if worm.block > 0:
   draw_rect(Rect2(center+Vector2(4,20),Vector2(26,16)),Color("243e50"))
@@ -1992,7 +2008,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.28",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.29",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2118,8 +2134,9 @@ func camp_battle_profile() -> Dictionary:
  for hero in range(3):
   var soul: String = expedition.camp.equipped_souls[hero]
   result["soul.eligible."+str(hero)] = reward_soul or soul != ""
-  result["soul.distance."+str(hero)] = balance_number("soul.move") if reward_soul or soul != "beginning" else 1
-  result["soul.allowance."+str(hero)] = balance_number("soul.uses") if reward_soul or soul != "beginning" else 1
+  result["soul.mode."+str(hero)] = "move" if reward_soul else Wilds.SOULS.get(soul,{}).get("mode","move")
+  result["soul.distance."+str(hero)] = balance_number("soul.move") if reward_soul else int(Wilds.SOULS[soul].distance) if Wilds.SOULS.has(soul) else (1 if soul == "beginning" else balance_number("soul.move"))
+  result["soul.allowance."+str(hero)] = balance_number("soul.uses") if reward_soul or soul in ["hollow","ashroad",""] else 1
  return result
 func camp_allocation_error(candidate: Array) -> String:
  var used := {}
@@ -2139,8 +2156,8 @@ func camp_place(face: int, hero: int, die: int, side: int) -> void:
  else:builds = next;camp_message = "Equipped %s on %s, Die %s side %d. Replaced faces remain owned." % [Catalog.name_for(face),["Vesper","Rook","Wren"][hero],["I","II","III"][die],side+1]
  rebuild()
 func craft_recipe(key: String) -> void:
- var error: String = expedition.camp.craft(key)
- camp_message = error if error != "" else "Crafted "+expedition.camp.reward_name(key)+". Exact effect revealed. Additional face copies cost the same amount."
+ var error: String = expedition.camp.craft(key,camp_hero)
+ camp_message = error if error != "" else ("Bound "+expedition.camp.reward_name(key)+" to "+["Vesper","Rook","Wren"][camp_hero]+". Equip it under Equipment → Soul. Souls cannot trade." if Essence.RECIPES[key].has("soul") else "Crafted "+expedition.camp.reward_name(key)+". Exact effect revealed. Additional face copies cost the same amount.")
  if error == "":camp_remove_mode = false;expedition.save()
  rebuild()
 func open_camp() -> void:
@@ -2296,12 +2313,12 @@ func go_main() -> void:
  rebuild()
 
 func start_creature_encounter(group: int) -> void:
- if group not in range(3):return
+ if group not in range(Wilds.GROUPS.size()):return
  if party_build_error() != "":
   queued_creature = group;hint = party_build_error();build_hero = 0;open_forge(true);return
  abandon_encounter();queued_creature = -1
  game = EventBattle.new();game.prototype_pack = true
- game.creature_types = [["bone_creature","bone_creature"],["support_creature","movement_creature","movement_creature"],["movement_creature","movement_creature"]][group]
+ game.creature_types = Wilds.GROUPS[group].types.duplicate()
  game.start(builds,0,reward_soul,balanced,camp_battle_profile());game.harvest_revealed = expedition.camp.defeated.duplicate()
  creature_fight = true;event_fight = false;lab = false;training = false;draft_modal = false;page = "battle"
  show_enemy_cards = false;show_menu = false;show_options = false;show_dice = false;show_help = false;show_changes = false

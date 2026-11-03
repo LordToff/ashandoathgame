@@ -1,5 +1,6 @@
 extends RefCounted
 ## PDF v1: fixed prototype reward effects/costs; combat values below are provisional.
+const Wilds = preload("res://prototype/wilds.gd")
 const FACE_FIRST = 60
 const FACE_COUNT = 69
 const FACES = [
@@ -14,6 +15,9 @@ const FACES = [
  ["Evasive Counter","Defense","Reaction when targeted: +1 Block before the Attack. If it removes no HP, optionally Move 1 after the entire Attack resolves."]
 ]
 const TYPES = {
+ "mire_leech":{"name":"Mire Leech","rank":"normal","condition":"regular","hp":4,"faces":[]},
+ "glasswing_moth":{"name":"Glasswing Moth","rank":"normal","condition":"regular","hp":3,"faces":[]},
+ "iron_husk":{"name":"Iron Husk","rank":"normal","condition":"regular","hp":5,"faces":[]},
  "bone_creature":{"name":"Bone Creature","rank":"normal","condition":"regular","hp":3,"faces":[60,61,62]},
  "support_creature":{"name":"Support Creature","rank":"normal","condition":"regular","hp":2,"faces":[63,64,65]},
  "movement_creature":{"name":"Movement Creature","rank":"normal","condition":"regular","hp":3,"faces":[66,67,68]},
@@ -26,6 +30,9 @@ const TYPES = {
  "cinder_mite":{"name":"Cinder Mite","rank":"normal","condition":"regular","faces":[]}
 }
 const RECIPES = {
+ "mire_soul":{"enemy":"mire_leech","category":"Soul · bound","cost":3,"soul":"mire","name":"Soul of the Mire","effect":Wilds.SOULS.mire.effect},
+ "glasswing_soul":{"enemy":"glasswing_moth","category":"Soul · bound","cost":3,"soul":"glasswing","name":"Glasswing Soul","effect":Wilds.SOULS.glasswing.effect},
+ "iron_soul":{"enemy":"iron_husk","category":"Soul · bound","cost":3,"soul":"iron","name":"Ironbound Soul","effect":Wilds.SOULS.iron.effect},
  "bone_growth":{"enemy":"bone_creature","category":"Skill Face · Bone","cost":1,"face":60},
  "bone_strike":{"enemy":"bone_creature","category":"Attack Face · Bone","cost":2,"face":61},
  "bone_guard":{"enemy":"bone_creature","category":"Defense Face · Bone","cost":3,"face":62},
@@ -67,14 +74,18 @@ func recipes_for(type: String) -> Array:
   if RECIPES[key].enemy == type:result.append(key)
  return result
 func owned(face: int) -> int:return maxi(0,int(copies.get(str(face),0)))
-func craft(key: String) -> String:
+func craft(key: String, recipient: int = -1) -> String:
  if not RECIPES.has(key):return "Unknown reward."
  var recipe: Dictionary = RECIPES[key]
  if not discovered(recipe.enemy):return "Defeat this enemy first to reveal its rewards."
- if not recipe.has("face") and unlocked.has(key):return "Already permanently unlocked; this reward cannot be bought twice."
+ if recipe.has("soul"):
+  if recipient not in range(3):return "Choose the hero who will own this bound Soul."
+  if recipe.soul in souls[recipient]:return "This hero already owns that Soul. Choose another recipient."
+ if not recipe.has("face") and not recipe.has("soul") and unlocked.has(key):return "Already permanently unlocked; this reward cannot be bought twice."
  if int(bank.get(recipe.enemy,0)) < recipe.cost:return "Need %d %s Essence. Types cannot be mixed." % [recipe.cost,type_name(recipe.enemy)]
  bank[recipe.enemy] = int(bank.get(recipe.enemy,0))-recipe.cost;unlocked[key] = true
  if recipe.has("face"):copies[str(recipe.face)] = owned(recipe.face)+1
+ if recipe.has("soul"):grant_soul(recipient,recipe.soul)
  return ""
 func reward_name(key: String) -> String:
  var recipe: Dictionary = RECIPES[key]

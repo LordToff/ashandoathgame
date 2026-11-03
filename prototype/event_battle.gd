@@ -55,16 +55,24 @@ func continue_monsters():
     var target: int = wounded[0];unit_data(target).hp += 1;record_event("heal",unit_name(id)+" mends "+unit_name(target)+" for 1 HP (provisional AI).",id,target,1)
    else:note(unit_name(id)+" has no wounded ally in range 2; Mend does nothing.")
    continue
-  if action == "Guard":unit_data(id).block += 1;note(unit_name(id)+" gains 1 Block.");continue
+  if action in ["Guard","Iron Guard"]:
+   var amount := 2 if action == "Iron Guard" else 1
+   unit_data(id).block += amount;record_event("block_gain",unit_name(id)+" gains %d Block." % amount,id,id,amount);continue
   var target := nearest_attacked(id,attack_targets(id,99))
   if target < 0:continue
   if action == "Scuttle":
-   if unit_data(id).get("rooted",0) <= 0:move_friendly_summon(id,3 if essence_type(id) == "movement_creature" else 2)
-   note(unit_name(id)+" scuttles up to %d cells." % (3 if essence_type(id) == "movement_creature" else 2))
-  elif action == "Bite" and distance(id,target) <= 1:
-   pending = {"kind":"attack","action":"Ordinary Bite","victims":[target],"reacted":[],"amount":maxi(0,1-int(unit_data(id).get("weak",0))) if id >= 4 else 1,"source":id,"range":1,"area":false}
+   if unit_data(id).get("rooted",0) <= 0:move_friendly_summon(id,creature_move(essence_type(id)))
+   note(unit_name(id)+" scuttles up to %d cells." % creature_move(essence_type(id)))
+  elif action in ["Bite","Venom Bite","Needle","Bash"]:
+   var reach := 3 if action == "Needle" else 1
+   var candidates: Array = attack_targets(id,reach)
+   if action == "Needle":candidates = candidates.filter(func(t):return sight(id,t,reach))
+   var victim := nearest_attacked(id,candidates)
+   if victim < 0:note(unit_name(id)+" has no legal target for "+action+"; holds.");continue
+   var weak: int = boss_weakness() if id == 3 and boss.weak else int(unit_data(id).get("weak",0)) if id >= 4 else 0
+   pending = {"kind":"attack","action":action,"victims":[victim],"reacted":[],"amount":maxi(0,(2 if action == "Bash" else 1)-weak),"source":id,"range":reach,"needs_sight":action == "Needle","area":false}
    continue_attack()
-  else:note(unit_name(id)+" has no target in Bite reach 1; holds.")
+  else:note(unit_name(id)+" holds.")
  report_changes()
 func react(use: bool, dir: Vector2i = Vector2i.ZERO) -> void:
  super.react(use,dir)
@@ -77,9 +85,17 @@ func activate() -> void:
 
 func summon_description(id: int) -> String:
  if friendly(id):return super.summon_description(id)
- return "Ordinary monster, not a summon. Shares the public enemy dice. 1-cell footprint; Bite 1, Scuttle 2, Guard 1. No Poison on bite, no phase. " + super.summon_description(id).replace("Enemy summon.","")
+ return "Ordinary creature, one cell. Its own public dice appear on Enemy cards. "+creature_help(essence_type(id))
 
+func creature_move(type: String) -> int:
+ return 1 if type == "iron_husk" else 3 if type == "movement_creature" else 2
+func on_enemy_bite(source: int, target: int, action: String) -> void:
+ super.on_enemy_bite(source,target,action)
+ if action == "Venom Bite":apply_poison(source,target,1)
 func creature_dice(type: String) -> Array:
+ if type == "mire_leech":return [["Scuttle","Scuttle","Venom Bite","Venom Bite","Guard","Venom Bite"],["Venom Bite","Guard","Scuttle","Venom Bite","Scuttle","Venom Bite"],["Guard","Venom Bite","Scuttle","Guard","Venom Bite","Scuttle"]]
+ if type == "glasswing_moth":return [["Needle","Needle","Scuttle","Guard","Needle","Scuttle"],["Scuttle","Needle","Guard","Needle","Scuttle","Needle"],["Needle","Guard","Scuttle","Needle","Guard","Scuttle"]]
+ if type == "iron_husk":return [["Scuttle","Scuttle","Bash","Iron Guard","Bash","Iron Guard"],["Iron Guard","Bash","Scuttle","Iron Guard","Bash","Scuttle"],["Bash","Iron Guard","Scuttle","Bash","Iron Guard","Scuttle"]]
  if type == "support_creature":return [["Mend","Mend","Guard","Scuttle","Bite","Mend"],["Mend","Guard","Bite","Scuttle","Mend","Guard"],["Bite","Mend","Scuttle","Guard","Mend","Guard"]]
  if type == "movement_creature":return [["Scuttle","Bite","Bite","Scuttle","Guard","Bite"],["Bite","Scuttle","Bite","Guard","Scuttle","Bite"],["Scuttle","Guard","Bite","Scuttle","Bite","Guard"]]
  return DICE
@@ -93,5 +109,10 @@ func shared_roll() -> void:
 func boss_display_action() -> String:
  return "Group die "+["I","II","III"][boss_index] if prototype_pack and boss_index < 3 else super.boss_display_action()
 func default_boss_help(action: String) -> String:
- if prototype_pack:return "Provisional creature AI. Resolve this numbered result for each living creature, in card order. Each card lists its own public result. Scuttle moves 2 (Movement Creature: 3); Bite deals 1 in reach 1; Guard grants 1 Block; Support Mend heals one living ally within 2 by 1. No boss phases."
+ if prototype_pack:return "Provisional creature AI. Resolve this numbered result for each living creature, in card order. Each card lists its own public result. Scuttle moves 2 (Movement Creature: 3); Bite deals 1 in reach 1; Guard grants 1 Block; Support Mend heals one living ally within 2 by 1. No boss phases. Leech Venom Bite adds Poison 1 only after HP loss; Moth Needle is range 3 with sight; Husk Scuttle 1 / Bash 2 / Iron Guard 2."
  return "Each living monster: "+{"Scuttle":"move up to 2 cells.","Bite":"1 normal damage in reach 1; no Poison.","Guard":"+1 Block until next enemy turn."}.get(action,"no action.")
+
+func creature_help(type: String) -> String:
+ return {"mire_leech":"4 HP. Venom Bite 1 at reach 1; actual HP loss adds Poison 1. Scuttle 2, Guard 1.","glasswing_moth":"3 HP. Needle 1 at range 3 with line of sight. Scuttle 2, Guard 1.","iron_husk":"5 HP. Bash 2 at reach 1. Scuttle 1, Iron Guard +2 Block. No passive armor."}.get(type,"Scuttle 2 (Movement: 3), Bite 1, Guard 1. Support can Mend 1 within 2.")
+func fallback() -> void:
+ note("No legal creature target after Reactions; hold position.")
