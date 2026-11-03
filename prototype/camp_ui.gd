@@ -18,7 +18,9 @@ static func art(app, texture: Texture2D, rect: Rect2) -> void:
  if not texture is AtlasTexture and texture in app.CREATURE_SPRITES.values():
   var frame := AtlasTexture.new();frame.atlas = texture;frame.region = Rect2(0,0,16,16);image.texture = frame
  else:image.texture = texture
- image.position = rect.position;image.size = rect.size
+ var native: Vector2 = image.texture.get_size()
+ var zoom: int = maxi(1,int(minf(rect.size.x/native.x,rect.size.y/native.y)))
+ image.size = native*zoom;image.position = (rect.position+(rect.size-image.size)/2).round()
  image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
  image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;image.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(image)
 
@@ -47,7 +49,7 @@ static func crafting(app) -> void:
   var index: int = i+app.essence_page*3
   var type: String = SPECIES[index];var y := 270+i*125
   app.button("",Vector2(64,y),Vector2(234,110),func():app.camp_type = type;app.camp_recipe = app.expedition.camp.recipes_for(type)[0];app.rebuild(),app.GOLD if type == app.camp_type else app.MUTED).name = "CampType"+str(index)
-  art(app,app.CREATURE_SPRITES[type],Rect2(76,y+22,60,60))
+  art(app,app.CREATURE_SPRITES[type],Rect2(76,y+22,64,64))
   app.label_at(E.type_name(type).replace(" Creature","").replace(" Moth",""),Vector2(148,y+20),19,app.GOLD if type == app.camp_type else Color("d9e0df"),142,true).mouse_filter = Control.MOUSE_FILTER_IGNORE
   app.label_at("%d Essence" % int(app.expedition.camp.bank.get(type,0)),Vector2(148,y+55),16,app.MUTED,142).mouse_filter = Control.MOUSE_FILTER_IGNORE
  app.button("←" if app.essence_page else "1 / 2",Vector2(68,656),Vector2(102,34),func():app.essence_page = 0;app.camp_type = SPECIES[0];app.camp_recipe = app.expedition.camp.recipes_for(app.camp_type)[0];app.rebuild(),app.MUTED).name = "EssencePreviousPage"
@@ -166,9 +168,9 @@ static func inheritance(app) -> void:
   var texture: Texture2D
   if NEW_SOUL_ART.has(key):texture = NEW_SOUL_ART[key]
   else:
-   var region := AtlasTexture.new();region.atlas = ITEM_ART;region.region = Rect2(index*543,0,543,724);texture = region
-  var image := TextureRect.new();image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;image.name = "EquipmentSprite_"+key;image.texture = texture;image.position = Vector2(764+index*148,352);image.size = Vector2(132,134)
-  image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED;image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+   var region := AtlasTexture.new();region.atlas = ITEM_ART;region.region = Rect2(index*16,0,16,16);texture = region
+  var image := Control.new();image.name = "EquipmentSprite_"+key;image.position = Vector2(764+index*148,352);image.size = Vector2(132,134);image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+  var pixels := TextureRect.new();pixels.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;pixels.texture = texture;pixels.position = Vector2(2,3);pixels.size = Vector2(128,128);pixels.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;pixels.mouse_filter = Control.MOUSE_FILTER_IGNORE;image.add_child(pixels)
   image.modulate = Color.WHITE if owned else Color(0.22,0.26,0.3,0.7);app.ui.add_child(image)
   app.label_at((["Beginning","Hollow","Ash Road","Memory"][index] if app.soul_gallery_page == 0 else ["Mire","Glasswing","Ironbound"][index]) if owned else "Undiscovered",Vector2(764+index*148,492),14,app.GOLD if owned else app.MUTED,136)
  if not app.expedition.camp.unlocked.has("memory_loss"):descriptions.memory = "Shared Memory\n\nThis reward design is still undiscovered. Craft the Memory using Support Creature Essence in the Essence Forge. Its exact name and effect reveal on first craft. One physical copy can then be equipped or transferred among the party."
