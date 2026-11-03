@@ -52,7 +52,7 @@ static func crafting(app) -> void:
   app.label_at("%d Essence" % int(app.expedition.camp.bank.get(type,0)),Vector2(148,y+55),16,app.MUTED,142).mouse_filter = Control.MOUSE_FILTER_IGNORE
  app.button("←" if app.essence_page else "1 / 2",Vector2(68,656),Vector2(102,34),func():app.essence_page = 0;app.camp_type = SPECIES[0];app.camp_recipe = app.expedition.camp.recipes_for(app.camp_type)[0];app.rebuild(),app.MUTED).name = "EssencePreviousPage"
  app.button("More →" if app.essence_page == 0 else "2 / 2",Vector2(182,656),Vector2(112,34),func():app.essence_page = 1;app.camp_type = SPECIES[3];app.camp_recipe = app.expedition.camp.recipes_for(app.camp_type)[0];app.rebuild(),app.GOLD).name = "EssenceNextPage"
- detail(app,"Win to bank individual enemy Essence safely.",Rect2(68,706,226,32),13)
+ detail(app,"Victory banks earned Essence.",Rect2(68,706,226,32),13)
  app.setup_panel(Rect2(334,210,420,534))
  app.label_at("REWARD DESIGNS",Vector2(356,230),13,app.GOLD,372)
  var recipes: Array = app.expedition.camp.recipes_for(app.camp_type)

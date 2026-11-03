@@ -614,7 +614,9 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
  if f >= 9: return catalog_action(d,target,destination)
  match f:
   0:
-   if soul_mode(active) in ["heal","block"] and reward and balance.get("soul.eligible."+str(active),true):return resolve_soul(d)
+   if soul_mode(active) in ["heal","block"] and reward and balance.get("soul.eligible."+str(active),true):
+    if destination.x != -99:return false
+    if soul_remaining(active) > 0:return resolve_soul(d)
    if destination.x != -99 and not reward:return false
    if reward and destination.x != -99:
     if soul_remaining(active) <= 0 or not soul_cells(active).has(destination): return false
@@ -2069,12 +2071,12 @@ func soul_cells(id: int) -> Array:
  return result
 func resolve_soul(die: int) -> bool:
  if soul_remaining(active) <= 0 or not burden_interrupt.is_empty():return false
- var h: Dictionary = heroes[active];var mode := soul_mode(active)
+ var h: Dictionary = heroes[active];var mode := soul_mode(active);var actual := 0
  if mode == "heal":
   if h.hp >= h.max_hp:return false
-  heal(active,1)
- elif mode == "block":h.block += modified_value(die,2)
+  var before: int = h.hp;heal(active,1);actual = h.hp-before
+ elif mode == "block":actual = modified_value(die,2);h.block += actual
  else:return false
  h.soul_moves_used = int(h.get("soul_moves_used",0))+1;h.soul_move_used = h.soul_moves_used >= soul_limit(active)
- record_event("soul",unit_name(active)+" spends a rolled Blank through their equipped Soul: "+("heal self 1" if mode == "heal" else "+2 Block")+". Once-per-own-turn allowance consumed; installed side remains Blank.",active,active)
+ record_event("soul",unit_name(active)+" spends a rolled Blank through their equipped Soul: "+("heal self %d" % actual if mode == "heal" else "+%d Block" % actual)+". Once-per-own-turn allowance consumed; installed side remains Blank.",active,active,actual)
  spend(die);return true

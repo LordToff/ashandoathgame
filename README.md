@@ -1,11 +1,13 @@
-# Ash & Oath v0.28 — playable prototype
+# Ash & Oath v0.29 — playable prototype
 
 **Canonical source:** [LordToff/ashandoathgame](https://github.com/LordToff/ashandoathgame), branch `main`.
 **Recovery and publishing:** [docs/RECOVERY.md](docs/RECOVERY.md). The browser package is on `gh-pages`.
 
-[**Play Ash & Oath v0.28 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.28)
+[**Play Ash & Oath v0.29 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.29)
 
-v0.28 adds a main menu, spacious Camp/Forge tabs, equipment selectors, Beginning Soul (one Blank → Move 1 per turn), Dagger Poke, direct creature encounters and smooth recorded dice animations. See [release notes](docs/Changes-v0.28.md).
+v0.29 adds Mire Leeches, Glasswing Moths and Iron Husks, their individual Essence, three craftable bound Souls, original sprites and paged Camp lists. See [release notes](docs/Changes-v0.29.md).
+
+v0.28 added the main menu, equipment, Beginning Soul, Dagger and direct creature fights. See [notes](docs/Changes-v0.28.md).
 
 v0.27 added Essence harvesting, Camp crafting, nine reward faces, Memory of Loss and bound Souls. See [implementation](docs/Essence-Implementation-v0.27.md).
 
@@ -15,9 +17,9 @@ v0.25 adds the six-slot Ash Road event system, two ordinary monster encounters, 
 
 v0.24 replaces Bu’gh’s cocoon encounter with the Iron Warden: guard or evade his marked sweep to break Bulwark, then counterattack. Includes original pixel sprites, soundtrack and polished UI. See [release notes and validation](docs/Changes-v0.24.md). Difficulty remains provisional. The Windows download is an older release.
 
-[**Play in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.28) — no installation required.
+[**Play in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.29) — no installation required.
 
-[**Current rules: timing, abilities and bosses**](docs/current-rules.html) · [Download PDF](docs/AshAndOath-Current-Rules-v0.28.pdf). One consolidated v0.28 reference.
+[**Current rules: timing, abilities and bosses**](docs/current-rules.html) · [Download PDF](docs/AshAndOath-Current-Rules-v0.29.pdf). One consolidated v0.29 reference.
 
 [**Historical v0.16 playtest report**](https://lordtoff.github.io/Godot-Game-Template/playtest-report.html) · [Download the polished Excel workbook](downloads/Ash-and-Oath-Playtest-v0.16.xlsx). Includes plain-language team descriptions, each hero’s abilities, dice layouts, win rates and the test method.
 

@@ -20,5 +20,10 @@ func _initialize():
  for entry in n.phase_upgrades():result.nugh.append({"name":entry[0],"description":n.default_boss_help(entry[0]),"upgrade":entry[1]})
  for entry in c.phase_upgrades():result.cantor.append({"name":entry[0],"description":c.default_boss_help(entry[0]),"upgrade":entry[1]})
  for entry in bug.phase_upgrades():result.bugh.append({"name":entry[0],"description":bug.default_boss_help(entry[0]),"upgrade":entry[1]})
+ var wilds = preload("res://prototype/wilds.gd")
+ var creatures = preload("res://prototype/event_battle.gd").new()
+ var essence = preload("res://prototype/essence.gd")
+ result.wilds = {"souls":wilds.SOULS,"groups":wilds.GROUPS,"enemies":{}}
+ for type in ["mire_leech","glasswing_moth","iron_husk"]:result.wilds.enemies[type] = {"name":essence.type_name(type),"hp":essence.TYPES[type].hp,"dice":creatures.creature_dice(type),"description":creatures.creature_help(type)}
  result["original_dice"] = B.BOSS_DICE
  var f = FileAccess.open("/tmp/current-rules-data.json",FileAccess.WRITE);f.store_string(JSON.stringify(result,"  "));quit()

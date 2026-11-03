@@ -13,7 +13,7 @@ func fresh(mode: String):
  var g = B.new();g.start([B.default_build(),B.default_build(),B.default_build()],29,false,true,profile)
  g.active = 0;g.cursor = g.order.find(0);g.pending = {};g.forced_die = -1
  g.heroes[0].pos = Vector2i(0,7);g.heroes[1].pos = Vector2i(1,7);g.heroes[2].pos = Vector2i(6,7)
- g.heroes[0].results = [0,0,0];g.heroes[0].used = [false,false,false];return g
+ g.heroes[0].results = [0,0,0];g.heroes[0].used = [false,false,false];g.heroes[0].reaction = [];return g
 func monster(type: String):
  var g = M.new();g.prototype_pack = true;g.creature_types = [type];g.start([B.default_build(),B.default_build(),B.default_build()],29)
  g.active = 3;g.pending = {};g.boss.pos = Vector2i(3,4)
@@ -37,15 +37,18 @@ func run():
  e = E.new();e.bank = {"mire_leech":2,"iron_husk":99};check(e.craft("mire_soul",0) != "" and e.bank.iron_husk == 99,"cannot mix Essence types")
  var g = fresh("heal");check(not g.hero_action(0) and not g.heroes[0].used[0] and g.soul_remaining(0) == 1,"full HP rejects Mire without spending")
  g.heroes[0].hp = 3;check(g.hero_action(0) and g.heroes[0].hp == 4 and g.heroes[0].used[0],"Mire heals one and spends Blank")
- check(not g.hero_action(1) and g.heroes[0].hp == 4,"Mire cannot heal twice in turn")
- g.cursor = g.order.find(0);g.activate();check(g.hero_action(1) and g.heroes[0].hp == 5,"Mire refreshes on own activation")
+ check(g.hero_action(1) and g.heroes[0].hp == 4,"Mire cannot heal twice in turn")
+ g.cursor = g.order.find(0);g.activate();g.heroes[0].used[1] = false;check(g.hero_action(1) and g.heroes[0].hp == 5,"Mire refreshes on own activation")
  g = fresh("heal");g.heroes[0].hp = 3;g.balance["memory.loss.0"] = true;g.hero_action(0)
  check(g.heroes[0].hp == 5 and g.heroes[0].memory_self_used,"Mire actual self-heal supports Memory once per combat")
+ check(g.event_log.any(func(event):return event.kind == "soul" and event.value == 2),"Mire log reports actual Memory-enhanced healing")
  g = fresh("heal");g.heroes[0].hp = 0;check(not g.hero_action(0),"Mire cannot revive its Downed owner")
  g = fresh("block");check(g.hero_action(0) and g.heroes[0].block == 2 and g.soul_remaining(0) == 0,"Ironbound grants two Block once")
- check(not g.hero_action(1),"Ironbound second Blank denied")
+ check(g.hero_action(1) and g.heroes[0].block == 2,"Ironbound second Blank is inert")
  g.cursor = g.order.find(0);g.activate();check(g.heroes[0].block == 0 and g.soul_remaining(0) == 1,"Ironbound old Block expires and allowance refreshes")
- g.heroes[0].rooted = 1;check(g.hero_action(1),"Rooted does not prevent stationary Ironbound defense")
+ g.heroes[0].rooted = 1;check(g.hero_action(2),"Rooted does not prevent stationary Ironbound defense")
+ g = fresh("block");g.heroes[0].debt_buff = 1;g.hero_action(0)
+ check(g.heroes[0].block == 3 and g.event_log.any(func(event):return event.kind == "soul" and event.value == 3),"Ironbound modifiers and actual gain log agree")
  g = fresh("blink");check(Vector2i(2,7) in g.soul_cells(0),"Glasswing can cross occupied intermediate cell")
  check(not (Vector2i(1,7) in g.soul_cells(0)) and not g.hero_action(0,-1,Vector2i(1,7)),"Glasswing cannot land on occupied cell")
  check(not g.hero_action(0,-1,Vector2i(3,7)) and g.soul_remaining(0) == 1,"Glasswing range restriction preserves unused allowance")
@@ -74,6 +77,7 @@ func run():
  g = monster("iron_husk");action(g,"Bash");check(g.heroes[0].hp == 4,"Husk Bash deals two adjacent damage")
  check(g.creature_move("iron_husk") == 1 and g.creature_move("mire_leech") == 2,"distinct movement budgets")
  var app = load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
+ app.expedition.camp = E.new()
  app.camp_tab = 3;app.creature_page = 1;app.open_camp()
  for i in range(3,6):check(app.ui.has_node("FightCreature"+str(i)),"new encounter card "+str(i))
  app.camp_tab = 0;app.essence_page = 1;app.camp_type = "mire_leech";app.camp_recipe = "mire_soul";app.expedition.camp.bank.mire_leech = 3;app.camp_hero = 1;app.rebuild()

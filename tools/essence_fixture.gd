@@ -23,7 +23,16 @@ func proof(args):
   if app.game.heroes.size() == 3:data.hp = app.game.heroes.map(func(h):return h.hp);data.block = app.game.heroes.map(func(h):return h.block);data.positions = app.game.heroes.map(func(h):return [h.pos.x,h.pos.y]);data.dagger_used = app.game.heroes.map(func(h):return h.get("dagger_used",false));data.used = app.game.heroes.map(func(h):return h.used);data.boss_hp = app.game.boss.hp
   JavaScriptBridge.get_interface("window").essenceState = JSON.stringify(data);return
  reset_ui()
- if mode == "equipment_all":
+ if mode == "wilds_camp":
+  app.expedition.camp = E.new();app.expedition.camp.bank = {"mire_leech":6,"glasswing_moth":6,"iron_husk":6};app.camp_type = "mire_leech";app.camp_recipe = "mire_soul";app.essence_page = 1;app.camp_hero = 0;app.open_camp()
+ elif mode in ["soul_heal","soul_block","soul_blink"]:
+  app.expedition.camp = E.new()
+  var soul: String = {"soul_heal":"mire","soul_block":"iron","soul_blink":"glasswing"}[mode]
+  app.expedition.camp.grant_soul(0,soul);app.expedition.camp.equip_soul(0,soul);setup_reward(0);app.game.heroes[0].hp = 3
+  for hero in range(3):app.game.heroes[hero].pos = Vector2i(hero,7)
+ elif mode == "wilds_cards":
+  app.game = M.new();app.game.prototype_pack = true;app.game.creature_types = ["mire_leech","glasswing_moth","iron_husk"];app.game.start(app.builds,29);app.page = "battle";app.show_enemy_cards = true
+ elif mode == "equipment_all":
   app.expedition.camp = E.new();app.expedition.camp.bank.support_creature = 10;app.expedition.camp.craft("memory_loss")
   for hero in range(3):app.expedition.camp.grant_soul(hero,"hollow");app.expedition.camp.grant_soul(hero,"ashroad")
   app.camp_tab = 2;app.open_camp()

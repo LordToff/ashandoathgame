@@ -85,7 +85,7 @@ func activate() -> void:
 
 func summon_description(id: int) -> String:
  if friendly(id):return super.summon_description(id)
- return "Ordinary creature, one cell. Its own public dice appear on Enemy cards. "+creature_help(essence_type(id))
+ return "Ordinary creature, not a summon; one cell. Its own public dice appear on Enemy cards. "+creature_help(essence_type(id))
 
 func creature_move(type: String) -> int:
  return 1 if type == "iron_husk" else 3 if type == "movement_creature" else 2

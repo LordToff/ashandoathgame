@@ -255,3 +255,8 @@ See [implementation](../docs/Essence-Implementation-v0.27.md) for fixed PDF rule
 ## v0.28 navigation and equipment
 
 The main menu now opens first. Camp separates Essence Forge, Refit dice, Equipment and Creature encounters. Equipment has Body, Weapon, Soul and Memory selectors per hero. New parties start with Beginning Soul (one rolled Blank → Move 1 per own turn) and Dagger (after actual enemy HP damage, one adjacent base-1 Poke per own turn, no die cost). Saved earned Souls and empty selections are preserved; earned Move 2 and sandbox options remain separate. Direct creature groups award Essence only and leave the pre-boss event requirement intact. See [v0.28 notes](../docs/Changes-v0.28.md) for complete conditions. Earlier starting-Soul/no-movement descriptions above are historical.
+
+
+## v0.29 Wilds
+
+Camp Creature encounters → Wilds creatures adds the Sunken Bank, Glasswing Swarm and Rusted Procession. Each enemy drops one own-type Essence on its defeated card. Victory banks it. Essence Forge → More offers three Souls at 3 matching Essence per chosen recipient; equip them separately. Mire heals self 1, Glasswing blinks 2 and Ironbound gains 2 Block, each using one rolled Blank once per own turn. See [v0.29 changes](../docs/Changes-v0.29.md) for requirements, timing and provisional balance.
