@@ -1,6 +1,7 @@
 extends Control
 ## Presentation only: every resting face comes from the recorded model result.
 signal finished
+var mobile_mode := false
 var busy := false
 var batches: Array = []
 var elapsed := 0.0
@@ -33,6 +34,7 @@ func _draw() -> void:
  if not busy or batches.is_empty():return
  var roll: Dictionary = batches[0]
  var progress := clampf(elapsed/SETTLE,0,1)
+ if mobile_mode:draw_mobile(roll,progress);return
  if roll.has("rows"):
   draw_round(roll.rows,progress)
  else:
@@ -96,3 +98,26 @@ func cube(rest: Vector2, scale_px: float, progress: float, seed_index: int, resu
    if not numeric and face == 0:text = result
    var font_size := int(scale_px*0.6)
    draw_string(FONT,midpoint+Vector2(-scale_px*0.6,font_size*0.32),text,HORIZONTAL_ALIGNMENT_CENTER,scale_px*1.2,font_size,Color("293139"))
+
+func draw_mobile(roll: Dictionary, progress: float) -> void:
+ var size := get_viewport_rect().size
+ draw_rect(Rect2(Vector2.ZERO,size),Color(0.02,0.03,0.05,0.85))
+ var width: float = minf(size.x-24,560)
+ if not roll.has("rows"):
+  var at := (size-Vector2(width,360))/2
+  draw_style_box(box,Rect2(at,Vector2(width,360)))
+  draw_string(FONT,at+Vector2(20,36),str(roll.actor)+" · Numeric",HORIZONTAL_ALIGNMENT_LEFT,width-40,22,Color("e9cd98"))
+  cube(at+Vector2(width/2,150),48,progress,0,str(roll.faces[0][int(roll.sides[0])]),true)
+  draw_string(FONT,at+Vector2(20,280),"RESULT: "+str(roll.results[0]) if progress>=1 else "Rolling…",HORIZONTAL_ALIGNMENT_CENTER,width-40,26,Color("e9cd98"))
+  draw_string(FONT,at+Vector2(20,326),str(roll.kind),HORIZONTAL_ALIGNMENT_CENTER,width-40,16,Color("b7c5cd"));return
+ var rows: Array = roll.rows;var row_height: float = minf(125,(size.y-100)/rows.size());var height: float = 80+rows.size()*row_height
+ var at := (size-Vector2(width,height))/2
+ draw_style_box(box,Rect2(at,Vector2(width,height)))
+ draw_string(FONT,at+Vector2(16,36),"ROLLING DICE" if progress<1 else "DICE RESULTS",HORIZONTAL_ALIGNMENT_LEFT,width-32,24,Color("e9cd98"))
+ for r in range(rows.size()):
+  var entry: Dictionary = rows[r];var y: float = at.y+60+r*row_height
+  draw_string(FONT,Vector2(at.x+16,y),str(entry.actor),HORIZONTAL_ALIGNMENT_LEFT,width-32,18,Color("b7c5cd"))
+  for die in range(entry.sides.size()):
+   var x: float = at.x+(die+0.5)*width/3
+   cube(Vector2(x,y+row_height*0.32),minf(21,row_height*0.2),progress,r*3+die,str(int(entry.sides[die])+1),false)
+   draw_string(FONT,Vector2(x-width/6+4,y+row_height*0.78),str(entry.results[die]) if progress>=1 else "Die "+str(int(entry.dice[die])+1),HORIZONTAL_ALIGNMENT_CENTER,width/3-8,14,Color("e9cd98"))

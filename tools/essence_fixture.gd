@@ -8,7 +8,18 @@ func _ready():
  app = load("res://prototype/prototype.tscn").instantiate();add_child(app)
  await get_tree().process_frame
  callback = JavaScriptBridge.create_callback(proof);JavaScriptBridge.get_interface("window").essenceProof = callback
+func mobile_controls(node: Node, list: Array):
+ if node is Control and (node is BaseButton or node is ScrollContainer):
+  var rect: Rect2 = node.get_global_rect()
+  var clip := Rect2(Vector2.ZERO,app.get_viewport_rect().size)
+  var ancestor: Node = node.get_parent()
+  while ancestor != null:
+   if ancestor is ScrollContainer:clip = clip.intersection(ancestor.get_global_rect())
+   ancestor = ancestor.get_parent()
+  list.append({"clip":[clip.position.x,clip.position.y,clip.size.x,clip.size.y],"name":str(node.name),"text":node.text if node is Button else "", "x":rect.position.x,"y":rect.position.y,"w":rect.size.x,"h":rect.size.y,"disabled":node.disabled if node is BaseButton else false})
+ for child in node.get_children():mobile_controls(child,list)
 func reset_ui():
+ app.mobile_info = "";app.mobile_scrolls.clear()
  app.dice_tray.cancel();app.rolling_time = 0;app.choosing_poke = false;app.creature_fight = false;app.camp_tab = 0;app.show_enemy_cards = false;app.show_menu = false;app.show_options = false;app.show_history = false;app.show_supplies = false;app.show_soundtrack = false;app.draft_modal = false;app.lab = false;app.training = false;app.event_fight = false;app.combat_notices.clear();app.selected = -1
  app.gifts = [[34,47],[34,47],[34,47]];app.builds = [B.bonus_build([34,47]),B.bonus_build([34,47]),B.bonus_build([34,47])]
  app.seen_event = 0;app.seen_roll = 0;app.roll_seen = 0;app.effects.clear();app.snapshots.clear();app.visual_positions.clear()
@@ -20,10 +31,16 @@ func proof(args):
  var mode: String = str(args[0])
  if mode == "state":
   var data := {"rolling":app.dice_tray.busy,"bank":app.expedition.camp.bank,"copies":app.expedition.camp.copies,"memories":app.expedition.camp.memories,"active":app.game.active,"page":app.page,"builds":app.builds,"weapons":app.expedition.camp.weapons,"souls":app.expedition.camp.souls,"equipped_souls":app.expedition.camp.equipped_souls}
+  var controls: Array = [];mobile_controls(app.ui,controls);data.controls = controls;data.viewport = [app.get_viewport_rect().size.x,app.get_viewport_rect().size.y];data.mobile = app.mobile_mode;data.selected = app.selected;data.pending = app.game.pending
   if app.game.heroes.size() == 3:data.hp = app.game.heroes.map(func(h):return h.hp);data.block = app.game.heroes.map(func(h):return h.block);data.positions = app.game.heroes.map(func(h):return [h.pos.x,h.pos.y]);data.dagger_used = app.game.heroes.map(func(h):return h.get("dagger_used",false));data.used = app.game.heroes.map(func(h):return h.used);data.boss_hp = app.game.boss.hp
   JavaScriptBridge.get_interface("window").essenceState = JSON.stringify(data);return
  reset_ui()
- if mode == "wilds_camp":
+ if mode == "mobile_main":
+  app.gifts = [[],[],[]];app.builds = [B.default_build(),B.default_build(),B.default_build()];app.go_main()
+ elif mode == "mobile_move":
+  app.expedition.camp = E.new();setup_reward(2)
+  for hero in range(3):app.game.heroes[hero].pos = Vector2i(hero*3,7)
+ elif mode == "wilds_camp":
   app.expedition.camp = E.new();app.expedition.camp.bank = {"mire_leech":6,"glasswing_moth":6,"iron_husk":6};app.camp_type = "mire_leech";app.camp_recipe = "mire_soul";app.essence_page = 1;app.camp_hero = 0;app.open_camp()
  elif mode in ["soul_heal","soul_block","soul_blink"]:
   app.expedition.camp = E.new()

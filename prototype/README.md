@@ -1,3 +1,5 @@
+Phone browser: choose **Mobile mode** on the main menu. Small touch screens open it automatically unless a different preference was saved. Tap dice and board targets, use **Ability details**, and swipe menus or battle controls. Rotate for controls beside the board. **Desktop mode** switches back. Both layouts share rules and local rewards. See [v0.31 controls](../docs/Changes-v0.31.md).
+
 > v0.21: autonomous worms, chance-based bites and poison, projected 3D Numeric rolls, hover-only combat details, face-picker previews and tile-by-tile movement. [Changes](../docs/Changes-v0.21.md).
 
 > v0.20: optional third boss Veyl, Resonance / open-core windows, original bell sprites and block-only starter Reaction. [Rules and test notes](../docs/Changes-v0.20.md).

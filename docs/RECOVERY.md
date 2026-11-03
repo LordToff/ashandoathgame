@@ -12,7 +12,7 @@ The dedicated repository retains source history and the previous Pages history. 
 
 A GitHub repository backs up committed source and published files. It cannot guarantee that a cloud runtime never fails. Commit and push completed work; ignored caches, running processes and uncommitted files are not repository backups.
 
-Current source for v0.30 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
+Current source for v0.31 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
 
 ## Recover in a new environment
 
@@ -69,3 +69,7 @@ New content data is in prototype/wilds.gd, creature tactics in event_battle.gd a
 ## v0.30 sprite pipeline
 
 Run python tools/make_retro_sprites.py to reproduce the current 16-pixel tiles from the included human-authored Kenney CC0 source sheet and explicit palette variants. Do not restore the retired detailed generated pictures. Atlas dimensions are documented in ART_NOTES.md. Gameplay rules and saves remain v0.29. Verify actual browser artwork and the hub/Wilds UI suites after editing these assets.
+
+## v0.31 phone controls
+
+The phone presentation is in prototype/mobile_ui.gd. It calls the existing model and controller for every action; do not fork battle, rewards or equipment rules. prototype.gd maps board taps to the existing grid and adapts the virtual viewport on rotation. The browser uses the ash-and-oath-mobile localStorage key for immediate layout persistence; native runs use user://ash-ui-layout.cfg. Both are independent of local reward storage. Run mobile_v31_test.gd and tools/verify_mobile_browser.py (the isolated Essence fixture) plus existing hub/Wilds/Essence verifiers. The fixture is excluded from release exports. Browser emulation is not physical iOS/Android testing.

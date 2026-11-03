@@ -23,7 +23,8 @@ static func main_menu(app) -> void:
  C.detail(app,"A tactical dice-building adventure",Rect2(884,457,438,44),23)
  C.detail(app,"Three heroes, four bosses, and creature groups you can choose directly. Earn Essence, discover reward designs, then refit your party at Camp.",Rect2(884,525,438,113),18)
  app.label_at("Banked rewards save on this browser.",Vector2(884,681),15,app.MUTED,438)
- app.label_at("PLAYABLE PROTOTYPE  /  v0.30",Vector2(80,838),12,app.MUTED,650)
+ app.button("Mobile mode · play on a phone",Vector2(80,793),Vector2(480,40),func():app.set_mobile_mode(true),Color("9acfc0")).name = "MainMobileMode"
+ app.label_at("PLAYABLE PROTOTYPE  /  v0.31",Vector2(80,838),12,app.MUTED,650)
 
 static func forge(app) -> void:
  app.chamber_background()

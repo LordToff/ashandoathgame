@@ -1,0 +1,154 @@
+{
+  "version": "0.31",
+  "engine": "4.6.3.stable",
+  "scope": "Phone browser presentation and input; same battle/reward model.",
+  "native": [
+    {
+      "test": "mobile_v31_test",
+      "exit": 0,
+      "errors": [
+        "ERROR: 4 resources still in use at exit (run with --verbose for details)."
+      ],
+      "summary": [
+        "MOBILE v0.31: 17 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "hub_v28_test",
+      "exit": 0,
+      "errors": [
+        "ERROR: 2 resources still in use at exit (run with --verbose for details)."
+      ],
+      "summary": [
+        "HUB V0.28: 55 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "wilds_v29_test",
+      "exit": 0,
+      "errors": [],
+      "summary": [
+        "WILDS V0.29: 66 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "essence_v27_test",
+      "exit": 0,
+      "errors": [],
+      "summary": [
+        "ESSENCE V0.27: 115 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "usability_v26_test",
+      "exit": 0,
+      "errors": [
+        "ERROR: 2 resources still in use at exit (run with --verbose for details)."
+      ],
+      "summary": [
+        "V0.26 usability: 69 checks, 0 failures"
+      ]
+    }
+  ],
+  "native_checks": 322,
+  "desktop_browsers": {
+    "hub": {
+      "result": "passed",
+      "browser_errors": [],
+      "tested": [
+        "main menu",
+        "direct Swift Pack via party creation",
+        "creature card dice",
+        "main menu return",
+        "equipment selectors and reload persistence",
+        "roomy Forge",
+        "reroll timing options",
+        "four owned item sprites",
+        "Memory equipment",
+        "Poke target, HP damage and no die cost",
+        "Poke once per turn",
+        "Beginning Soul Move 1 and second-Blank restriction"
+      ]
+    },
+    "wilds": {
+      "result": "passed",
+      "errors": [],
+      "tested": [
+        "normal Wilds pagination and creature sprites",
+        "real leech encounter",
+        "public new enemy dice",
+        "hidden Soul design",
+        "paid binding to chosen hero",
+        "bound Soul equipment and sprite",
+        "Mire actual healing/once per turn",
+        "Ironbound Block",
+        "Glasswing blink control"
+      ]
+    },
+    "essence": {
+      "normal_flow": "passed",
+      "deterministic_fixture_ui": "passed",
+      "errors": [],
+      "tested": [
+        "hidden recipes",
+        "genuine event to mixed encounter",
+        "individual defeated-card tokens",
+        "victory banking",
+        "same-cost second copy",
+        "legal refitting",
+        "Memory crafting/equip and healing",
+        "Shared Burden source/ally/return",
+        "Evasive post-Attack step",
+        "defeat preserves bank"
+      ]
+    }
+  },
+  "mobile_browser": {
+    "result": "passed",
+    "devices": [
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "result": "passed",
+        "browser_errors": []
+      },
+      {
+        "viewport": [
+          360,
+          640
+        ],
+        "result": "passed",
+        "browser_errors": []
+      },
+      {
+        "viewport": [
+          844,
+          390
+        ],
+        "result": "passed",
+        "browser_errors": []
+      }
+    ],
+    "tested": [
+      "touch draft with scroll",
+      "required event into boss",
+      "tap board movement",
+      "ability details",
+      "reroll selection and notice",
+      "Blank Block/healing",
+      "equipment popup",
+      "reaction modal",
+      "enemy cards",
+      "full log",
+      "rotation preserves battle",
+      "desktop preference persists"
+    ]
+  },
+  "limitations": [
+    "Physical iOS/Android hardware not tested.",
+    "Historical native ObjectDB/resource shutdown warnings remain.",
+    "Windows download unchanged."
+  ]
+}

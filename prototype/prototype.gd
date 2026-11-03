@@ -1,5 +1,10 @@
 extends Control
 
+const MobileUI = preload("res://prototype/mobile_ui.gd")
+var mobile_mode := false
+var mobile_info := ""
+var mobile_die := 0
+var mobile_scrolls: Dictionary = {}
 const Balance = preload("res://prototype/balance.gd")
 const AbilityCopy = preload("res://prototype/ability_copy.gd")
 const BalanceEditor = preload("res://prototype/balance_editor.gd")
@@ -176,6 +181,8 @@ func _ready() -> void:
  make_offers()
  dice_tray = Tray.new();add_child(dice_tray)
  dice_tray.finished.connect(func(): rolling_time = 0;play_hit_sound(queued_hit_sound);queued_hit_sound = -1;rebuild())
+ load_mobile_layout()
+ get_window().size_changed.connect(func():refresh_mobile_layout.call_deferred())
  rebuild()
  if get_tree().root.has_meta("ash_restart"):
   var saved: Dictionary = get_tree().root.get_meta("ash_restart")
@@ -235,7 +242,7 @@ func _process(delta: float) -> void:
     visual_positions[id] = track.path[segment].lerp(track.path[segment+1],smoothstep(0.0,1.0,part))
     if progress >= 1:visual_positions[id] = track.to
  rolling_time = 1.0 if dice_tray and dice_tray.busy else 0.0
- if page == "battle" and rolling_time <= 0:
+ if page == "battle" and rolling_time <= 0 and not mobile_mode:
   var current_hover := inspection_at_mouse()
   if current_hover != hover_key:
    hover_key = current_hover
@@ -286,7 +293,7 @@ func button(text: String, p: Vector2, sz: Vector2, fn: Callable, accent: Color =
  b.add_theme_color_override("font_hover_color",Color("fff2d5"))
  b.add_theme_color_override("font_color",accent); b.add_theme_color_override("font_disabled_color",Color("83909d"))
  b.pressed.connect(func():
-  fn.call())
+  fn.call(),CONNECT_DEFERRED if mobile_mode else 0)
  ui.add_child(b); return b
 
 func panel(rect: Rect2, color: Color = Color("161d28"), border: Color = Color("303a48")) -> void:
@@ -295,6 +302,8 @@ func panel(rect: Rect2, color: Color = Color("161d28"), border: Color = Color("3
 func rebuild() -> void:
  sync_presentation()
  for c in ui.get_children(): ui.remove_child(c); c.queue_free()
+ if mobile_mode:
+  MobileUI.render(self);queue_redraw();return
  if page in ["main","camp","forge"]:
   if page == "main":HubUI.main_menu(self)
   elif page == "camp":CampUI.render(self)
@@ -319,7 +328,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.30",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.31",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -503,15 +512,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.30 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.31 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.30 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.30 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.31 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.31 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.30 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.31 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.30 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.31 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -667,6 +676,13 @@ func help_ui() -> void:
  button("Return to the game",Vector2(1003,799),Vector2(255,51),func(): show_help = false; rebuild())
 
 func _gui_input(event: InputEvent) -> void:
+ if mobile_mode:
+  if event is InputEventMouseMotion:return
+  if event is InputEventMouseButton:
+   if mobile_info != "" or not MobileUI.board_rect(self).has_point(event.position):return
+   var converted := event.duplicate()
+   converted.position = MobileUI.board_point(self,event.position)
+   event = converted
  if not combat_notices.is_empty():return
  if event is InputEventMouseMotion:
   hover = Vector2i((event.position-ORIGIN)/CELL)
@@ -719,10 +735,18 @@ func _unhandled_key_input(event: InputEvent) -> void:
  if not combat_notices.is_empty():return
  if event.is_action_pressed("ui_cancel"):
   if is_instance_valid(balance_editor):balance_editor.queue_free();balance_editor = null
-  choosing_poke = false
+  choosing_poke = false;mobile_info = ""
   selected = -1; shove_target = -1; show_active_effects = false; show_soundtrack = false; show_options = false; show_menu = false; show_lab_tools = false; show_help = false; inspect_action = "";combat_inspected = -1; show_supplies = false; show_history = false; show_changes = false; show_dice = false; show_turn = false; show_lab_setup = false; rebuild()
 
 func _draw() -> void:
+ if mobile_mode:
+  draw_rect(get_viewport_rect(),Color("101923"))
+  if page == "battle":
+   var rect: Rect2 = MobileUI.board_rect(self)
+   var zoom: float = rect.size.x/MobileUI.SOURCE_RECT.size.x
+   draw_set_transform(rect.position-MobileUI.SOURCE_RECT.position*zoom,0,Vector2.ONE*zoom)
+   draw_board();draw_effects();draw_set_transform(Vector2.ZERO)
+  return
  draw_texture_rect(CHAMBER,Rect2(0,0,1440,900),false)
  draw_line(Vector2(24,76),Vector2(1408,76),Color("303846"))
  if page in ["main","forge","setup","events","camp"]:return
@@ -1260,13 +1284,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.30 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.31 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.30",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.31",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -2008,7 +2032,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.30",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.31",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2308,6 +2332,7 @@ func abandon_encounter() -> void:
  rolling_time = 0;combat_notices.clear();effects.clear()
 
 func go_main() -> void:
+ mobile_info = ""
  abandon_encounter();page = "main";queued_creature = -1
  show_menu = false;show_options = false;show_help = false;show_changes = false;show_enemy_cards = false;show_history = false;show_soundtrack = false;show_dice = false;show_supplies = false
  rebuild()
@@ -2340,3 +2365,37 @@ func poke_ui() -> void:
   var choice := Button.new();choice.text = game.unit_name(target)+" · %d HP · %d Block" % [game.unit_data(target).hp,game.unit_data(target).block];choice.custom_minimum_size = Vector2(550,48)
   choice.pressed.connect(func():game.poke(target);choosing_poke = false;rebuild());column.add_child(choice)
  button("Cancel",Vector2(399,598),Vector2(575,44),func():choosing_poke = false;rebuild(),MUTED)
+
+
+func load_mobile_layout() -> void:
+ var config := ConfigFile.new();var enabled := false
+ var browser_preference = null
+ if OS.has_feature("web"):
+  browser_preference = JavaScriptBridge.eval("(()=>{try{return window.localStorage.getItem('ash-and-oath-mobile')}catch(e){return null}})()",true)
+ if browser_preference in ["true","false"]:enabled = browser_preference == "true"
+ elif config.load("user://ash-ui-layout.cfg") == OK and config.has_section_key("layout","mobile"):
+  enabled = bool(config.get_value("layout","mobile",false))
+ elif OS.has_feature("web"):
+  enabled = bool(JavaScriptBridge.eval("window.matchMedia('(pointer: coarse)').matches && Math.min(window.innerWidth, window.innerHeight) < 800",true))
+ if "--mobile" in OS.get_cmdline_user_args():enabled = true
+ set_mobile_mode(enabled,false)
+func set_mobile_mode(enabled: bool, save: bool = true) -> void:
+ mobile_mode = enabled;mobile_info = "";hover_key = "";combat_inspected = -1;inspect_action = ""
+ if is_instance_valid(dice_tray):dice_tray.mobile_mode = enabled
+ if save:
+  var config := ConfigFile.new();config.set_value("layout","mobile",enabled);config.save("user://ash-ui-layout.cfg")
+  if OS.has_feature("web"):JavaScriptBridge.eval("try{window.localStorage.setItem('ash-and-oath-mobile','"+("true" if enabled else "false")+"')}catch(e){}",true)
+ refresh_mobile_layout(false)
+ if save:rebuild()
+func refresh_mobile_layout(redraw: bool = true) -> void:
+ var window := get_window();var target := Vector2i(1440,900)
+ if mobile_mode:
+  var pixels: Vector2i = window.size
+  if pixels.x <= 0 or pixels.y <= 0:return
+  if pixels.x > pixels.y:target = Vector2i(roundi(480.0*pixels.x/pixels.y),480)
+  else:target = Vector2i(480,roundi(480.0*pixels.y/pixels.x))
+ window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+ window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+ if window.content_scale_size == target:return
+ window.content_scale_size = target
+ if redraw:rebuild.call_deferred()

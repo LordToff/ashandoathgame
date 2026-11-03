@@ -25,7 +25,7 @@ with sync_playwright() as pw:
  for trial in range(40):
   click(p,720,620);text=snap(p,'event-current')
   if 'Fight mixed prototype group' in text:
-   click(p,1040,710);p.wait_for_timeout(1500);click(p,350,125);click(p,650,590);text=snap(p,'03-real-mixed-enemy-cards')
+   click(p,1040,710);p.wait_for_timeout(3500);click(p,350,125);click(p,650,590);text=snap(p,'03-real-mixed-enemy-cards')
    assert 'Support Creature' in text and 'Movement Creature' in text and 'Mend' in text,text
    break
   click(p,400,710);click(p,330,710)
