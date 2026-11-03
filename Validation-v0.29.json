@@ -1,0 +1,244 @@
+{
+  "version": "0.29",
+  "engine": "4.6.3.stable",
+  "total_scripts": 30,
+  "total_checks": 8223,
+  "all_scripts_passed": true,
+  "scripts": [
+    {
+      "script": "rules_test.gd",
+      "checks": 41,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "catalog_test.gd",
+      "checks": 180,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "presentation_test.gd",
+      "checks": 2269,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "lab_test.gd",
+      "checks": 329,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "update_test.gd",
+      "checks": 28,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "soul_test.gd",
+      "checks": 14,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "balance_test.gd",
+      "checks": 51,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "boss_v13_test.gd",
+      "checks": 47,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "loadout_v14_test.gd",
+      "checks": 836,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "bugfix_v15_test.gd",
+      "checks": 18,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "preset_v15_test.gd",
+      "checks": 31,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "encounter_v18_test.gd",
+      "checks": 358,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "encounter_v19_test.gd",
+      "checks": 358,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "cantor_v20_test.gd",
+      "checks": 34,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "brood_v21_test.gd",
+      "checks": 2414,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "numeric_v21_test.gd",
+      "checks": 52,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "summons_v22_test.gd",
+      "checks": 269,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "worm_path_v221_test.gd",
+      "checks": 75,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "bug_sweep_v222_test.gd",
+      "checks": 14,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "warden_v24_test.gd",
+      "checks": 38,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "reliability_test.gd",
+      "checks": 10,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "polish_test.gd",
+      "checks": 12,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "playtest_v12_test.gd",
+      "checks": 51,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "trial_regression_test.gd",
+      "checks": 12,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "events_v25_test.gd",
+      "checks": 355,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "events_v25_ui_test.gd",
+      "checks": 24,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "usability_v26_test.gd",
+      "checks": 69,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "essence_v27_test.gd",
+      "checks": 115,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "hub_v28_test.gd",
+      "checks": 55,
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "script": "wilds_v29_test.gd",
+      "checks": 64,
+      "passed": true,
+      "exit_code": 0
+    }
+  ],
+  "wilds_browser": {
+    "result": "passed",
+    "errors": [],
+    "tested": [
+      "normal Wilds pagination and creature sprites",
+      "real leech encounter",
+      "public new enemy dice",
+      "hidden Soul design",
+      "paid binding to chosen hero",
+      "bound Soul equipment and sprite",
+      "Mire actual healing/once per turn",
+      "Ironbound Block",
+      "Glasswing blink control"
+    ]
+  },
+  "essence_browser": {
+    "normal_flow": "passed",
+    "deterministic_fixture_ui": "passed",
+    "errors": [],
+    "tested": [
+      "hidden recipes",
+      "genuine event to mixed encounter",
+      "individual defeated-card tokens",
+      "victory banking",
+      "same-cost second copy",
+      "legal refitting",
+      "Memory crafting/equip and healing",
+      "Shared Burden source/ally/return",
+      "Evasive post-Attack step",
+      "defeat preserves bank"
+    ]
+  },
+  "hub_browser": {
+    "result": "passed",
+    "browser_errors": [],
+    "tested": [
+      "main menu",
+      "direct Swift Pack via party creation",
+      "creature card dice",
+      "main menu return",
+      "equipment selectors and reload persistence",
+      "roomy Forge",
+      "reroll timing options",
+      "four owned item sprites",
+      "Memory equipment",
+      "Poke target, HP damage and no die cost",
+      "Poke once per turn",
+      "Beginning Soul Move 1 and second-Blank restriction"
+    ]
+  },
+  "limits": [
+    "No human balance trial or Windows rebuild.",
+    "Inherited native UI ObjectDB/resource warnings remain on some shutdowns; no script errors in passing tests or browser console/page errors.",
+    "New enemy values, compositions and Soul costs/effects are provisional."
+  ]
+}
