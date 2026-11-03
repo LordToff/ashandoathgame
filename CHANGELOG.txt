@@ -347,3 +347,5 @@ The three new abilities share the normal per-hero Blank-conversion allowance. Su
 Camp keeps spacious cards by paging both the creature and Essence source lists. Equipment retains existing sprites and adds a second gallery for the new Souls. Original transparent enemy/Soul artwork is stored in one atlas and used through six AtlasTexture resources. No external artwork was copied.
 
 HP, dice weights, encounter composition and Soul costs/effects are provisional. Tests verify implementation, not human balance. Undefined Forge services, campaign Hunt scheduling and bespoke boss opportunities remain future content. Windows downloads were not rebuilt.
+
+Package revision 2 corrects the lead creature’s Weakness calculation: the shared Attack resolver applies it once. A weakened Bash 2 deals 1 before defenses; a weakened Venom Bite 1 deals 0 and applies no Poison.
