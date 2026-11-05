@@ -12,7 +12,7 @@ The dedicated repository retains source history and the previous Pages history. 
 
 A GitHub repository backs up committed source and published files. It cannot guarantee that a cloud runtime never fails. Commit and push completed work; ignored caches, running processes and uncommitted files are not repository backups.
 
-Current source for v0.32 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
+Current source for v0.33 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
 
 ## Recover in a new environment
 
@@ -77,3 +77,7 @@ The phone presentation is in prototype/mobile_ui.gd. It calls the existing model
 ## v0.32 combat clarity
 
 Enemy priority scoring and stable random tie selection are in prototype/enemy_targeting.gd; battle.gd shares those rules between real resolution and live forecasts. UI inspection must never advance the combat RNG. Actual credited enemy HP damage is recorded per hero and rolled into previous-round threat on the shared roll. Support Mend targets the most wounded legal ally. battle_panels.gd renders intent cards and the nine-result picker. Do not show hidden installed sides for a rolled-result choice; installed-slot abilities remain explicit exceptions. The status SFX queue is separate from impact audio, respects mute/volume, and consumes each event once. Engrave previews installed-side changes without rewriting recorded results. All recipe effects are now visible before payment; prices/ownership remain unchanged. Run clarity_v32_test.gd and verify_clarity_browser.py plus existing equipment, Wilds, Essence and boss suites.
+
+## v0.33 phone flow, boss rewards and Debug
+
+Combat controls in mobile_ui.gd use fixed rows, without a battle-action ScrollContainer. Enemy intent names open focused details. Poison ticks never queue combat_notices or floating HP text; green smoke reads actual status in draw_effects. Earned faces 69–72 and four boss Memories are original requested content; bosses yield 3 matching Essence, ordinary creatures 1. Keep the 48-design free pool and old IDs stable. Memories share one copy of each type, with one slot per hero. Debug defaults off: stationary 650 ms holds on locked Collection cards/Forge recipes grant one owned item; movement cancels. Web Debug preference uses ash-and-oath-debug localStorage, native user://ash-debug.cfg; reward ownership still uses the existing ledger. Run mobile_flow_v33_test.gd and tools/verify_mobile_flow_browser.py plus clarity/Essence/hub/Wilds checks. Test fixtures must never ship.
