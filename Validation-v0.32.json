@@ -1,0 +1,251 @@
+{
+  "version": "0.32",
+  "engine": "4.6.3.stable",
+  "native_scripts": [
+    {
+      "test": "clarity_v32",
+      "exit": 0,
+      "summary": [
+        "CLARITY v0.32: 62 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "playtest_v12",
+      "exit": 0,
+      "summary": [
+        "V0.12 PLAYTEST: 51 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "trial_regression",
+      "exit": 0,
+      "summary": [
+        "TRIAL REGRESSIONS: 12 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "balance",
+      "exit": 0,
+      "summary": [
+        "CUSTOM BALANCE: 51 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "hub_v28",
+      "exit": 0,
+      "summary": [
+        "HUB V0.28: 55 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "wilds_v29",
+      "exit": 0,
+      "summary": [
+        "WILDS V0.29: 66 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "essence_v27",
+      "exit": 0,
+      "summary": [
+        "ESSENCE V0.27: 115 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "usability_v26",
+      "exit": 0,
+      "summary": [
+        "V0.26 usability: 69 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "mobile_v31",
+      "exit": 0,
+      "summary": [
+        "MOBILE v0.31: 17 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "warden_v24",
+      "exit": 0,
+      "summary": [
+        "V0.24 WARDEN: 38 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "cantor_v20",
+      "exit": 0,
+      "summary": [
+        "V0.20 CANTOR: 34 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "encounter_v18",
+      "exit": 0,
+      "summary": [
+        "V0.19 ENCOUNTERS: 358 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "encounter_v19",
+      "exit": 0,
+      "summary": [
+        "V0.19 ENCOUNTERS: 358 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "summons_v22",
+      "exit": 0,
+      "summary": [
+        "V0.22 SUMMONS: 269 checks, 0 failures; seeded friendly hits 33/120"
+      ]
+    },
+    {
+      "test": "worm_path_v221",
+      "exit": 0,
+      "summary": [
+        "V0.22.1 WORM PATH: 75 checks, 0 failures"
+      ]
+    }
+  ],
+  "new_clarity_checks": 62,
+  "browser_checks": {
+    "clarity": {
+      "result": "passed",
+      "devices": [
+        {
+          "viewport": [
+            390,
+            844
+          ],
+          "result": "passed",
+          "browser_errors": [],
+          "tested": [
+            "readable live named intents",
+            "persistent intent button",
+            "nine rolled face picker",
+            "spent face copy and confirmation",
+            "Engrave physical side and notice",
+            "Poison damage effect and actual audio playback",
+            "healing effect and actual audio playback",
+            "Stun effect and actual audio playback",
+            "free recipe preview"
+          ]
+        },
+        {
+          "viewport": [
+            360,
+            640
+          ],
+          "result": "passed",
+          "browser_errors": [],
+          "tested": [
+            "readable live named intents",
+            "persistent intent button",
+            "nine rolled face picker",
+            "spent face copy and confirmation",
+            "Engrave physical side and notice",
+            "Poison damage effect and actual audio playback",
+            "healing effect and actual audio playback",
+            "Stun effect and actual audio playback",
+            "free recipe preview"
+          ]
+        },
+        {
+          "viewport": [
+            844,
+            390
+          ],
+          "result": "passed",
+          "browser_errors": [],
+          "tested": [
+            "readable live named intents",
+            "persistent intent button",
+            "nine rolled face picker",
+            "spent face copy and confirmation",
+            "Engrave physical side and notice",
+            "Poison damage effect and actual audio playback",
+            "healing effect and actual audio playback",
+            "Stun effect and actual audio playback",
+            "free recipe preview"
+          ]
+        },
+        {
+          "viewport": [
+            1440,
+            900
+          ],
+          "result": "passed",
+          "browser_errors": [],
+          "tested": [
+            "readable live named intents",
+            "persistent intent button",
+            "nine rolled face picker",
+            "spent face copy and confirmation",
+            "Engrave physical side and notice",
+            "Poison damage effect and actual audio playback",
+            "healing effect and actual audio playback",
+            "Stun effect and actual audio playback",
+            "free recipe preview"
+          ]
+        }
+      ]
+    },
+    "essence": {
+      "normal_flow": "passed",
+      "deterministic_fixture_ui": "passed",
+      "errors": [],
+      "tested": [
+        "free recipe previews",
+        "genuine event to mixed encounter",
+        "individual defeated-card tokens",
+        "victory banking",
+        "same-cost second copy",
+        "legal refitting",
+        "Memory crafting/equip and healing",
+        "Shared Burden source/ally/return",
+        "Evasive post-Attack step",
+        "defeat preserves bank"
+      ]
+    },
+    "wilds": {
+      "result": "passed",
+      "errors": [],
+      "tested": [
+        "normal Wilds pagination and creature sprites",
+        "real leech encounter",
+        "public new enemy dice",
+        "free Soul design preview",
+        "paid binding to chosen hero",
+        "bound Soul equipment and sprite",
+        "Mire actual healing/once per turn",
+        "Ironbound Block",
+        "Glasswing blink control"
+      ]
+    },
+    "hub": {
+      "result": "passed",
+      "browser_errors": [],
+      "tested": [
+        "main menu",
+        "direct Swift Pack via party creation",
+        "creature card dice",
+        "main menu return",
+        "equipment selectors and reload persistence",
+        "roomy Forge",
+        "reroll timing options",
+        "four owned item sprites",
+        "Memory equipment",
+        "Poke target, HP damage and no die cost",
+        "Poke once per turn",
+        "Beginning Soul Move 1 and second-Blank restriction"
+      ]
+    }
+  },
+  "limits": [
+    "Chromium touch emulation; physical iOS/Android not tested.",
+    "Native UI resource/ObjectDB shutdown warnings remain.",
+    "Encounter difficulty remains provisional.",
+    "Windows downloads unchanged."
+  ]
+}

@@ -1,11 +1,11 @@
-# Ash & Oath v0.31
+# Ash & Oath v0.32
 
-[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.31)
+[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.32)
 
-Choose **Mobile mode** on the main menu for larger touch controls, scrolling menus, tap-to-target combat, ability details and portrait/landscape layouts. Small touch screens open it automatically unless another preference was saved. Both layouts share combat rules and local rewards. There is no app to install; saves do not transfer automatically between devices.
+Readable named enemy intents and varied targeting priorities, a nine-result face-up picker, category/spent colors, Poison/healing/Stun SFX and visuals, visible Engrave growth, and Essence recipe previews before payment. Mobile mode supports portrait and landscape. Saved banks, inventory and prices are preserved.
 
-[Changes](CHANGES_v0.31.md) · [Validation](Validation-v0.31.md) · [Current rules](current-rules.html) · [PDF](AshAndOath-Current-Rules-v0.31.pdf)
+[Changes](CHANGES_v0.32.md) · [Validation](Validation-v0.32.md) · [Rules](current-rules.html) · [PDF](AshAndOath-Current-Rules-v0.32.pdf)
 
-Sprites remain human-authored Kenney Tiny Dungeon CC0 pixel art. Physical iOS/Android hardware was not tested. Windows downloads are unchanged.
+Browser checks cover 390×844, 360×640, 844×390 and desktop 1440×900. Physical phone hardware and Windows downloads were not tested/rebuilt. Difficulty remains provisional. Sprites remain human-authored Kenney CC0 pixel art.
 
-Source: e6e7cdbfb38e49566f95bc6f422a0887ca4a42d6
+Source: b53f7c49d12fb65d0259d90634639a5b9832dfa0
