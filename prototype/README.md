@@ -1,3 +1,5 @@
+v0.32: **Enemy intents** shows live targets, priorities and effects. Face-up copy choices show only rolled results with inspection and confirmation. Poison HP loss, healing and Stun have distinct SFX; Engrave displays its new installed side. Inspect Essence recipes before spending. [Changes](../docs/Changes-v0.32.md).
+
 Phone browser: choose **Mobile mode** on the main menu. Small touch screens open it automatically unless a different preference was saved. Tap dice and board targets, use **Ability details**, and swipe menus or battle controls. Rotate for controls beside the board. **Desktop mode** switches back. Both layouts share rules and local rewards. See [v0.31 controls](../docs/Changes-v0.31.md).
 
 > v0.21: autonomous worms, chance-based bites and poison, projected 3D Numeric rolls, hover-only combat details, face-picker previews and tile-by-tile movement. [Changes](../docs/Changes-v0.21.md).

@@ -82,7 +82,7 @@ func boss_step() -> void:
    var options := attack_targets(3,boss_range(action))
    if options.is_empty():fallback()
    else:
-    var target := nearest(options);var amount := chime_damage();last_targets = [target]
+    var target := enemy_target(3,options,action);var amount := chime_damage();last_targets = [target]
     change_resonance(-v("cantor.chime_spend"),"Hushed Chime spends Resonance")
     pending = {"kind":"attack","action":action,"victims":[target],"reacted":[],"amount":amount};continue_attack()
   "Tuning Fork":
@@ -90,7 +90,7 @@ func boss_step() -> void:
    var options := attack_targets(3,boss_range(action))
    if options.is_empty():fallback()
    else:
-    var target := nearest(options);last_targets = [target]
+    var target := enemy_target(3,options,action);last_targets = [target]
     pending = {"kind":"attack","action":action,"victims":[target],"reacted":[],"amount":v("cantor.fork_damage")+(v("cantor.fork_damage_phase") if phase_two else 0)};continue_attack()
   _:fallback()
  report_changes()
@@ -104,7 +104,7 @@ func default_boss_help(action: String) -> String:
   "Crescendo":return "Gain %d Resonance and OPEN THE CORE until next boss turn. Hero Attacks against Veyl gain +%d per hit before Block. Burst now or calm the next Toll." % [v("cantor.crescendo")+(v("cantor.crescendo_phase") if phase_two else 0),core_bonus()]
   "Seal the Bell":return "Gain %d Block. Old Block expires next boss turn; this does not close an open core." % [v("cantor.seal_block")+(v("cantor.seal_phase") if phase_two else 0)]
   "Toll of Reckoning":return "Attack EVERY standing hero within %d for %d NOW: %d base + 1 per %d Resonance. Spend the entire meter when declared. Reactions apply; the declared hit is fixed. No targets: fallback, keep meter." % [boss_range(action),toll_damage(),v("cantor.toll_base"),v("cantor.toll_divisor")]
-  "Hushed Chime":return "Closest standing hero within %d: %d damage NOW (%d base + 1 per %d Resonance). Spend up to %d Resonance when declared. No target: fallback, keep meter." % [boss_range(action),chime_damage(),v("cantor.chime_base"),v("cantor.chime_divisor"),v("cantor.chime_spend")]
+  "Hushed Chime":return "Most-buffed hero (closest legal fallback) within %d: %d damage NOW (%d base + 1 per %d Resonance). Spend up to %d Resonance when declared. No target: fallback, keep meter." % [boss_range(action),chime_damage(),v("cantor.chime_base"),v("cantor.chime_divisor"),v("cantor.chime_spend")]
   "Tuning Fork":return "Advance up to %d, then attack within %d for %d. Reactions apply. No reachable target: fallback advance / Block." % [v("cantor.fork_move")+(v("cantor.fork_move_phase") if phase_two else 0),boss_range(action),v("cantor.fork_damage")+(v("cantor.fork_damage_phase") if phase_two else 0)]
   "Bound":return "Lethargic Bind suppresses this result."
  return "Resolve I → II → III, then end the boss turn."

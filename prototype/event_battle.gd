@@ -52,22 +52,22 @@ func continue_monsters():
   if action == "Mend":
    var wounded: Array = ([3]+living_minions()).filter(func(target):return unit_data(target).hp > 0 and unit_data(target).hp < unit_data(target).max_hp and distance(id,target) <= 2)
    if not wounded.is_empty():
-    var target: int = wounded[0];unit_data(target).hp += 1;record_event("heal",unit_name(id)+" mends "+unit_name(target)+" for 1 HP (provisional AI).",id,target,1)
+    var target: int = mend_target(id,wounded,boss_index-1);unit_data(target).hp += 1;record_event("heal",unit_name(id)+" mends "+unit_name(target)+" for 1 HP (provisional AI).",id,target,1)
    else:note(unit_name(id)+" has no wounded ally in range 2; Mend does nothing.")
    continue
   if action in ["Guard","Iron Guard"]:
    var amount := 2 if action == "Iron Guard" else 1
    unit_data(id).block += amount;record_event("block_gain",unit_name(id)+" gains %d Block." % amount,id,id,amount);continue
-  var target := nearest_attacked(id,attack_targets(id,99))
+  var target := enemy_target(id,attack_targets(id,99),action)
   if target < 0:continue
   if action == "Scuttle":
-   if unit_data(id).get("rooted",0) <= 0:move_friendly_summon(id,creature_move(essence_type(id)))
+   if unit_data(id).get("rooted",0) <= 0:move_friendly_summon(id,creature_move(essence_type(id)),target)
    note(unit_name(id)+" scuttles up to %d cells." % creature_move(essence_type(id)))
   elif action in ["Bite","Venom Bite","Needle","Bash"]:
    var reach := 3 if action == "Needle" else 1
    var candidates: Array = attack_targets(id,reach)
    if action == "Needle":candidates = candidates.filter(func(t):return sight(id,t,reach))
-   var victim := nearest_attacked(id,candidates)
+   var victim := enemy_target(id,candidates,action)
    if victim < 0:note(unit_name(id)+" has no legal target for "+action+"; holds.");continue
    var weak: int = int(unit_data(id).get("weak",0)) if id >= 4 else 0
    pending = {"kind":"attack","action":action,"victims":[victim],"reacted":[],"amount":maxi(0,(2 if action == "Bash" else 1)-weak),"source":id,"range":reach,"needs_sight":action == "Needle","area":false}

@@ -25,7 +25,7 @@ func _initialize():call_deferred("run")
 func run():
  check(W.GROUPS.size() == 6 and W.SOULS.size() == 3,"three new groups and Souls")
  var e = E.new();e.bank = {"mire_leech":9,"glasswing_moth":3,"iron_husk":3}
- check(e.reward_name("mire_soul") == "Soul · bound" and e.reward_effect("mire_soul").contains("hidden"),"Soul name/effect hidden until first binding")
+ check(e.reward_name("mire_soul") == "Soul of the Mire" and not e.reward_effect("mire_soul").contains("hidden"),"Soul name/effect readable before binding")
  check(e.craft("mire_soul") != "" and e.bank.mire_leech == 9,"binding requires recipient without charging")
  check(e.craft("mire_soul",1) == "" and e.bank.mire_leech == 6,"binding pays three matching Essence")
  check("mire" in e.souls[1] and "mire" not in e.souls[0] and e.reward_name("mire_soul") == "Soul of the Mire","Soul belongs to chosen hero and reveals design")

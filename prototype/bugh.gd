@@ -107,7 +107,7 @@ func boss_step() -> void:
    var options := attack_targets(3,boss_range(action))
    if options.is_empty():fallback()
    else:
-    var victims: Array = options if action == "Hammerfall" else [nearest(options)]
+    var victims: Array = options if action == "Hammerfall" else [enemy_target(3,options,action)]
     var amount := w("hammer_damage") if action == "Hammerfall" else (w("bash_damage","bash_damage_phase") if action == "Shield Bash" else w("drive_damage","drive_damage_phase"))
     last_targets = victims.duplicate();pending = {"kind":"attack","source":3,"action":action,"range":boss_range(action),"area":action == "Hammerfall","victims":victims,"reacted":[],"amount":amount};continue_attack()
   _:fallback()
@@ -123,11 +123,11 @@ func phase_upgrades() -> Array:
 func default_boss_help(action: String) -> String:
  match action:
   "Iron Advance":return "Advance up to %d toward the party. Occupied tiles block the full 2×2 footprint." % w("advance","advance_phase")
-  "Shield Bash":return "Closest opponent within %d: %d normal damage. Fully preventing HP loss with Block / Damage Reduction breaks Bulwark and removes his Block. Reactions apply." % [boss_range(action),w("bash_damage","bash_damage_phase")]
+  "Shield Bash":return "Most-Block hero (closest legal fallback) within %d: %d normal damage. Fully preventing HP loss with Block / Damage Reduction breaks Bulwark and removes his Block. Reactions apply." % [boss_range(action),w("bash_damage","bash_damage_phase")]
   "Hammerfall":return "Attack each opponent within %d for %d normal damage. Spread out or guard. One fully defended hero hit breaks Bulwark. Reactions apply." % [boss_range(action),w("hammer_damage")]
   "Raise Guard":return "Gain %d Block. Does not restore a broken Bulwark before his next turn." % w("block","block_phase")
   "Crushing Sweep","Crushing Sweep · impact":return "Marked cells take %d damage before his next three dice. The warning is fixed: move a threatened hero out to break Bulwark, or fully guard the impact. Reactions apply; movement Reactions can escape. After every boss turn a sweep is armed if none is already marked. Future warning reach %d." % [sweep_damage if not sweep_tiles.is_empty() else w("sweep_damage","sweep_damage_phase"),w("sweep_range","sweep_range_phase")]
-  "Driving Blow":return "Closest opponent within %d: %d damage. A hero who loses HP is pushed up to %d; occupied cells stop the push. Fully guarding prevents the push and breaks Bulwark." % [boss_range(action),w("drive_damage","drive_damage_phase"),w("push","push_phase")]
+  "Driving Blow":return "Highest-HP hero (closest legal fallback) within %d: %d damage. A hero who loses HP is pushed up to %d; occupied cells stop the push. Fully guarding prevents the push and breaks Bulwark." % [boss_range(action),w("drive_damage","drive_damage_phase"),w("push","push_phase")]
   "Bound":return "Suppressed by Lethargic Bind."
  return "Defend / evade → break Bulwark → counterattack. Resolve the marked sweep, then I → II → III."
 func turn_explanation() -> String:return "IRON WARDEN: %s Fully guard his direct attack or move a threatened hero off the sweep warning to break Bulwark until his next turn. Counterattack during that opening. " % ("BULWARK BROKEN: normal damage gets through." if guard_broken else "BULWARK ON: −%d normal incoming damage." % v("warden.armor"))+super.turn_explanation()

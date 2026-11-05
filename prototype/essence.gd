@@ -89,10 +89,8 @@ func craft(key: String, recipient: int = -1) -> String:
  return ""
 func reward_name(key: String) -> String:
  var recipe: Dictionary = RECIPES[key]
- if not unlocked.has(key):return recipe.category
  return FACES[recipe.face-60][0] if recipe.has("face") else recipe.name
 func reward_effect(key: String) -> String:
- if not unlocked.has(key):return "Exact effect is hidden until crafted."
  var recipe: Dictionary = RECIPES[key]
  return FACES[recipe.face-60][2] if recipe.has("face") else recipe.effect
 func settle(run_id: String, victory: bool, tokens: Array, deaths: Array, encounters: Array) -> bool:
@@ -142,3 +140,12 @@ func equip_weapon(hero: int, weapon: String) -> bool:
 func equip_body(hero: int, body: String) -> bool:
  if hero not in range(3) or body != "broken_body":return false
  bodies[hero] = body;return true
+
+func recipe_progress(key: String) -> String:
+ var recipe: Dictionary = RECIPES[key];var available := int(bank.get(recipe.enemy,0));var need := maxi(0,int(recipe.cost)-available)
+ return "%d / %d %s Essence · %s" % [available,recipe.cost,type_name(recipe.enemy),"Ready to craft" if need == 0 else "%d more needed" % need]
+func allocated(builds: Array, face: int) -> int:
+ var count := 0
+ for hero in builds:
+  for die in hero:count += die.count(face)
+ return count

@@ -38,7 +38,7 @@ static func screen(app, heading: String, key: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
  app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.31",Vector2(18,58),15,MUTED,size.x-36)
+ app.label_at("ASH & OATH · MOBILE · v0.32",Vector2(18,58),15,MUTED,size.x-36)
  var width: float = minf(720,size.x-24)
  var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
@@ -63,7 +63,11 @@ static func render(app) -> void:
   "events":events(app)
   "battle":battle(app)
  # A pending choice stays mandatory; optional panels never grant a combat action.
- if not app.combat_notices.is_empty() and app.rolling_time <= 0:modal(app,app.notice_ui);return
+ if not app.combat_notices.is_empty() and app.rolling_time <= 0:
+  if app.combat_notices[0].has("faces"):app.BattlePanels.engrave(app)
+  else:modal(app,app.notice_ui)
+  return
+ if app.show_intents:app.BattlePanels.intents(app);return
  if app.choosing_poke and app.rolling_time <= 0:modal(app,app.poke_ui);return
  if app.show_enemy_cards:modal(app,app.enemy_cards_ui);return
  if app.show_soundtrack:modal(app,app.soundtrack_settings_ui);return
@@ -76,7 +80,10 @@ static func render(app) -> void:
  if app.show_menu:menu(app);return
  if app.page == "battle":
   if app.game.outcome != "":modal(app,app.outcome_ui);return
-  if not app.game.pending.is_empty():modal(app,app.pending_ui);return
+  if not app.game.pending.is_empty():
+   if app.rolled_choice_pending():app.BattlePanels.picker(app)
+   else:modal(app,app.pending_ui)
+   return
  if app.mobile_info != "":info(app)
 
 static func main_menu(app) -> void:
@@ -151,13 +158,13 @@ static func crafting(app, column: Control) -> void:
  if app.camp_recipe not in recipes:app.camp_recipe = recipes[0]
  for key in recipes:btn(app,column,app.expedition.camp.reward_name(key)+" · %d Essence" % E.RECIPES[key].cost,func():app.camp_recipe = key;app.rebuild(),GOLD if app.camp_recipe == key else MUTED)
  var recipe: Dictionary = E.RECIPES[app.camp_recipe]
- text(column,app.expedition.camp.reward_name(app.camp_recipe),26,GOLD);text(column,app.expedition.camp.reward_effect(app.camp_recipe))
+ text(column,app.expedition.camp.reward_name(app.camp_recipe),26,GOLD);text(column,app.expedition.camp.reward_effect(app.camp_recipe));text(column,app.expedition.camp.recipe_progress(app.camp_recipe),20,GOLD)
  var already: bool = false
  if recipe.has("soul"):
   text(column,"Bind permanently to:",20,GOLD);heroes(app,column,true);already = recipe.soul in app.expedition.camp.souls[app.camp_hero]
  elif not recipe.has("face"):already = app.expedition.camp.unlocked.has(app.camp_recipe)
- else:text(column,"Owned copies: %d" % app.expedition.camp.owned(recipe.face),20)
- var caption: String = "Already owned" if already else ("Bind to "+NAMES[app.camp_hero] if recipe.has("soul") else "Craft & reveal / add copy")
+ else:text(column,"Owned %d · Equipped %d · Free %d" % [app.expedition.camp.owned(recipe.face),app.expedition.camp.allocated(app.builds,recipe.face),maxi(0,app.expedition.camp.owned(recipe.face)-app.expedition.camp.allocated(app.builds,recipe.face))],20)
+ var caption: String = "Already owned" if already else ("Bind to "+NAMES[app.camp_hero] if recipe.has("soul") else "Craft / add one party copy")
  btn(app,column,caption,func():app.craft_recipe(app.camp_recipe),GOLD,already or int(app.expedition.camp.bank.get(app.camp_type,0)) < recipe.cost)
 static func refit(app, column: Control) -> void:
  heroes(app,column,true)
@@ -247,8 +254,12 @@ static func battle(app) -> void:
   var status: Button = app.button(NAMES[hero]+" · %d/%d HP · B%d" % [h.hp,h.max_hp,h.block],Vector2(12+hero*width,49),Vector2(width-4,36),func():app.mobile_info = NAMES[hero]+"\n"+app.game.status_description(hero);app.rebuild(),app.COLORS[hero])
   status.add_theme_font_size_override("font_size",14);status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
  if not landscape:
-  var intents: String = app.game.boss_name()+" · %d HP\n" % app.enemy_pool("hp")+" · ".join(app.game.boss_rolls)
-  app.button(intents,Vector2(12,104),Vector2(size.x-24,64),func():app.show_enemy_cards = true;app.rebuild(),MUTED).add_theme_font_size_override("font_size",17)
+  var list: Array = app.game.enemy_intents()
+  var intent: Dictionary = list[mini(app.game.boss_visible_index(),list.size()-1)] if not list.is_empty() else {}
+  var caption: String = ("%s · %s\n→ %s" % [app.game.unit_name(intent.source),intent.action,intent.target_text]) if not intent.is_empty() else "Enemy intents · view targets & effects"
+  var b: Button = app.button(caption,Vector2(12,104),Vector2(size.x-24,64),func():app.show_intents = true;app.rebuild(),app.GOLD)
+  b.name = "EnemyIntentsButton";b.add_theme_font_size_override("font_size",17);b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
  var rect := board_rect(app)
  var controls := ScrollContainer.new();controls.name = "MobileBattleActions";controls.scroll_deadzone = 14
  controls.position = Vector2(rect.end.x+12,98) if landscape else Vector2(12,rect.end.y+10)
@@ -257,6 +268,7 @@ static func battle(app) -> void:
  controls.get_v_scroll_bar().value_changed.connect(func(value):app.mobile_scrolls[scroll_key] = int(value))
  controls.set_deferred("scroll_vertical",int(app.mobile_scrolls.get(scroll_key,0)))
  var column := VBoxContainer.new();column.custom_minimum_size.x = controls.size.x-14;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",10);controls.add_child(column)
+ if landscape:btn(app,column,"Enemy intents · targets & effects",func():app.show_intents = true;app.rebuild()).name = "EnemyIntentsButton"
  if active < 3:
   var h: Dictionary = app.game.heroes[active]
   var dice := row(column)
@@ -265,6 +277,7 @@ static func battle(app) -> void:
    var name: String = app.game.soul_label(active) if face == 0 and app.game.reward and app.game.soul_remaining(active)>0 else app.Catalog.name_for(face)
    var caption: String = "Die %s%s\n%s" % [["I","II","III"][die]," · held" if die in h.reaction else " · spent" if h.used[die] else "",name]
    var pick := btn(app,dice,caption,func():app.mobile_die = die;app.select_combat_die(die),GOLD if app.selected == die else app.color_for_face(face),not app.game.pending.is_empty() or app.game.outcome != "" or h.dead or h.hp <= 0);pick.custom_minimum_size.y = 104;pick.add_theme_font_size_override("font_size",18);pick.name = "MobileDie"+str(die)
+   if h.used[die] and die not in h.reaction and (h.channel.is_empty() or h.channel.die != die):app.mark_spent(pick)
   if app.selected >= 0 and not h.used[app.selected]:
    var face: int = app.game.face(active,app.selected)
    var immediate: bool = (face == 59 and app.game.owned_worm(active)>=0) or face in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65] or (face == 0 and (not app.game.reward or app.game.soul_remaining(active)<=0 or app.game.soul_mode(active) in ["heal","block"]))
@@ -343,7 +356,7 @@ static func menu(app) -> void:
  modal(app,func():
   app.label_at("Game menu",Vector2.ZERO,28,GOLD)
   app.button("Return to battle",Vector2.ZERO,Vector2(400,68),func():app.show_menu = false;app.rebuild())
-  for item in [["Enemy cards","show_enemy_cards"],["Full battle log","show_history"],["View dice","show_dice"],["Supplies","show_supplies"],["Rules","show_help"],["Sound & volume","show_soundtrack"],["Options","show_options"]]:
+  for item in [["Enemy intents","show_intents"],["Enemy cards","show_enemy_cards"],["Full battle log","show_history"],["View dice","show_dice"],["Supplies","show_supplies"],["Rules","show_help"],["Sound & volume","show_soundtrack"],["Options","show_options"]]:
    app.button(item[0],Vector2.ZERO,Vector2(400,68),func():app.show_menu = false;app.set(item[1],true);app.rebuild())
   app.button("Main menu · leave encounter",Vector2.ZERO,Vector2(400,68),app.go_main))
 static func options(app) -> void:

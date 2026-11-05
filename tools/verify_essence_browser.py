@@ -18,8 +18,8 @@ with sync_playwright() as pw:
  p.goto(os.environ.get('ASH_WEB_URL','http://127.0.0.1:8890'));p.wait_for_timeout(6500)
  click(p,300,450)
  for hero in range(3):click(p,180,280);click(p,490,280);click(p,1130,830)
- click(p,480,850);text=snap(p,'01-camp-before-crafting');assert 'ESSENCE FORGE' in text.upper() and 'hidden until crafted' in text,text
- assert 'Bone Growth' not in text and 'Bone Strike' not in text,text
+ click(p,480,850);text=snap(p,'01-camp-before-crafting');assert 'ESSENCE FORGE' in text.upper() and 'Bone Growth' in text,text
+ assert 'Bone Strike' in text and 'Bone Guard' in text,text
  click(p,1200,860);click(p,1200,850);text=snap(p,'02-required-event');assert 'THE ASH ROAD' in text,text
  # Resolve safe event options until a live mixed group is genuinely rolled.
  for trial in range(40):
@@ -52,7 +52,10 @@ with sync_playwright() as pw:
  fixture('remedy');text=snap(p,'10-remedy-after-self-heal');assert state()['hp'][0]==4 and 'Shared Remedy' in text,text
  click(p,650,495);assert state()['hp'][1]==4
  fixture('burden');text=snap(p,'11-burden-rolled-history');assert 'Guard' in text,text
- click(p,650,410);click(p,485,485);assert state()['active']==1
+ click(p,650,410)
+ for key,value in [('name','RolledChoice1_0'),('text','Use selected result')]:
+  control=next(v for v in state()['controls'] if v[key]==value);click(p,control['x']+control['w']/2,control['y']+control['h']/2)
+ assert state()['active']==1
  click(p,900,580);assert state()['block'][1]==1
  click(p,900,710);assert state()['active']==0;snap(p,'12-burden-returned-owner')
  fixture('evasive');click(p,520,505);text=snap(p,'13-evasive-post-attack');assert 'no HP lost' in text,text
@@ -64,6 +67,6 @@ with sync_playwright() as pw:
  # Screenshot of all three provisional creature cards.
  fixture('mixed');snap(p,'15-prototype-cards')
  assert not errors,errors
- report={'normal_flow':'passed','deterministic_fixture_ui':'passed','errors':errors,'tested':['hidden recipes','genuine event to mixed encounter','individual defeated-card tokens','victory banking','same-cost second copy','legal refitting','Memory crafting/equip and healing','Shared Burden source/ally/return','Evasive post-Attack step','defeat preserves bank']}
+ report={'normal_flow':'passed','deterministic_fixture_ui':'passed','errors':errors,'tested':['free recipe previews','genuine event to mixed encounter','individual defeated-card tokens','victory banking','same-cost second copy','legal refitting','Memory crafting/equip and healing','Shared Burden source/ally/return','Evasive post-Attack step','defeat preserves bank']}
  (out/'results.json').write_text(json.dumps(report,indent=2));print('PASS actual browser Camp/events and all deterministic progression/ability UI scenarios; no browser errors.',flush=True)
  b.close()

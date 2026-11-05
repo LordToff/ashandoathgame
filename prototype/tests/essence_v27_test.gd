@@ -24,7 +24,7 @@ func run():
  for id in range(60,69):check(C.name_for(id) == E.FACES[id-60][0] and B.valid_face_number(id),"reward catalog integration")
  check(not B.valid_face_number(69),"invalid next face still rejected")
  var e = E.new();e.bank = {"bone_creature":100,"support_creature":20,"movement_creature":10}
- check(e.reward_name("bone_strike") == "Attack Face · Bone" and e.reward_effect("bone_strike").contains("hidden"),"effect and design name hidden before crafting")
+ check(e.reward_name("bone_strike") == "Bone Strike" and e.reward_effect("bone_strike").contains("Adjacent"),"effect and design name inspectable before crafting")
  check(e.craft("bone_strike") == "" and e.owned(61) == 1 and e.bank.bone_creature == 98,"first craft pays two and grants first physical copy")
  check(e.reward_name("bone_strike") == "Bone Strike" and not e.reward_effect("bone_strike").contains("hidden"),"unlock reveals exact effect")
  for i in range(12):check(e.craft("bone_strike") == "","same-cost duplicates have no owned maximum")

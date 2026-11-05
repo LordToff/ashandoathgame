@@ -109,13 +109,13 @@ func activate_worm() -> void:
  tick_poison(id)
  if unit_data(id).dead or outcome != "":return
  action_owner = id;action_label = "Worm Bite";action_before = state_snapshot()
- move_worm(id,v("nugh.command_move")+(v("nugh.command_move_bonus") if phase_two else 0))
+ move_friendly_summon(id,v("nugh.command_move")+(v("nugh.command_move_bonus") if phase_two else 0),Targeting.pick(self,id,attack_targets(id,99),"Worm pursuit / bite",0))
  var options := attack_targets(id,1)
  if options.is_empty():
   last_boss_result = "%s: moved / held; no adjacent hero to bite." % unit_name(id)
   record_event("minion_action",last_boss_result,id,id)
  else:
-  var target := nearest_attacked(id,options);last_targets = [target]
+  var target := enemy_target(id,options,"Worm pursuit / bite",0);last_targets = [target]
   var side := rng.randi_range(0,5)
   var amount := worm_damage() if side < v("nugh.worm_hit_faces") else 0
   var faces := worm_faces()
@@ -178,7 +178,7 @@ func boss_step() -> void:
    var options := attack_targets(3,boss_range(action))
    if options.is_empty():fallback()
    else:
-    var target := nearest(options);last_targets = [target]
+    var target := enemy_target(3,options,action);last_targets = [target]
     var amount := v("nugh.maw_damage")+pressure();last_boss_result = "Gnashing Maw → %s: %d damage before defenses." % [unit_name(target),amount]
     pending = {"kind":"attack","action":action,"victims":[target],"reacted":[],"amount":amount};continue_attack()
   _:fallback()
@@ -201,7 +201,7 @@ func default_boss_help(action: String) -> String:
   "Brood turn":return "After Nu’gh’s three dice, each worm moves up to %d toward a standing hero, then bites if adjacent.\n\nDie: %s. HP loss applies Poison %d (next activation: damage equal to total Poison, then reduce by 1; applications stack). Reactions apply.\n\nThis is extra to Brood Command." % [v("nugh.command_move")+(v("nugh.command_move_bonus") if phase_two else 0),", ".join(worm_faces()),v("nugh.poison")]
   "Birth Cry":return "Summon %d worms on empty cells within 2; cap %d living, %d HP each. Never on heroes, the boss or other worms." % [v("nugh.summon")+(v("nugh.summon_bonus") if phase_two else 0),v("nugh.worm_cap"),v("nugh.worm_hp")]
   "Brood Command":return "Each worm: move up to %d toward a standing hero, then bite if adjacent.\n\nDie: %s. HP loss applies Poison %d (next activation: damage equal to total Poison, then reduce by 1; applications stack). Reactions apply.\n\nNo worms: summon %d instead. New worms can act after Nu’gh." % [v("nugh.command_move")+(v("nugh.command_move_bonus") if phase_two else 0),", ".join(worm_faces()),v("nugh.poison"),v("nugh.command_empty")+(v("nugh.summon_bonus") if phase_two else 0)]
-  "Gnashing Maw":return "Closest standing hero within %d: %d base + %d brood pressure damage. No target: RETREAT %d or gain %d Block if cornered." % [boss_range(action),v("nugh.maw_damage"),pressure(),v("nugh.fallback_move"),v("nugh.guard_block")]
+  "Gnashing Maw":return "Lowest-HP hero (closest legal fallback) within %d: %d base + %d brood pressure damage. No target: RETREAT %d or gain %d Block if cornered." % [boss_range(action),v("nugh.maw_damage"),pressure(),v("nugh.fallback_move"),v("nugh.guard_block")]
   "Burrow":return "RETREAT up to %d cells to maximize distance from the nearest hero. No safer route: +%d Block." % [v("nugh.burrow_move")+(v("nugh.retreat_bonus") if phase_two else 0),v("nugh.guard_block")]+(" Also leave %d worm(s) near the old location." % v("nugh.burrow_worms") if phase_two else "")
   "Brood Guard":return "Gain %d Block + one per living worm, bonus capped at %d." % [v("nugh.guard_block"),v("nugh.guard_worm_cap")]+(" Also shield one worm with %d non-stacking Block." % v("nugh.guard_worm_block") if phase_two else "")
   "Devour Brood":return "Consume the nearest worm (no Soul Link); heal %d HP.%s No worms: summon %d." % [v("nugh.devour_heal")+(v("nugh.devour_heal_bonus") if phase_two else 0)," Gain %d Block." % v("nugh.devour_block") if phase_two else "",v("nugh.command_empty")]

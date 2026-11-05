@@ -22,7 +22,7 @@ with sync_playwright() as pw:
  def fixture(mode):
   p.evaluate('(m)=>window.essenceProof(m)',mode)
   p.wait_for_function('()=>{window.essenceProof("state");return !JSON.parse(window.essenceState).rolling;}');p.wait_for_timeout(300)
- fixture('wilds_camp');text=snap(p,'03-hidden-soul-design');assert 'hidden until crafted' in text and 'Soul of the Mire' not in text,text
+ fixture('wilds_camp');text=snap(p,'03-soul-design-preview');assert 'Soul of the Mire' in text and 'heal' in text.lower(),text
  click(p,1080,640);click(p,1080,700);data=state();assert 'mire' in data['souls'][1] and 'mire' not in data['souls'][0] and data['bank']['mire_leech']==3
  text=snap(p,'04-bound-to-rook');assert 'Soul of the Mire' in text,text
  click(p,880,160);click(p,370,258);click(p,450,544);click(p,450,643);assert state()['equipped_souls'][1]=='mire'
@@ -33,5 +33,5 @@ with sync_playwright() as pw:
  fixture('soul_blink');click(p,900,245);click(p,78,562);assert state()['positions'][0]==[0,5];snap(p,'08-glasswing-blink')
  fixture('wilds_cards');text=snap(p,'09-all-public-dice');assert 'Venom Bite' in text and 'Needle' in text and 'Iron Guard' in text,text
  assert not errors,errors
- report={'result':'passed','errors':errors,'tested':['normal Wilds pagination and creature sprites','real leech encounter','public new enemy dice','hidden Soul design','paid binding to chosen hero','bound Soul equipment and sprite','Mire actual healing/once per turn','Ironbound Block','Glasswing blink control']}
+ report={'result':'passed','errors':errors,'tested':['normal Wilds pagination and creature sprites','real leech encounter','public new enemy dice','free Soul design preview','paid binding to chosen hero','bound Soul equipment and sprite','Mire actual healing/once per turn','Ironbound Block','Glasswing blink control']}
  (out/'results.json').write_text(json.dumps(report,indent=2));print(json.dumps(report));b.close()

@@ -12,7 +12,7 @@ The dedicated repository retains source history and the previous Pages history. 
 
 A GitHub repository backs up committed source and published files. It cannot guarantee that a cloud runtime never fails. Commit and push completed work; ignored caches, running processes and uncommitted files are not repository backups.
 
-Current source for v0.31 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
+Current source for v0.32 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
 
 ## Recover in a new environment
 
@@ -73,3 +73,7 @@ Run python tools/make_retro_sprites.py to reproduce the current 16-pixel tiles f
 ## v0.31 phone controls
 
 The phone presentation is in prototype/mobile_ui.gd. It calls the existing model and controller for every action; do not fork battle, rewards or equipment rules. prototype.gd maps board taps to the existing grid and adapts the virtual viewport on rotation. The browser uses the ash-and-oath-mobile localStorage key for immediate layout persistence; native runs use user://ash-ui-layout.cfg. Both are independent of local reward storage. Run mobile_v31_test.gd and tools/verify_mobile_browser.py (the isolated Essence fixture) plus existing hub/Wilds/Essence verifiers. The fixture is excluded from release exports. Browser emulation is not physical iOS/Android testing.
+
+## v0.32 combat clarity
+
+Enemy priority scoring and stable random tie selection are in prototype/enemy_targeting.gd; battle.gd shares those rules between real resolution and live forecasts. UI inspection must never advance the combat RNG. Actual credited enemy HP damage is recorded per hero and rolled into previous-round threat on the shared roll. Support Mend targets the most wounded legal ally. battle_panels.gd renders intent cards and the nine-result picker. Do not show hidden installed sides for a rolled-result choice; installed-slot abilities remain explicit exceptions. The status SFX queue is separate from impact audio, respects mute/volume, and consumes each event once. Engrave previews installed-side changes without rewriting recorded results. All recipe effects are now visible before payment; prices/ownership remain unchanged. Run clarity_v32_test.gd and verify_clarity_browser.py plus existing equipment, Wilds, Essence and boss suites.

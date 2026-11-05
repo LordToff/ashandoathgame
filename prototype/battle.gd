@@ -1,6 +1,10 @@
 class_name AshBattle
 extends RefCounted
 
+const Targeting = preload("res://prototype/enemy_targeting.gd")
+var intent_seed := 0
+var enemy_slot := 0
+
 const Essence = preload("res://prototype/essence.gd")
 const Balance = preload("res://prototype/balance.gd")
 var balance: Dictionary = {}
@@ -164,6 +168,7 @@ func note(text: String) -> void:
 
 func begin_action(owner: int, label: String, target: int = -1, die: int = -1) -> void:
  action_owner = owner; action_label = label
+ if owner >= 3:enemy_slot = die if die >= 0 else maxi(0,boss_index-1)
  action_before = state_snapshot()
  var text := unit_name(owner) + " declares " + label
  if target >= 0: text += " on " + unit_name(target)
@@ -254,6 +259,9 @@ func new_round() -> void:
  shared_roll()
 
 func shared_roll() -> void:
+ intent_seed = rng.randi()
+ for hero in heroes:
+  hero.damage_last_round = int(hero.get("damage_this_round",0));hero.damage_this_round = 0
  roll_context = "Heroes and boss · shared roll"
  roll_serial += 1
  for h in heroes:
@@ -457,7 +465,7 @@ func nearest(ts: Array, low_block: bool = false) -> int:
  return candidates[rng.randi_range(0,candidates.size()-1)]
 
 func boss_move(steps: int, chosen_target: int = -1) -> bool:
- var target := chosen_target if chosen_target >= 0 else nearest(targets())
+ var target := chosen_target if chosen_target >= 0 else enemy_target(3,attack_targets(3,99),action_label)
  if target < 0: return false
  var moved := false
  var origin: Vector2i = boss.pos
@@ -708,7 +716,7 @@ func boss_step() -> void:
  last_targets.clear()
  match action:
   "Ashen Chain":
-   var target := nearest(targets(v("boss.chain.range")))
+   var target := enemy_target(3,targets(v("boss.chain.range")),action)
    if target < 0: fallback()
    else:
     last_targets = [target]
@@ -730,7 +738,7 @@ func boss_step() -> void:
     var lost: int = remove_block(target,v("boss.chain.strip"))
     record_event("debuff","Ashen Chain pulls %s %s → %s and removes %d Block. No HP damage; occupied cells stop the pull." % [unit_name(target),cell_name(origin),cell_name(best),lost],3,target)
   "Cinder Brand":
-   var target := nearest(targets(v("boss.brand.range")))
+   var target := enemy_target(3,targets(v("boss.brand.range")),action)
    if target < 0: fallback()
    elif not brand_cells.is_empty(): note("Cinder Brand is already armed; the marked cells remain unchanged.")
    else:
@@ -759,7 +767,8 @@ func boss_step() -> void:
     pending = {"kind":"attack","action":action,"victims":victims,"reacted":[],"amount":v("boss.Furnace Roar.damage")}
     continue_attack()
   "Advance":
-   var highest := highest_hp_targets()
+   var focus := enemy_target(3,targets(),action)
+   var highest: Array = [focus] if focus >= 0 else []
    var adjacent := highest.filter(func(t):return distance(3,t) == 1)
    if not adjacent.is_empty():
     var target: int = adjacent[rng.randi_range(0,adjacent.size()-1)]
@@ -785,7 +794,7 @@ func boss_step() -> void:
    if v("boss.fracture.count") == 0:
     note("Fracture destroys no faces: its configured count is 0.");report_changes();return
    var ts := targets(v("boss.fracture.range")).filter(func(i): return heroes[i].build.any(func(d): return d.any(func(f): return f not in [0,56])))
-   var t := nearest(ts)
+   var t := enemy_target(3,ts,action)
    if t < 0: fallback()
    else: last_targets = [t]; pending = {"kind":"fracture","hero":t,"remaining":v("boss.fracture.count")}
   _:
@@ -797,7 +806,7 @@ func boss_step() -> void:
    if ts.is_empty():
     if action != "Skirmish": fallback()
    else:
-    var victims: Array = ts if action == "Sweep" else [nearest(ts,action in ["Strike","Smoking Strike"])]
+    var victims: Array = ts if action == "Sweep" else [enemy_target(3,ts,action)]
     last_targets = victims.duplicate()
     note(action + " targets " + ", ".join(victims.map(func(t): return unit_name(t))))
     pending = {"kind":"attack","action":action,"victims":victims,"reacted":[],"amount":v("boss."+("Strike" if action == "Smoking Strike" else action)+".damage")}
@@ -835,7 +844,7 @@ func continue_attack() -> void:
    pending = {}
    if source == 3 and action != "Skirmish": fallback()
    return
-  var t := nearest(ts,action in ["Strike","Smoking Strike"]) if source == 3 else nearest_attacked(source,ts)
+  var t := enemy_target(source,ts,action) if not friendly(source) else nearest_attacked(source,ts)
   record_event("retarget","%s retargets %s to %s after a Reaction." % [unit_name(source),action,unit_name(t)],source,t)
   pending.victims = [t]; continue_attack(); return
  var amount: int = pending.amount
@@ -992,6 +1001,7 @@ func action_reroll(d: int) -> bool:
 
 func boss_help(action: String) -> String:
  var base := default_boss_help(action)
+ if Targeting.RULES.has(action):base = "TARGET: "+Targeting.label(action)+". Preferred target out of reach: closest legal target. Seeded random ties.\n\n"+base
  if not balance.keys().any(func(key):return Balance.INDEX.has(key)):return base
  var group := "Boss · "+action
  var values := Balance.summary(balance,group,tuned)
@@ -999,18 +1009,18 @@ func boss_help(action: String) -> String:
 
 func default_boss_help(action: String) -> String:
  match action:
-  "Ashen Chain": return "Pull the closest standing hero within %d up to %d legal cells closer; strip %d Block. %s" % [v("boss.chain.range"),v("boss.chain.move"),v("boss.chain.strip"),("PHASE II: also inflict Rooted %d until the next boss turn (no voluntary movement; forced movement allowed)." % v("boss.chain.root")) if phase_two else "Phase I: no Rooted. At half HP this upgrades to Rooted until the next boss turn."]
+  "Ashen Chain": return "Pull the furthest preferred hero (closest legal fallback) within %d up to %d legal cells closer; strip %d Block. %s" % [v("boss.chain.range"),v("boss.chain.move"),v("boss.chain.strip"),("PHASE II: also inflict Rooted %d until the next boss turn (no voluntary movement; forced movement allowed)." % v("boss.chain.root")) if phase_two else "Phase I: no Rooted. At half HP this upgrades to Rooted until the next boss turn."]
   "Furnace Roar": return "Unlocked at %d%% boss HP. Attack every standing hero within %d for %d damage, then push survivors up to %d cells away. Reactions apply; occupied cells stop the push without collision damage. Replaces Brace on Die I for the rest of the fight. The first Roar replaces the next unresolved boss die." % [v("boss.phase.percent"),v("boss.Furnace Roar.range"),v("boss.Furnace Roar.damage"),v("boss.roar.push")]
   "Cinder Brand": return "Mark %s beneath the closest hero within %d. At NEXT boss turn start, each hero on any marked cell takes %d normal damage. Move away to evade. No stacking. Phase I uses a cross; Phase II uses a square. Already armed cells do not expand mid-countdown." % [("a %d×%d square" % [v("boss.brand.radius")*2+1,v("boss.brand.radius")*2+1]) if phase_two else "a cross",v("boss.brand.range"),v("boss.brand.damage")]
   "Grave Tithe": return "Remove %d Block from each standing hero within %d. Gain the stolen Block, capped at %d. No HP damage." % [v("boss.tithe.strip"),v("boss.tithe.range"),v("boss.tithe.cap")]
   "Advance": return "Pursue the standing hero with the highest current HP, up to %d cells; highest-HP ties are random. If already adjacent to ANY tied highest-HP hero, stay and gain %d Block. Cannot path to the chosen hero: gain %d Block." % [v("boss.advance.move"),v("boss.advance.block"),v("boss.fallback.block")]
   "Skirmish": return "Move %d toward the closest hero, then attack within %d for %d. Reactions happen before damage." % [v("boss.skirmish.move"),boss_range(action),v("boss.Skirmish.damage")]
-  "Strike", "Smoking Strike": return "Attack the closest standing hero within %d for %d damage (distance ties: lowest Block, then random). Any positive hit, even fully blocked: put a fire tile under that hero. If a Smoking Strike fire tile is already there, consume it to deal %d extra normal damage on that cell instead. Ending a hero turn on fire deals %d normal damage. Moving through it does not detonate it." % [v("boss.Strike.range"),v("boss.Strike.damage"),v("boss.smoking.fire_damage"),v("boss.fire.end_turn")]
+  "Strike", "Smoking Strike": return "Attack the lowest-HP hero within %d for %d damage (closest legal fallback; seeded random ties). Any positive hit, even fully blocked: put a fire tile under that hero. If a Smoking Strike fire tile is already there, consume it to deal %d extra normal damage on that cell instead. Ending a hero turn on fire deals %d normal damage. Moving through it does not detonate it." % [v("boss.Strike.range"),v("boss.Strike.damage"),v("boss.smoking.fire_damage"),v("boss.fire.end_turn")]
   "Sweep": return "Attack EVERY hero within %d for %d each, including Downed heroes. Each hero is hit once." % [boss_range(action),v("boss.Sweep.damage")]
   "Drive Back": return "Attack within %d for %d, then automatically push %d cells along the direction from the boss to the hero. No player direction choice. Collision: %d unavoidable damage + Stunned; two equally aligned directions are resolved randomly." % [v("boss.Drive Back.range"),v("boss.Drive Back.damage"),v("boss.push.move"),v("boss.push.collision")]
   "Brace": return "Gain %d Block. Damage consumes Block; any left expires at the boss’s next turn." % v("boss.brace.block")
-  "Distort": return "Target a highest-current-HP standing hero within %d. If no globally highest-HP hero is in reach, target the closest standing hero in reach. HP / distance ties are random. Inflict Weakness %d until the next boss turn. With no reachable hero, use fallback." % [v("boss.distort.range"),v("boss.distort.weakness")]
-  "Fracture": return "Closest hero within %d chooses %d installed ability face(s) to become Blank for this fight. Earlier rolled results stay." % [v("boss.fracture.range"),v("boss.fracture.count")]
+  "Distort": return "Prefer the hero with the most active buffs within %d; otherwise closest legal hero. Ties are seeded randomly. Inflict Weakness %d until the next boss turn. With no reachable hero, use fallback." % [v("boss.distort.range"),v("boss.distort.weakness")]
+  "Fracture": return "Hero with the most active buffs (closest legal fallback) within %d chooses %d installed ability face(s) to become Blank for this fight. Earlier rolled results stay." % [v("boss.fracture.range"),v("boss.fracture.count")]
  return "Resolve one boss die at a time, then end its turn."
 func on_roll(h: Dictionary, d: int, rolled: bool = true) -> void:
  if rolled:
@@ -1117,7 +1127,9 @@ func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: boo
   lost += hit_loss
   # Personal on-hit rewards also resolve on a killing hit; no further damage follows victory.
   if attack_face == 36 and hit_loss >= v("face36.threshold"): h.block += hit_loss*v("face36.multiplier")
-  if attack_face == 41 and hit_loss > 0: engrave_copy(d)
+  if attack_face == 41:
+   if hit_loss > 0:engrave_copy(d)
+   else:record_event("engrave","Engrave dealt no HP damage: no new copy. Block, armor or a zero roll can prevent growth.",active,active)
   if outcome != "": break
   if attack_face == 38 and target >= 3:cleave_splash(target)
   if attack_face == 40 and target == 3 and hit_had_block and unit.block == 0 and hit_loss > 0: delay_boss_once()
@@ -1166,6 +1178,7 @@ func mutate(hero: int, d: int, side: int, id: int) -> void:
  var old: int = h.build[d][side]
  h.build[d][side] = id
  record_event("mutation","%s: %s, Die %s side %d changes %s → %s for this encounter." % [action_label,unit_name(hero),["I","II","III"][d],side+1,FACES[old],FACES[id]],action_owner,hero)
+ event_log[-1].merge({"face_before":old,"face_after":id,"die":d,"side":side})
  if d in h.reaction and h.rolls[d] == side: h.reaction.erase(d)
  if not h.channel.is_empty() and h.channel.die == d and h.channel.side == side: h.channel = {}
 
@@ -1503,14 +1516,21 @@ func numeric_attack_base(d: int, target: int) -> int:
 
 func engrave_copy(d: int) -> void:
  var h: Dictionary = heroes[active]
- if h.engrave_growth >= v("face41.growth"):return
+ var reason := ""
+ if h.engrave_growth >= v("face41.growth"):reason = "Growth already used this own turn."
+ elif h.build[d].count(41) >= v("face41.cap"):reason = "This die has the maximum Engrave copies."
+ elif 0 not in h.build[d]:reason = "No Blank side remains on this die."
+ if reason != "":record_event("engrave",reason,active,active);return
  var grown := 0
  for copy in range(v("face41.copies")):
   if h.build[d].count(41) >= v("face41.cap"):break
   var slot: int = h.build[d].find(0)
   if slot < 0:break
   mutate(active,d,slot,41);grown += 1
- if grown > 0:h.engrave_growth += 1
+ if grown > 0:
+  h.engrave_growth += 1
+  record_event("engrave","Engrave installed %d new copy on Die %s. Current results stay as rolled; the new side can appear on future rolls. Encounter only." % [grown,["I","II","III"][d]],active,active,grown)
+  event_log[-1].merge({"die":d,"faces":h.build[d].duplicate()})
 
 
 func delay_boss_once() -> void:
@@ -1544,6 +1564,8 @@ func face_range(f: int) -> int:
  var key := "face%d.range" % f
  return (v(key)+(1 if f in [15,19] and balance.get("memory.loss."+str(active),false) else 0)) if Balance.INDEX.has(key) else 1
 func boss_range(action: String) -> int:
+ var keys := {"Ashen Chain":"boss.chain.range","Cinder Brand":"boss.brand.range","Grave Tithe":"boss.tithe.range","Distort":"boss.distort.range","Fracture":"boss.fracture.range"}
+ if keys.has(action):return v(keys[action])
  if action == "Smoking Strike":action = "Strike"
  var key := "boss."+action+".range"
  return v(key) if Balance.INDEX.has(key) else 1
@@ -1671,9 +1693,7 @@ func highest_hp_targets() -> Array:
  return result
 
 func distort_target() -> int:
- var highest := highest_hp_targets().filter(func(id):return distance(3,id) <= v("boss.distort.range"))
- if not highest.is_empty():return highest[rng.randi_range(0,highest.size()-1)]
- return nearest(targets(v("boss.distort.range")))
+ return enemy_target(3,targets(v("boss.distort.range")),"Distort")
 
 func brand_offsets() -> Array:
  var result: Array = [Vector2i.ZERO]
@@ -1810,10 +1830,10 @@ func move_summon(id: int, steps: int) -> void:
  record_event("move","%s moves %s → %s." % [unit_name(id),cell_name(origin),cell_name(unit_data(id).pos)],id,id)
 # Friendly pursuit needs a complete route: a legal detour can initially move
 # farther from an enemy. Execute only the first movement-allowance steps.
-func move_friendly_summon(id: int, steps: int) -> void:
+func move_friendly_summon(id: int, steps: int, chosen_target: int = -1) -> void:
  if steps <= 0:return
  var origin: Vector2i = unit_data(id).pos
- var opponents := attack_targets(id,99)
+ var opponents: Array = [chosen_target] if chosen_target >= 0 else attack_targets(id,99)
  var queue: Array = [[origin,[]]];var visited: Array = [origin]
  var paths: Array = [];var length := 100
  while not queue.is_empty():
@@ -2023,6 +2043,10 @@ func friendly_evasive_react(use: bool) -> bool:
 
 
 func credit_enemy_damage(target: int, lost: int) -> void:
+ var owner: int = action_owner
+ if owner >= 4 and friendly(owner):owner = int(unit_data(owner).get("owner",-1))
+ if lost > 0 and owner in [0,1,2] and enemies(owner,target):
+  heroes[owner].damage_this_round = int(heroes[owner].get("damage_this_round",0))+lost
  if lost > 0 and active in [0,1,2] and action_owner == active and burden_interrupt.is_empty() and enemies(active,target):
   heroes[active].damaged_enemy_turn = true
 
@@ -2080,3 +2104,86 @@ func resolve_soul(die: int) -> bool:
  h.soul_moves_used = int(h.get("soul_moves_used",0))+1;h.soul_move_used = h.soul_moves_used >= soul_limit(active)
  record_event("soul",unit_name(active)+" spends a rolled Blank through their equipped Soul: "+("heal self %d" % actual if mode == "heal" else "+%d Block" % actual)+". Once-per-own-turn allowance consumed; installed side remains Blank.",active,active,actual)
  spend(die);return true
+
+func enemy_target(source: int, legal: Array, action: String, slot: int = -1) -> int:
+ var chosen := Targeting.pick(self,source,legal,action,enemy_slot if slot < 0 else slot)
+ if chosen >= 0:record_event("target","%s → %s. Priority: %s; closest legal fallback if preferred targets cannot be reached." % [action,unit_name(chosen),Targeting.label(action)],source,chosen)
+ return chosen
+func enemy_intents() -> Array:
+ var result: Array = []
+ for source in [3]+living_minions():
+  if friendly(source) or unit_data(source).hp <= 0:continue
+  var rolls: Array = unit_data(source).get("creature_rolls",boss_rolls) if encounter_id == "event" else boss_rolls if source == 3 else ["Worm pursuit / bite"]
+  for slot in range(rolls.size()):
+   result.append(enemy_intent(source,str(rolls[slot]),slot))
+ return result
+func enemy_intent(source: int, action: String, slot: int) -> Dictionary:
+ var policy := Targeting.label(action);var names := "";var reach := boss_range(action) if source == 3 and encounter_id != "event" else (3 if action == "Needle" else 1)
+ var everyone := attack_targets(source,99);var legal := attack_targets(source,reach)
+ if action == "Needle":legal = legal.filter(func(id):return sight(source,id,reach))
+ if action == "Grave Tithe":legal = targets(reach)
+ if action == "Sweep":
+  for id in targets(reach,true):
+   if id not in legal:legal.append(id)
+ var selected := -1
+ if action == "Bound":policy = "Suppressed";names = "No target / no effect"
+ elif action in Targeting.SELF:policy = "Self";names = unit_name(source)
+ elif action in Targeting.AREA:
+  policy = "All heroes in reach %d" % reach;names = ", ".join(legal.map(func(id):return unit_name(id)))
+  if names == "":names = "None in reach → fallback"
+ elif action == "Crushing Sweep":policy = "Marked tiles";names = "All units on gold tiles at impact"
+ elif action == "Birth Cry":policy = "Empty nearby cells";names = "Summon worms (living cap applies)"
+ elif action == "Brood Command":policy = "All living worms";names = "Each pursues then bites a legal hero"
+ elif action == "Devour Brood":policy = "Closest living worm";names = "Consume worm; summon if none"
+ elif action == "Mend":
+  policy = "Most missing HP among allies in reach 2"
+  var allies: Array = ([3]+living_minions()).filter(func(id):return unit_data(id).hp > 0 and distance(source,id)<=2 and unit_data(id).hp<unit_data(id).max_hp)
+  var ally := mend_target(source,allies,slot)
+  names = unit_name(ally) if ally >= 0 else "No wounded ally → no heal"
+ else:
+  if action in ["Advance","Iron Advance","Scuttle","Skirmish","Tuning Fork","Worm pursuit / bite"]:legal = everyone
+  if action == "Fracture":legal = legal.filter(func(id):return id < 3 and heroes[id].build.any(func(die):return die.any(func(face):return face not in [0,56])))
+  selected = Targeting.pick(self,source,legal,action,slot)
+  names = unit_name(selected) if selected >= 0 else "No legal target → fallback / hold"
+ var detail := intent_effect(action) if source == 3 and encounter_id != "event" else ("Move toward target; bite when adjacent. Reactions apply." if action == "Worm pursuit / bite" else creature_intent_help(action,source))
+ return {"source":source,"slot":slot,"action":action,"policy":policy,"target":selected,"target_text":names,"detail":detail,"done":active == 3 and slot < boss_visible_index() and source == 3}
+func creature_intent_help(action: String, source: int) -> String:
+ match action:
+  "Bash":return "2 Attack damage · reach 1 · Reactions apply."
+  "Needle":return "1 Attack damage · reach 3 · clear sight required. Reactions apply."
+  "Venom Bite":return "1 Attack damage · reach 1. HP damage adds Poison 1. Reactions apply."
+  "Bite":return "1 Attack damage · reach 1 · Reactions apply."
+  "Guard":return "+1 Block to self; expires at next activation."
+  "Iron Guard":return "+2 Block to self; expires at next activation."
+  "Mend":return "Heal the most wounded ally in reach 2 for 1 HP; no wounded ally means no effect."
+  "Scuttle":return "Move toward the closest hero (Movement Creature: 3; Iron Husk: 1; others: 2). No attack."
+  "Bound":return "Suppressed: no action."
+ return action
+
+func mend_target(source: int, options: Array, slot: int) -> int:
+ if options.is_empty():return -1
+ var best := -1;var choices: Array = []
+ for id in options:
+  var missing: int = unit_data(id).max_hp-unit_data(id).hp
+  if missing > best:best = missing;choices = [id]
+  elif missing == best:choices.append(id)
+ var tie_rng := RandomNumberGenerator.new();tie_rng.seed = hash([intent_seed,source,slot,"Mend"])
+ return choices[tie_rng.randi_range(0,choices.size()-1)]
+
+func intent_effect(action: String) -> String:
+ if encounter_id != "hollow":return default_boss_help(action)
+ match action:
+  "Smoking Strike","Strike":return "%d damage · reach %d. Leave fire under the target. Existing fire detonates for %d extra damage; ending a hero turn on fire deals %d." % [v("boss.Strike.damage"),boss_range(action),v("boss.smoking.fire_damage"),v("boss.fire.end_turn")]
+  "Advance":return "Move up to %d toward the focus hero. Already adjacent: gain %d Block. No legal route: +%d Block." % [v("boss.advance.move"),v("boss.advance.block"),v("boss.fallback.block")]
+  "Skirmish":return "Move up to %d, then attack for %d in reach %d. Recheck targets after moving; if nobody is in reach, no attack." % [v("boss.skirmish.move"),v("boss.Skirmish.damage"),boss_range(action)]
+  "Ashen Chain":return "Reach %d · pull up to %d cells · strip %d Block. No HP damage.%s" % [boss_range(action),v("boss.chain.move"),v("boss.chain.strip")," Also Roots until next boss turn." if phase_two else ""]
+  "Cinder Brand":return "Reach %d · mark tiles around the target. At next boss turn start, units still on marked tiles take %d damage. Move away to evade." % [boss_range(action),v("boss.brand.damage")]
+  "Distort":return "Reach %d · Weakness %d until the next boss turn. No immediate HP damage." % [boss_range(action),v("boss.distort.weakness")]
+  "Grave Tithe":return "Reach %d · remove %d Block from every standing hero. Gain stolen Block up to %d. No HP damage." % [boss_range(action),v("boss.tithe.strip"),v("boss.tithe.cap")]
+  "Fracture":return "Reach %d · target chooses %d installed ability side(s) to become Blank this encounter. Recorded results stay unchanged." % [boss_range(action),v("boss.fracture.count")]
+  "Sweep":return "%d damage to EVERY hero in reach %d, including Downed heroes. Reactions apply." % [v("boss.Sweep.damage"),boss_range(action)]
+  "Drive Back":return "%d damage · reach %d, then force the target away. Collision can cause damage and Stun. Reactions apply." % [v("boss.Drive Back.damage"),boss_range(action)]
+  "Brace":return "+%d Block to self. Expires at next boss turn." % v("boss.brace.block")
+  "Furnace Roar":return "%d damage to all standing enemies in reach %d, then push survivors up to %d. Reactions apply." % [v("boss.Furnace Roar.damage"),boss_range(action),v("boss.roar.push")]
+  "Bound":return "Suppressed by Lethargic Bind. No effect."
+ return default_boss_help(action)

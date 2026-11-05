@@ -70,7 +70,7 @@ static func crafting(app) -> void:
  var selected: Dictionary = E.RECIPES[app.camp_recipe]
  app.label_at("DESIGN DETAILS",Vector2(802,234),13,app.GOLD,550)
  app.label_at(app.expedition.camp.reward_name(app.camp_recipe),Vector2(802,278),28,Color("eee7d8"),562,true,true)
- detail(app,app.expedition.camp.reward_effect(app.camp_recipe),Rect2(802,360,562,160)).name = "CampRecipeDetails"
+ detail(app,app.expedition.camp.reward_effect(app.camp_recipe)+"\n\n"+app.expedition.camp.recipe_progress(app.camp_recipe),Rect2(802,360,562,160)).name = "CampRecipeDetails"
  app.label_at("COST  /  %d %s Essence" % [selected.cost,E.type_name(app.camp_type)],Vector2(802,552),16,app.GOLD,562)
  var unlocked: bool = app.expedition.camp.unlocked.has(app.camp_recipe)
  var bound: bool = selected.has("soul")
@@ -78,9 +78,9 @@ static func crafting(app) -> void:
  if bound:
   app.label_at("BIND TO A HERO · permanent, cannot trade",Vector2(802,592),14,app.GOLD,562)
   for hero in range(3):app.button(NAMES[hero],Vector2(802+hero*190,623),Vector2(182,36),func():app.camp_hero = hero;app.rebuild(),app.COLORS[hero] if app.camp_hero == hero else app.MUTED).name = "SoulRecipient"+str(hero)
- else:detail(app,"Your first craft reveals the design and gives one copy. Further face copies cost the same. Owned rewards stay yours; no dismantling or refunds.",Rect2(802,591,562,60),15)
+ else:detail(app,"Inspect designs freely. Each craft gives one physical party copy; further copies cost the same. Refit to equip. Owned rewards stay yours.",Rect2(802,591,562,60),15)
  var locked: bool = int(app.expedition.camp.bank.get(app.camp_type,0)) < selected.cost or already
- var caption: String = (NAMES[app.camp_hero]+" already owns this Soul" if already else "Bind Soul to "+NAMES[app.camp_hero]) if bound else "Memory already owned" if already else "Craft another copy" if unlocked else "Craft & reveal design"
+ var caption: String = (NAMES[app.camp_hero]+" already owns this Soul" if already else "Bind Soul to "+NAMES[app.camp_hero]) if bound else "Memory already owned" if already else "Craft another copy" if unlocked else "Craft first copy"
  app.button(caption,Vector2(802,674),Vector2(562,48),func():app.craft_recipe(app.camp_recipe),app.GOLD,locked).name = "Craft_"+app.camp_recipe
 
 static func refit(app) -> void:
@@ -99,7 +99,7 @@ static func refit(app) -> void:
  choices.item_selected.connect(func(index):app.camp_recipe = keys[index];app.rebuild());app.ui.add_child(choices)
  var has_face: bool = not keys.is_empty()
  var recipe: Dictionary = E.RECIPES[app.camp_recipe]
- detail(app,app.expedition.camp.reward_effect(app.camp_recipe) if has_face else "Your collection starts empty. Defeat creatures, bank their Essence, then craft a design in the Essence Forge tab.",Rect2(70,350,306,175))
+ detail(app,("Owned %d · Equipped %d · Free %d\n\n" % [app.expedition.camp.owned(recipe.face),app.expedition.camp.allocated(app.builds,recipe.face),maxi(0,app.expedition.camp.owned(recipe.face)-app.expedition.camp.allocated(app.builds,recipe.face))] + app.expedition.camp.reward_effect(app.camp_recipe)) if has_face else "Your collection starts empty. Defeat creatures, bank their Essence, then craft a design in the Essence Forge tab.",Rect2(70,350,306,175))
  app.button("Mode: return crafted face" if app.camp_remove_mode else "Mode: place selected face",Vector2(70,555),Vector2(306,48),func():app.camp_remove_mode = not app.camp_remove_mode;app.rebuild(),app.GOLD).name = "CampUnequipMode"
  detail(app,"Choose a hero, then a square. Keep 2+ Blanks on every die and respect body limits. Copies are shared by the whole party. Returning a crafted face keeps it owned.",Rect2(70,628,306,96),15)
  for hero in range(3):app.button(NAMES[hero],Vector2(442+hero*310,234),Vector2(292,46),func():app.camp_hero = hero;app.rebuild(),app.COLORS[hero] if app.camp_hero == hero else app.MUTED)
