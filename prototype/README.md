@@ -1,3 +1,5 @@
+v0.33: Fixed mobile combat controls; ability names/colors; tappable enemy intents and Block; Poison smoke/SFX without popups; boss Essence, four abilities and four Memories; optional long-hold Debug unlocks. [Changes](../docs/Changes-v0.33.md).
+
 v0.32: **Enemy intents** shows live targets, priorities and effects. Face-up copy choices show only rolled results with inspection and confirmation. Poison HP loss, healing and Stun have distinct SFX; Engrave displays its new installed side. Inspect Essence recipes before spending. [Changes](../docs/Changes-v0.32.md).
 
 Phone browser: choose **Mobile mode** on the main menu. Small touch screens open it automatically unless a different preference was saved. Tap dice and board targets, use **Ability details**, and swipe menus or battle controls. Rotate for controls beside the board. **Desktop mode** switches back. Both layouts share rules and local rewards. See [v0.31 controls](../docs/Changes-v0.31.md).

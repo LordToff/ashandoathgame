@@ -24,7 +24,7 @@ static func main_menu(app) -> void:
  C.detail(app,"Three heroes, four bosses, and creature groups you can choose directly. Earn Essence, discover reward designs, then refit your party at Camp.",Rect2(884,525,438,113),18)
  app.label_at("Banked rewards save on this browser.",Vector2(884,681),15,app.MUTED,438)
  app.button("Mobile mode · play on a phone",Vector2(80,793),Vector2(480,40),func():app.set_mobile_mode(true),Color("9acfc0")).name = "MainMobileMode"
- app.label_at("PLAYABLE PROTOTYPE  /  v0.32",Vector2(80,838),12,app.MUTED,650)
+ app.label_at("PLAYABLE PROTOTYPE  /  v0.33",Vector2(80,838),12,app.MUTED,650)
 
 static func forge(app) -> void:
  app.chamber_background()
@@ -52,7 +52,7 @@ static func forge(app) -> void:
  app.label_at("Die %s · Side %d" % [["I","II","III"][app.forge_die],app.forge_side+1],Vector2(1014,274),27,Color("eee7d8"),350,true)
  var picker := OptionButton.new();picker.name = "ForgeFacePicker";picker.position = Vector2(1014,335);picker.size = Vector2(350,48)
  var ids: Array = range(9)
- for id in range(60,69):
+ for id in range(60,app.Essence.FACE_COUNT):
   if app.expedition.camp.owned(id) > 0:ids.append(id)
  ids.append_array(app.gifts[app.build_hero])
  for id in ids:picker.add_item(app.Catalog.display_name(id),id)

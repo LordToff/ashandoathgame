@@ -17,7 +17,7 @@ func boss_action(g, action: String):
  g.active = 3;g.pending = {};g.boss_index = 0;g.boss_rolls = [action,"Bound","Bound"];g.boss_step()
 func _initialize():call_deferred("run")
 func run():
- check(C.extended_ids().size() == 48 and B.FACES.size() == 69,"catalog counts")
+ check(C.extended_ids().size() == 48 and B.FACES.size() == 73,"catalog counts")
  check(C.category(59) == "Skill" and B.validate(B.bonus_build([59,34]),[59,34]) == "","selectable legal Skill")
  check(B.validate(B.bonus_build([59,34]),[34]) != "","ownership enforced")
  var g = fresh()

@@ -53,7 +53,7 @@ with sync_playwright() as pw:
  click(p,650,495);assert state()['hp'][1]==4
  fixture('burden');text=snap(p,'11-burden-rolled-history');assert 'Guard' in text,text
  click(p,650,410)
- for key,value in [('name','RolledChoice1_0'),('text','Use selected result')]:
+ for key,value in [('name','RolledChoice1_0'),('text','Use')]:
   control=next(v for v in state()['controls'] if v[key]==value);click(p,control['x']+control['w']/2,control['y']+control['h']/2)
  assert state()['active']==1
  click(p,900,580);assert state()['block'][1]==1

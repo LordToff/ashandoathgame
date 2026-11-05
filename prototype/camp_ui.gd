@@ -5,7 +5,7 @@ const W = preload("res://prototype/wilds.gd")
 const NEW_SOUL_ART = {"mire":preload("res://prototype/assets/mire_soul.tres"),"glasswing":preload("res://prototype/assets/glasswing_soul.tres"),"iron":preload("res://prototype/assets/iron_soul.tres")}
 const E = preload("res://prototype/essence.gd")
 const NAMES = ["Vesper","Rook","Wren"]
-const SPECIES = ["bone_creature","support_creature","movement_creature","mire_leech","glasswing_moth","iron_husk"]
+const SPECIES = ["bone_creature","support_creature","movement_creature","mire_leech","glasswing_moth","iron_husk","hollow","nugh","cantor","bugh"]
 
 static func detail(app, text: String, rect: Rect2, size_px: int = 18) -> RichTextLabel:
  var node := RichTextLabel.new();node.position = rect.position;node.size = rect.size
@@ -28,6 +28,7 @@ static func render(app) -> void:
  app.chamber_background()
  app.label_at("CAMP",Vector2(48,30),36,app.GOLD,1080,true)
  app.label_at("Rest. Refit. Choose your next fight.",Vector2(50,86),18,app.MUTED,1000)
+ app.button("Collection",Vector2(1010,40),Vector2(182,44),func():app.show_collection = true;app.rebuild(),app.GOLD)
  app.button("Main menu",Vector2(1210,40),Vector2(182,44),app.go_main,app.MUTED).name = "CampMainMenu"
  var tabs := ["Essence Forge","Refit dice","Equipment","Creature encounters"]
  for i in range(tabs.size()):
@@ -47,13 +48,14 @@ static func crafting(app) -> void:
  app.label_at("ESSENCE SOURCES",Vector2(68,230),13,app.GOLD,226)
  for i in range(3):
   var index: int = i+app.essence_page*3
+  if index >= SPECIES.size():continue
   var type: String = SPECIES[index];var y := 270+i*125
   app.button("",Vector2(64,y),Vector2(234,110),func():app.camp_type = type;app.camp_recipe = app.expedition.camp.recipes_for(type)[0];app.rebuild(),app.GOLD if type == app.camp_type else app.MUTED).name = "CampType"+str(index)
-  art(app,app.CREATURE_SPRITES[type],Rect2(76,y+22,64,64))
+  art(app,source_texture(app,type),Rect2(76,y+22,64,64))
   app.label_at(E.type_name(type).replace(" Creature","").replace(" Moth",""),Vector2(148,y+20),19,app.GOLD if type == app.camp_type else Color("d9e0df"),142,true).mouse_filter = Control.MOUSE_FILTER_IGNORE
   app.label_at("%d Essence" % int(app.expedition.camp.bank.get(type,0)),Vector2(148,y+55),16,app.MUTED,142).mouse_filter = Control.MOUSE_FILTER_IGNORE
- app.button("←" if app.essence_page else "1 / 2",Vector2(68,656),Vector2(102,34),func():app.essence_page = 0;app.camp_type = SPECIES[0];app.camp_recipe = app.expedition.camp.recipes_for(app.camp_type)[0];app.rebuild(),app.MUTED).name = "EssencePreviousPage"
- app.button("More →" if app.essence_page == 0 else "2 / 2",Vector2(182,656),Vector2(112,34),func():app.essence_page = 1;app.camp_type = SPECIES[3];app.camp_recipe = app.expedition.camp.recipes_for(app.camp_type)[0];app.rebuild(),app.GOLD).name = "EssenceNextPage"
+ app.button("← Previous" if app.essence_page else "1 / 4",Vector2(68,656),Vector2(102,34),func():app.essence_page = maxi(0,app.essence_page-1);app.camp_type = SPECIES[app.essence_page*3];app.camp_recipe = app.expedition.camp.recipes_for(app.camp_type)[0];app.rebuild(),app.MUTED).name = "EssencePreviousPage"
+ app.button("Next →" if app.essence_page < 3 else "4 / 4",Vector2(182,656),Vector2(112,34),func():app.essence_page = mini(3,app.essence_page+1);app.camp_type = SPECIES[app.essence_page*3];app.camp_recipe = app.expedition.camp.recipes_for(app.camp_type)[0];app.rebuild(),app.GOLD).name = "EssenceNextPage"
  detail(app,"Victory banks earned Essence.",Rect2(68,706,226,32),13)
  app.setup_panel(Rect2(334,210,420,534))
  app.label_at("REWARD DESIGNS",Vector2(356,230),13,app.GOLD,372)
@@ -61,6 +63,7 @@ static func crafting(app) -> void:
  for i in range(recipes.size()):
   var key: String = recipes[i];var recipe: Dictionary = E.RECIPES[key];var y := 270+i*110
   var card = app.button(app.expedition.camp.reward_name(key),Vector2(350,y),Vector2(388,92),func():app.camp_recipe = key;app.rebuild(),app.GOLD if key == app.camp_recipe else app.MUTED)
+  app.bind_unlock(card,"recipe",key,app.camp_hero)
   card.name = "Recipe_"+key;card.alignment = HORIZONTAL_ALIGNMENT_LEFT;card.add_theme_font_size_override("font_size",17)
   for color_name in ["font_color","font_hover_color","font_pressed_color","font_focus_color","font_disabled_color","font_hover_pressed_color"]:card.add_theme_color_override(color_name,Color(0,0,0,0))
   app.label_at(app.expedition.camp.reward_name(key),Vector2(368,y+17),17,app.GOLD if key == app.camp_recipe else Color("d5dedf"),350).mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -79,7 +82,7 @@ static func crafting(app) -> void:
   app.label_at("BIND TO A HERO · permanent, cannot trade",Vector2(802,592),14,app.GOLD,562)
   for hero in range(3):app.button(NAMES[hero],Vector2(802+hero*190,623),Vector2(182,36),func():app.camp_hero = hero;app.rebuild(),app.COLORS[hero] if app.camp_hero == hero else app.MUTED).name = "SoulRecipient"+str(hero)
  else:detail(app,"Inspect designs freely. Each craft gives one physical party copy; further copies cost the same. Refit to equip. Owned rewards stay yours.",Rect2(802,591,562,60),15)
- var locked: bool = int(app.expedition.camp.bank.get(app.camp_type,0)) < selected.cost or already
+ var locked: bool = int(app.expedition.camp.bank.get(app.camp_type,0)) < selected.cost or already or not app.expedition.camp.discovered(app.camp_type)
  var caption: String = (NAMES[app.camp_hero]+" already owns this Soul" if already else "Bind Soul to "+NAMES[app.camp_hero]) if bound else "Memory already owned" if already else "Craft another copy" if unlocked else "Craft first copy"
  app.button(caption,Vector2(802,674),Vector2(562,48),func():app.craft_recipe(app.camp_recipe),app.GOLD,locked).name = "Craft_"+app.camp_recipe
 
@@ -136,7 +139,8 @@ static func inheritance(app) -> void:
     picker.select(maxi(0,options.find(app.expedition.camp.equipped_souls[hero])))
    "memory":
     options = [""];picker.add_item("None equipped")
-    if app.expedition.camp.unlocked.has("memory_loss"):options.append("memory_loss");picker.add_item("Memory of Loss · shared copy")
+    for memory in app.expedition.camp.memory_keys():
+     if app.expedition.camp.unlocked.has(memory):options.append(memory);picker.add_item(app.expedition.camp.reward_name(memory))
     picker.select(maxi(0,options.find(app.expedition.camp.memories[hero])))
   picker.item_selected.connect(func(index):
    app.equipment_slot = slot
@@ -147,8 +151,8 @@ static func inheritance(app) -> void:
      app.expedition.camp.equip_soul(hero,options[index])
      app.soul_gallery_page = 1 if options[index] in W.SOULS else 0
     "memory":
-     if options[index] != "":app.expedition.camp.equip_memory(hero)
-     elif app.expedition.camp.memories[hero] != "":app.expedition.camp.equip_memory(-1)
+     if options[index] != "":app.expedition.camp.equip_memory(hero,options[index])
+     elif app.expedition.camp.memories[hero] != "":app.expedition.camp.equip_memory(-1,app.expedition.camp.memories[hero])
    app.expedition.save();app.camp_message = NAMES[hero]+"’s "+slot+" equipment saved.";app.rebuild())
   app.ui.add_child(picker)
   picker.focus_entered.connect(func():app.equipment_slot = slot)
@@ -173,7 +177,8 @@ static func inheritance(app) -> void:
   var pixels := TextureRect.new();pixels.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;pixels.texture = texture;pixels.position = Vector2(2,3);pixels.size = Vector2(128,128);pixels.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;pixels.mouse_filter = Control.MOUSE_FILTER_IGNORE;image.add_child(pixels)
   image.modulate = Color.WHITE if owned else Color(0.22,0.26,0.3,0.7);app.ui.add_child(image)
   app.label_at((["Beginning","Hollow","Ash Road","Memory"][index] if app.soul_gallery_page == 0 else ["Mire","Glasswing","Ironbound"][index]) if owned else "Undiscovered",Vector2(764+index*148,492),14,app.GOLD if owned else app.MUTED,136)
- if not app.expedition.camp.unlocked.has("memory_loss"):descriptions.memory = "Shared Memory\n\nThis reward design is still undiscovered. Craft the Memory using Support Creature Essence in the Essence Forge. Its exact name and effect reveal on first craft. One physical copy can then be equipped or transferred among the party."
+ if app.expedition.camp.memories[hero] != "":descriptions.memory = app.expedition.camp.reward_name(app.expedition.camp.memories[hero])+"\n\n"+app.expedition.camp.reward_effect(app.expedition.camp.memories[hero])
+ elif not app.expedition.camp.unlocked.has("memory_loss"):descriptions.memory = "Shared Memory\n\nThis reward design is still undiscovered. Craft the Memory using Support Creature Essence in the Essence Forge. Its exact name and effect reveal on first craft. One physical copy can then be equipped or transferred among the party."
  app.button("More Souls →" if app.soul_gallery_page == 0 else "← Starter & rewards",Vector2(1210,512),Vector2(150,25),func():app.soul_gallery_page = 1-app.soul_gallery_page;app.rebuild(),app.MUTED).add_theme_font_size_override("font_size",11)
  var current_soul: String = app.expedition.camp.equipped_souls[hero]
  if W.SOULS.has(current_soul):descriptions.soul = W.soul_name(current_soul)+"\n\n"+W.SOULS[current_soul].effect+"\n\nBound to "+NAMES[hero]+". Uses a rolled Blank, not a free action. Next own/recovery turn refreshes the allowance; rerolls and toggles do not."
@@ -192,3 +197,9 @@ static func creatures(app) -> void:
   app.button("Fight this group →",Vector2(x+28,682),Vector2(380,44),func():app.start_creature_encounter(index),app.GOLD).name = "FightCreature"+str(index)
  app.button("← Familiar creatures" if app.creature_page else "Creatures 1 / 2",Vector2(367,831),Vector2(265,44),func():app.creature_page = 0;app.rebuild(),app.MUTED).name = "CreaturePreviousPage"
  app.button("Wilds creatures →" if app.creature_page == 0 else "Creatures 2 / 2",Vector2(650,831),Vector2(265,44),func():app.creature_page = 1;app.rebuild(),app.GOLD).name = "CreatureNextPage"
+
+static func source_texture(app, type: String) -> Texture2D:
+ if app.CREATURE_SPRITES.has(type):return app.CREATURE_SPRITES[type]
+ if type == "hollow":
+  var atlas := AtlasTexture.new();atlas.atlas = app.SPRITES;atlas.region = Rect2(32,32,32,32);return atlas
+ return {"nugh":app.NUGH_SPRITE,"cantor":app.CANTOR_SPRITE,"bugh":app.BUGH_SPRITE}.get(type,app.SPRITES)

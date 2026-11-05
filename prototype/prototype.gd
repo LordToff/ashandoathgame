@@ -1,6 +1,13 @@
 extends Control
 
 const BattlePanels = preload("res://prototype/battle_panels.gd")
+var info_return_collection := false
+var show_collection := false
+var debug_mode := false
+var debug_hold: Dictionary = {}
+var mobile_more := false
+var intent_focus := Vector2i(3,0)
+var mobile_enemy := 3
 var show_intents := false
 var choice_preview := Vector2i(-1,-1)
 var status_sounds: Array = []
@@ -216,6 +223,11 @@ func make_audio() -> void:
 
 func _process(delta: float) -> void:
  t += delta
+ if not debug_hold.is_empty():
+  if not debug_mode or not is_instance_valid(debug_hold.button) or not debug_hold.button.is_inside_tree():debug_hold.clear()
+  elif Time.get_ticks_msec()-int(debug_hold.started)>=650:
+   var hold: Dictionary = debug_hold.duplicate();debug_hold.clear();hold.button.set_meta("debug_consumed",true)
+   if debug_unlock(hold.kind,hold.key,hold.hero):rebuild.call_deferred()
  if is_instance_valid(score):
   var cue := "forge"
   if page == "battle" and game.outcome == "":cue = "phase" if game.phase_two else "battle"
@@ -305,6 +317,7 @@ func button(text: String, p: Vector2, sz: Vector2, fn: Callable, accent: Color =
  b.add_theme_color_override("font_hover_color",Color("fff2d5"))
  b.add_theme_color_override("font_color",accent); b.add_theme_color_override("font_disabled_color",Color("83909d"))
  b.pressed.connect(func():
+  if b.get_meta("debug_consumed",false):b.remove_meta("debug_consumed");return
   fn.call(),CONNECT_DEFERRED if mobile_mode else 0)
  ui.add_child(b); return b
 
@@ -340,7 +353,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.32",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.33",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -364,6 +377,8 @@ func rebuild() -> void:
  if show_options: options_ui()
  if show_supplies:supplies_ui()
  if show_soundtrack:soundtrack_settings_ui()
+ if mobile_info != "":MobileUI.info(self)
+ if show_collection:BattlePanels.collection(self)
  if show_intents:BattlePanels.intents(self)
  if show_enemy_cards:enemy_cards_ui()
  if choosing_poke and rolling_time <= 0:poke_ui()
@@ -484,7 +499,7 @@ func battle_ui() -> void:
   instruction_label.max_lines_visible = 2;instruction_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;instruction_label.tooltip_text = instruction
   if selected >= 0 and not h.used[selected]:
    var f: int = game.face(game.active,selected)
-   if (f == 59 and game.owned_worm(game.active) >= 0) or f in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65] or (f == 0 and (not game.reward or game.soul_remaining(game.active) <= 0 or game.soul_mode(game.active) in ["heal","block"])):
+   if (f == 59 and game.owned_worm(game.active) >= 0) or f in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65,71,72] or (f == 0 and (not game.reward or game.soul_remaining(game.active) <= 0 or game.soul_mode(game.active) in ["heal","block"])):
     button("Resolve selected face",Vector2(760,556),Vector2(211,44),func():
      if game.hero_action(selected):selected = -1;roll_feedback = {}
      rebuild(),GOLD,f == 0 and game.soul_mode(game.active) == "heal" and h.hp >= h.max_hp)
@@ -529,15 +544,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.32 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.33 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.32 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.32 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.33 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.33 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.32 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.33 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.32 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.33 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -669,7 +684,7 @@ func outcome_ui() -> void:
  var won: bool = game.outcome == "victory"
  label_at("ENCOUNTER COMPLETE",Vector2(399,264),12,GOLD)
  label_at("A soul, reclaimed." if won else "The oath is not over.",Vector2(399,309),32,Color("ece6d9"),700,true)
- label_at(game.boss_name()+" is defeated.\n"+camp_message+"\n"+("Tutorial Hollow Soul awarded to each hero. Equip at Camp." if game.encounter_id == "hollow" else "No bespoke Soul reward is assigned to this boss yet.") if won else "All three heroes are Downed or dead.\nEncounter tokens discarded; banked Essence is safe.\nReturn to Camp to refit before another expedition.",Vector2(399,378),16,MUTED,570,false,true)
+ label_at(game.boss_name()+" is defeated.\n"+camp_message+"\n"+("Hollow Soul awarded. Ability and Memory available at Camp." if game.encounter_id == "hollow" else "Boss ability and Memory now available in Essence Forge.") if won else "All three heroes are Downed or dead.\nEncounter tokens discarded; banked Essence is safe.\nReturn to Camp to refit before another expedition.",Vector2(399,378),16,MUTED,570,false,true)
  if won:
   button("Return to Camp · bank / craft / refit",Vector2(399,493),Vector2(520,49),open_camp)
  else:
@@ -690,7 +705,7 @@ func help_ui() -> void:
  label_at("Reactions store immediately and expire before the next round’s roll. Block is spent\non damage and expires at your next turn. First zero HP: Downed, protected through\nthe acting turn. First Aid revives with Broken and queues a full recovery turn.\nAt zero again, a Broken hero dies. All heroes Downed/dead means immediate defeat.",Vector2(162,535),16,Color("d8dfe5"))
  label_at("PROTOTYPE SCOPE",Vector2(162,660),13,GOLD)
  label_at("Tuned: Hollow 12 HP; Nu’gh 10 HP; Veyl 14 HP. Choose boss and rules after picking faces.\nThe Hollow: fire burns at hero turn end; Brand and phase-II Sweep punish staying close.\nNu’gh: retreats and commands worms. Soul Link stops at half HP. Reactions work against bites.\nVeyl: Attacks charge Resonance; Skills / Defenses calm it. Bu’gh: fully guard or evade a marked sweep to break his Bulwark, then counterattack.",Vector2(162,696),14,MUTED)
- button("Open current rulebook",Vector2(162,799),Vector2(310,51),func():OS.shell_open("https://lordtoff.github.io/Godot-Game-Template/current-rules.html"),Color("9fc7e6"))
+ button("Open current rulebook",Vector2(162,799),Vector2(310,51),func():OS.shell_open("https://lordtoff.github.io/ashandoathgame/current-rules.html"),Color("9fc7e6"))
  button("Return to the game",Vector2(1003,799),Vector2(255,51),func(): show_help = false; rebuild())
 
 func _gui_input(event: InputEvent) -> void:
@@ -720,7 +735,7 @@ func _gui_input(event: InputEvent) -> void:
   if page == "battle" and game.encounter_id == "bugh" and hover in game.sweep_tiles:tooltip_text += "\nCRUSHING SWEEP: %d damage on this fixed tile before the next boss dice. Escape or fully guard to break Bulwark." % game.sweep_damage
   if page == "battle" and hover in game.fire_tiles:tooltip_text += "\nFIRE TILE: end your turn here → %d normal damage. A later positive Smoking Strike also detonates it for %d." % [game.v("boss.fire.end_turn"),game.v("boss.smoking.fire_damage")]
  if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-  if page != "battle" or is_instance_valid(balance_editor) or show_intents or show_menu or show_lab_tools or show_options or show_soundtrack or show_lab_setup or show_dice or show_turn or show_changes or show_help or show_history or rolling_time > 0 or not game.pending.is_empty() or game.outcome != "" or game.active == 3 or selected < 0: return
+  if page != "battle" or is_instance_valid(balance_editor) or show_collection or mobile_more or show_intents or show_menu or show_lab_tools or show_options or show_soundtrack or show_lab_setup or show_dice or show_turn or show_changes or show_help or show_history or rolling_time > 0 or not game.pending.is_empty() or game.outcome != "" or game.active == 3 or selected < 0: return
   var c := Vector2i((event.position-ORIGIN)/CELL)
   if not Rect2(ORIGIN,Vector2.ONE*CELL*9).has_point(event.position): return
   var f: int = game.face(game.active,selected)
@@ -728,7 +743,7 @@ func _gui_input(event: InputEvent) -> void:
   for u in range(game.unit_count()):
    if game.unit_data(u).get("dead",false): continue
    if c in game.cells(u): target = u
-  if Catalog.is_attack(f) and target >= 0 and game.friendly(target) and target != game.active and friendly_confirm != target:
+  if Catalog.is_attack(f) and f not in [61,67,69,70] and target >= 0 and game.friendly(target) and target != game.active and friendly_confirm != target:
    friendly_confirm = target; hint = "FRIENDLY FIRE: click this ally again to confirm the attack."; rebuild(); return
   friendly_confirm = -1
   var done := false
@@ -741,7 +756,7 @@ func _gui_input(event: InputEvent) -> void:
     var delta := c-tp
     var dir := Vector2i(signi(delta.x),0) if absi(delta.x) >= absi(delta.y) else Vector2i(0,signi(delta.y))
     done = game.hero_action(selected,shove_target,dir)
-  elif f in [61,67]:done = game.hero_action(selected,target)
+  elif f in [61,67,69,70]:done = game.hero_action(selected,target)
   elif f in [1,7,12,15,19,34,35,36,37,38,39,40,41,55,58]: done = game.hero_action(selected,target)
   if done: selected = -1; shove_target = -1; roll_feedback = {}; hint = "Choose another die, or end this hero’s turn."
   else:
@@ -901,9 +916,8 @@ func sync_presentation() -> void:
    inspect_actor = game.active
    effects.append({"kind":"phase","source":3,"target":3,"life":2.6,"length":2.6})
   if event.kind == "poison_tick":
-   combat_notices.append({"title":"POISON TICKS · "+game.unit_name(event.target),"text":event.text})
    if event.value > 0:
-    explicit_hp.append(event.target);feedback_event("poison_tick",event.target);floaters.append({"at":effect_center(event.target),"text":"POISON −%d HP" % event.value,"color":Color("b8ee6a"),"life":1.8})
+    explicit_hp.append(event.target);feedback_event("poison_tick",event.target)
   if event.kind == "heal" and event.value > 0:
    explicit_hp.append(event.target);feedback_event("heal",event.target)
    floaters.append({"at":effect_center(event.target),"text":"HEAL +%d HP" % event.value,"color":Color("85dfb5"),"life":1.8})
@@ -1001,6 +1015,16 @@ func effect_center(id: int) -> Vector2:
  return ORIGIN+pos*CELL+Vector2.ONE*CELL*(1.0 if id == 3 and game.encounter_id != "event" else 0.5)
 
 func draw_effects() -> void:
+ for id in range(game.unit_count()):
+  var unit: Dictionary = game.unit_data(id)
+  if unit.hp<=0 or unit.get("dead",false) or int(unit.get("poison",0))<=0:continue
+  var p: Vector2 = effect_center(id)
+  for mote in range(7):
+   var phase: float = fmod(t*0.48+mote/7.0,1.0)
+   var q: Vector2 = p+Vector2(sin(t*1.8+mote*2.3)*18,15-phase*66)
+   var alpha: float = sin(phase*PI)*0.48
+   draw_circle(q,4+phase*6,Color(0.45,0.85,0.22,alpha))
+  draw_arc(p+Vector2(0,17),20,0,TAU,24,Color(0.55,0.9,0.25,0.6),2)
  for fx in effects:
   if not combat_effects and fx.kind in ["boss_attack","impact"]:continue
   if fx.kind == "focus":
@@ -1319,13 +1343,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.32 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.33 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.32",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.33",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1533,6 +1557,7 @@ func set_soul_enabled(enabled: bool, live: bool = true) -> void:
 func options_ui() -> void:
  var shade := ColorRect.new();shade.color = Color(0.02,0.03,0.05,0.9);shade.size = Vector2(1440,900);ui.add_child(shade)
  setup_panel(Rect2(158,92,1124,716),GOLD)
+ button("Debug unlocks: "+("ON" if debug_mode else "OFF"),Vector2(194,694),Vector2(620,48),func():set_debug_mode(not debug_mode),GOLD).name = "DebugToggle"
  label_at("GAME OPTIONS",Vector2(194,128),34,GOLD,1040,true)
  label_at("Choose your rules and presentation. Earned equipment stays in Camp.",Vector2(196,188),18,MUTED,1040)
  setup_panel(Rect2(190,242,520,428));setup_panel(Rect2(734,242,516,428))
@@ -1666,7 +1691,7 @@ func draw_pixel_fire(center: Vector2, alpha: float, seed_value: int, burst: bool
 func inspection_at_mouse() -> String:
  return inspection_at(get_local_mouse_position())
 func inspection_at(at: Vector2) -> String:
- if page != "battle" or show_intents or show_menu or show_lab_tools or show_options or show_soundtrack or show_lab_setup or show_dice or show_turn or show_changes or show_help or show_history or not game.pending.is_empty():return ""
+ if page != "battle" or show_collection or mobile_more or show_intents or show_menu or show_lab_tools or show_options or show_soundtrack or show_lab_setup or show_dice or show_turn or show_changes or show_help or show_history or not game.pending.is_empty():return ""
  if Rect2(1112,151,304,687).has_point(at) and hover_key != "":return hover_key
  for die in range(3):
   if Rect2(760+die*220,66,208,36).has_point(at):return "boss:"+str(die)
@@ -2058,6 +2083,9 @@ func play_hit_sound(kind: int) -> void:
  combat_audio.play()
 
 func _input(event: InputEvent) -> void:
+ if not debug_hold.is_empty():
+  if event is InputEventMouseButton and not event.pressed:debug_hold.clear()
+  elif (event is InputEventMouseMotion or event is InputEventScreenDrag) and event.position.distance_to(debug_hold.origin)>18:debug_hold.clear()
  if is_instance_valid(score) and ((event is InputEventMouseButton and event.pressed) or (event is InputEventKey and event.pressed)):
   score.unlock()
 func chamber_background() -> void:
@@ -2069,7 +2097,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.32",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.33",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2225,7 +2253,10 @@ func craft_recipe(key: String) -> void:
 func open_camp() -> void:
  if page == "battle" and game.outcome == "":abandon_encounter()
  show_menu = false;show_options = false;show_enemy_cards = false;draft_modal = false
- if page == "battle" and game.outcome != "" and not lab and not training:settle_essence()
+ if page == "battle" and game.outcome != "" and not lab and not training:
+  settle_essence()
+  if game.outcome == "victory" and game.encounter_id in ["hollow","nugh","cantor","bugh"]:
+   camp_tab = 0;camp_type = game.encounter_id;camp_recipe = expedition.camp.recipes_for(camp_type)[0];essence_page = int(CampUI.SPECIES.find(camp_type)/3)
  page = "camp";rebuild()
 func settle_essence() -> void:
  if lab or training or game.outcome == "":return
@@ -2326,6 +2357,8 @@ func camp_remove(hero: int, die: int, side: int) -> void:
 
 func hub_overlays() -> void:
  soundtrack_ui()
+ if show_collection:BattlePanels.collection(self)
+ if mobile_info != "":MobileUI.info(self)
  if show_help:help_ui()
  if show_changes:changes_ui()
  if show_dice:dice_ui()
@@ -2370,6 +2403,7 @@ func abandon_encounter() -> void:
  rolling_time = 0;combat_notices.clear();effects.clear()
 
 func go_main() -> void:
+ friendly_confirm = -1;info_return_collection = false;show_collection = false;mobile_more = false;debug_hold.clear()
  show_intents = false;choice_preview = Vector2i(-1,-1);status_sounds.clear()
  mobile_info = ""
  abandon_encounter();page = "main";queued_creature = -1
@@ -2407,6 +2441,11 @@ func poke_ui() -> void:
 
 
 func load_mobile_layout() -> void:
+ var debug_config := ConfigFile.new()
+ if debug_config.load("user://ash-debug.cfg") == OK:debug_mode = bool(debug_config.get_value("debug","unlocks",false))
+ if OS.has_feature("web"):
+  var stored = JavaScriptBridge.eval("(()=>{try{return localStorage.getItem('ash-and-oath-debug')}catch(e){return null}})()",true)
+  if stored in ["true","false"]:debug_mode = stored == "true"
  var config := ConfigFile.new();var enabled := false
  var browser_preference = null
  if OS.has_feature("web"):
@@ -2463,3 +2502,29 @@ func make_feedback_sound(kind: String) -> AudioStreamWAV:
    "stun":value = sin(TAU*(980*x-1050*x*x))*.55+sin(TAU*1470*x)*.2
   bytes.encode_s16(index*2,int(clampf(value*envelope*19000,-32767,32767)))
  wave.data = bytes;return wave
+
+func set_debug_mode(enabled: bool) -> void:
+ debug_mode = enabled;debug_hold.clear()
+ var config := ConfigFile.new();config.set_value("debug","unlocks",enabled);config.save("user://ash-debug.cfg")
+ if OS.has_feature("web"):JavaScriptBridge.eval("try{localStorage.setItem('ash-and-oath-debug','"+("true" if enabled else "false")+"')}catch(e){}",true)
+ rebuild()
+func bind_unlock(pick: Button, kind: String, key: String, hero: int) -> void:
+ pick.gui_input.connect(func(event):
+  if not debug_mode or not debug_locked(kind,key,hero):return
+  if event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and event.pressed:
+   debug_hold = {"button":pick,"kind":kind,"key":key,"hero":hero,"origin":get_viewport().get_mouse_position(),"started":Time.get_ticks_msec()})
+func debug_locked(kind: String, key: String, hero: int) -> bool:
+ if kind == "soul":return hero in range(3) and key not in expedition.camp.souls[hero]
+ if not Essence.RECIPES.has(key):return false
+ var recipe: Dictionary = Essence.RECIPES[key]
+ if recipe.has("soul"):return recipe.soul not in expedition.camp.souls[hero]
+ return expedition.camp.owned(recipe.face)==0 if recipe.has("face") else not expedition.camp.unlocked.has(key)
+func debug_unlock(kind: String, key: String, hero: int) -> bool:
+ if not debug_mode or not debug_locked(kind,key,hero):return false
+ var changed: bool = expedition.camp.grant_soul(hero,key) if kind == "soul" else expedition.camp.debug_unlock(key,hero)
+ if changed:
+  expedition.save();camp_message = "Unlocked · "+(Wilds.soul_name(key) if kind == "soul" else expedition.camp.reward_name(key))
+ return changed
+func show_mobile_details() -> void:
+ if game.active not in range(3):return
+ mobile_info = face_help(game.face(game.active,mobile_die));rebuild()

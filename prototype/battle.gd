@@ -95,7 +95,7 @@ static func validate(build: Array, gift: Variant = -1, profile: Dictionary = {})
  elif not (gift is int and gift == -1):return "Owned designs must be valid face numbers."
  var canonical_owned: Array = []
  for id in owned:
-  if not valid_face_number(id):return "Owned designs must be whole face numbers from 0 to 68."
+  if not valid_face_number(id):return "Owned designs must be whole face numbers from 0 to 72."
   canonical_owned.append(int(id))
  owned = canonical_owned
  var counts := []
@@ -104,7 +104,7 @@ static func validate(build: Array, gift: Variant = -1, profile: Dictionary = {})
   if not die is Array or die.size() != 6:return "Every die must have exactly six faces."
   var blanks := 0
   for f in die:
-   if not valid_face_number(f):return "Each die face must be a whole number from 0 to 68."
+   if not valid_face_number(f):return "Each die face must be a whole number from 0 to 72."
    counts[int(f)] += 1
    if int(f) == 0:blanks += 1
   if blanks < Balance.value(profile,"body.blanks"):return "Every six-sided die needs at least %d Blanks." % Balance.value(profile,"body.blanks")
@@ -358,6 +358,7 @@ func activate() -> void:
   if h.channel.is_empty() or h.channel.face != 31:
    if h.block > 0: record_event("expire","%s loses %d unspent Block at turn start." % [unit_name(active),h.block],active,active)
    h.block = 0
+  h.memory_embers_used = false;h.memory_brood_used = false;h.memory_silence_used = false;h.memory_iron_used = false
   h.opening = true; reset_soul_allowance(active); h.engrave_growth = 0
   if not h.channel.is_empty():
    h.channel.block_lost = 0
@@ -599,6 +600,13 @@ func face(id: int, d: int) -> int:
  return heroes[id].results[d]
 
 func spend(d: int, store_smoke: bool = false) -> void:
+ var h: Dictionary = heroes[active]
+ if not h.used[d] and burden_interrupt.is_empty():
+  var category: String = Catalog.category(face(active,d))
+  var memory: String = "silence" if category == "Skill" else "iron" if category == "Defense" else ""
+  if memory != "" and balance.get("memory."+memory+"."+str(active),false) and not h.get("memory_"+memory+"_used",false):
+   h["memory_"+memory+"_used"] = true;h.block += 1
+   record_event("memory","Memory bonus applied to "+unit_name(active)+".",active,active,1)
  report_changes()
  heroes[active].opening = false
  heroes[active].used[d] = true
@@ -1560,7 +1568,8 @@ func move_steps(f: int) -> int:
  return soul_distance(active) if f == 0 else v("face%d.move" % f)
 func face_range(f: int) -> int:
  if f in [63,64,65]:return 2+(1 if f == 63 and balance.get("memory.loss."+str(active),false) else 0)
- if f in [60,61,62,66,67,68]:return 1
+ if f == 70:return 2
+ if f in [60,61,62,66,67,68,69,71,72]:return 1
  var key := "face%d.range" % f
  return (v(key)+(1 if f in [15,19] and balance.get("memory.loss."+str(active),false) else 0)) if Balance.INDEX.has(key) else 1
 func boss_range(action: String) -> int:
@@ -1853,6 +1862,9 @@ func move_friendly_summon(id: int, steps: int, chosen_target: int = -1) -> void:
  unit_data(id).pos = chosen[moved-1]
  record_event("move","%s moves %s → %s (%d orthogonal step(s) along a legal route; detours around occupied cells)." % [unit_name(id),cell_name(origin),cell_name(unit_data(id).pos),moved],id,id)
 func apply_poison(source: int, target: int, amount: int) -> void:
+ var owner: int = int(unit_data(source).get("owner",-1)) if source >= 4 and friendly(source) else source
+ if amount>0 and burden_interrupt.is_empty() and owner in [0,1,2] and active == owner and balance.get("memory.brood."+str(owner),false) and not heroes[owner].get("memory_brood_used",false):
+  amount += 1;heroes[owner].memory_brood_used = true
  var victim := unit_data(target)
  if victim.hp <= 0 or victim.get("dead",false) or amount <= 0:return
  var before: int = int(victim.get("poison",0))
@@ -1902,16 +1914,18 @@ func harvest_death(id: int) -> void:
  var unit: Dictionary = unit_data(id)
  var condition: String = unit.get("harvest_condition",Essence.TYPES.get(type,{}).get("condition","regular"))
  if Essence.eligible(unit,condition):
-  harvest_tokens.append({"id":id,"type":type,"name":unit_name(id)})
-  record_event("harvest","%s defeated: 1 %s Essence token placed on its enemy card. Bank only after victory; defeat discards this encounter’s tokens." % [unit_name(id),Essence.type_name(type)],-1,id,1)
+  var amount := 3 if Essence.TYPES.get(type,{}).get("rank","") == "boss" else 1
+  for token in range(amount):harvest_tokens.append({"id":id,"type":type,"name":unit_name(id)})
+  record_event("harvest","%s defeated: %d %s Essence on its card. Victory banks it." % [unit_name(id),amount,Essence.type_name(type)],-1,id,amount)
  else:record_event("harvest",unit_name(id)+" defeated without satisfying its condition at death: no token.",-1,id)
 func harvest_card(id: int) -> String:
  var type := essence_type(id)
  var hidden: bool = unit_data(id).get("rank",Essence.TYPES.get(type,{}).get("rank","normal")) != "normal" and not harvest_revealed.has(type) and not harvest_claimed.has(id)
  if hidden:return "Harvest requirement: HIDDEN until first defeat. Eligibility and rewards are hidden."
  var condition: String = unit_data(id).get("harvest_condition",Essence.TYPES.get(type,{}).get("condition","regular"))
- var token := harvest_tokens.any(func(entry):return entry.id == id)
- return Essence.condition_text(condition)+("\nDefeated card: 1 Essence token." if token else ("\nDefeated card: no token." if harvest_claimed.has(id) else "\nEligible now: "+("YES" if Essence.eligible(unit_data(id),condition) else "NO")))
+ var count := harvest_tokens.filter(func(entry):return entry.id == id).size()
+ var token := count>0
+ return Essence.condition_text(condition)+("\nDefeated card: %d Essence token%s." % [count,"" if count == 1 else "s"] if token else ("\nDefeated card: no token." if harvest_claimed.has(id) else "\nEligible now: "+("YES" if Essence.eligible(unit_data(id),condition) else "NO")))
 func encounter_types() -> Array:
  var types: Array = []
  for id in range(3,unit_count()):
@@ -1929,6 +1943,16 @@ func movement_distance(id: int, origin: Vector2i, destination: Vector2i) -> int:
 func essence_action(d: int, target: int, destination: Vector2i) -> bool:
  var h: Dictionary = heroes[active];var f := face(active,d)
  match f:
+  69,70:
+   if target < 0 or not enemies(active,target) or unit_data(target).hp <= 0 or distance(active,target)>face_range(f):return false
+   if f == 70 and not sight(active,target,2):return false
+   var lost := strike(d,target,2 if f == 69 else 1)
+   if lost > 0:
+    if f == 69:h.block += 1
+    elif outcome == "":apply_poison(active,target,1)
+  71:
+   heal(active,1);h.weak = false;h.bulwark_weak = false
+  72:h.block += modified_value(d,3 if h.block>0 else 2)
   60:
    if destination.x != -99:
     if destination not in reachable(active,1,false):return false
@@ -2049,6 +2073,9 @@ func credit_enemy_damage(target: int, lost: int) -> void:
   heroes[owner].damage_this_round = int(heroes[owner].get("damage_this_round",0))+lost
  if lost > 0 and active in [0,1,2] and action_owner == active and burden_interrupt.is_empty() and enemies(active,target):
   heroes[active].damaged_enemy_turn = true
+  if balance.get("memory.embers."+str(active),false) and not heroes[active].get("memory_embers_used",false):
+   heroes[active].memory_embers_used = true;heroes[active].block += 1
+   record_event("memory","Memory of Embers bonus applied.",active,active,1)
 
 func poke_reason() -> String:
  if active not in [0,1,2] or outcome != "":return "Poke is available only during a living hero’s turn."

@@ -19,7 +19,7 @@ func mobile_controls(node: Node, list: Array):
   list.append({"clip":[clip.position.x,clip.position.y,clip.size.x,clip.size.y],"name":str(node.name),"text":node.text if node is Button else "", "x":rect.position.x,"y":rect.position.y,"w":rect.size.x,"h":rect.size.y,"disabled":node.disabled if node is BaseButton else false})
  for child in node.get_children():mobile_controls(child,list)
 func reset_ui():
- app.show_intents = false;app.choice_preview = Vector2i(-1,-1);app.status_sounds.clear();app.status_cooldown = 0;app.choosing_reroll = false;app.mobile_info = "";app.mobile_scrolls.clear()
+ app.show_collection = false;app.mobile_more = false;app.debug_hold.clear();app.show_intents = false;app.choice_preview = Vector2i(-1,-1);app.status_sounds.clear();app.status_cooldown = 0;app.choosing_reroll = false;app.mobile_info = "";app.mobile_scrolls.clear()
  app.dice_tray.cancel();app.rolling_time = 0;app.choosing_poke = false;app.creature_fight = false;app.camp_tab = 0;app.show_enemy_cards = false;app.show_menu = false;app.show_options = false;app.show_history = false;app.show_supplies = false;app.show_soundtrack = false;app.draft_modal = false;app.lab = false;app.training = false;app.event_fight = false;app.combat_notices.clear();app.selected = -1
  app.gifts = [[34,47],[34,47],[34,47]];app.builds = [B.bonus_build([34,47]),B.bonus_build([34,47]),B.bonus_build([34,47])]
  app.seen_event = 0;app.seen_roll = 0;app.roll_seen = 0;app.effects.clear();app.snapshots.clear();app.visual_positions.clear()
@@ -33,11 +33,23 @@ func proof(args):
  var mode: String = str(args[0])
  if mode == "state":
   var data := {"rolling":app.dice_tray.busy,"bank":app.expedition.camp.bank,"copies":app.expedition.camp.copies,"memories":app.expedition.camp.memories,"active":app.game.active,"page":app.page,"builds":app.builds,"weapons":app.expedition.camp.weapons,"souls":app.expedition.camp.souls,"equipped_souls":app.expedition.camp.equipped_souls}
-  var controls: Array = [];mobile_controls(app.ui,controls);data.controls = controls;data.viewport = [app.get_viewport_rect().size.x,app.get_viewport_rect().size.y];data.mobile = app.mobile_mode;data.intents = app.game.enemy_intents() if app.game.heroes.size()==3 else [];data.sfx = app.status_sounds;data.effects = app.effects.map(func(f):return f.kind);data.notices = app.combat_notices;data.selected = app.selected;data.pending = app.game.pending;data.feedback_playing = app.feedback_audio.playing;data.feedback_kind = app.feedback_streams.find_key(app.feedback_audio.stream);data.live_builds = app.game.heroes.map(func(h):return h.build);data.results = app.game.heroes.map(func(h):return h.results)
+  var controls: Array = [];mobile_controls(app.ui,controls);data.controls = controls;data.viewport = [app.get_viewport_rect().size.x,app.get_viewport_rect().size.y];data.mobile = app.mobile_mode;data.board = [app.MobileUI.board_rect(app).position.x,app.MobileUI.board_rect(app).position.y,app.MobileUI.board_rect(app).size.x,app.MobileUI.board_rect(app).size.y];data.debug = app.debug_mode;data.unlocked = app.expedition.camp.unlocked;data.collection = app.show_collection;data.enemy_block = app.game.boss.get("block",0) if app.game.heroes.size()==3 else 0;data.intents = app.game.enemy_intents() if app.game.heroes.size()==3 else [];data.sfx = app.status_sounds;data.effects = app.effects.map(func(f):return f.kind);data.notices = app.combat_notices;data.selected = app.selected;data.pending = app.game.pending;data.feedback_playing = app.feedback_audio.playing;data.feedback_kind = app.feedback_streams.find_key(app.feedback_audio.stream);data.live_builds = app.game.heroes.map(func(h):return h.build);data.results = app.game.heroes.map(func(h):return h.results)
   if app.game.heroes.size() == 3:data.hp = app.game.heroes.map(func(h):return h.hp);data.block = app.game.heroes.map(func(h):return h.block);data.positions = app.game.heroes.map(func(h):return [h.pos.x,h.pos.y]);data.dagger_used = app.game.heroes.map(func(h):return h.get("dagger_used",false));data.used = app.game.heroes.map(func(h):return h.used);data.boss_hp = app.game.boss.hp
   JavaScriptBridge.get_interface("window").essenceState = JSON.stringify(data);return
  reset_ui()
- if mode == "clarity_borrow":
+ if mode == "flow_player":
+  setup_clarity(2)
+  for hero in range(3):app.game.heroes[hero].pos=Vector2i(hero*3,7)
+  app.game.boss.block=4
+ elif mode == "flow_enemy":
+  setup_clarity(2);app.game.active=3;app.game.order=[3,0,1,2];app.game.cursor=0;app.game.boss_index=0;app.game.boss_rolls=["Brace","Brace","Brace"];app.game.boss.block=4
+ elif mode == "flow_debug":
+  app.expedition.camp=E.new();app.debug_mode=false;app.camp_hero=0;app.camp_tab=2;app.open_camp();app.show_collection=true
+ elif mode == "flow_boss_forge":
+  app.expedition.camp=E.new();app.camp_type="hollow";app.camp_recipe="ember_cut";app.essence_page=2;app.camp_tab=0;app.open_camp()
+ elif mode == "flow_boss_win":
+  app.expedition.camp=E.new();setup_clarity(1);app.game.damage(3,999,true)
+ elif mode == "clarity_borrow":
   setup_clarity(16);app.game.heroes[1].results = [4,1,6];app.game.heroes[1].used = [true,false,false];app.game.heroes[2].results=[7,2,0];app.game.hero_action(0)
  elif mode == "clarity_engrave":
   setup_clarity(41);app.game.heroes[0].pos = Vector2i(3,5);app.game.heroes[0].build[0] = [41,1,0,0,0,0];app.game.heroes[0].stored_num = 1;app.game.hero_action(0,3)

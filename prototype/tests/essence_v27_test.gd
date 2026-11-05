@@ -20,9 +20,9 @@ func group(hard: bool = false):
  g.pending = {};return g
 func _initialize():call_deferred("run")
 func run():
- check(C.FACE_COUNT == 69 and B.FACES.size() == 69,"nine new reward faces have stable IDs")
+ check(C.FACE_COUNT == 73 and B.FACES.size() == 73,"original reward IDs retained with four boss faces")
  for id in range(60,69):check(C.name_for(id) == E.FACES[id-60][0] and B.valid_face_number(id),"reward catalog integration")
- check(not B.valid_face_number(69),"invalid next face still rejected")
+ check(not B.valid_face_number(73),"invalid next face still rejected")
  var e = E.new();e.bank = {"bone_creature":100,"support_creature":20,"movement_creature":10}
  check(e.reward_name("bone_strike") == "Bone Strike" and e.reward_effect("bone_strike").contains("Adjacent"),"effect and design name inspectable before crafting")
  check(e.craft("bone_strike") == "" and e.owned(61) == 1 and e.bank.bone_creature == 98,"first craft pays two and grants first physical copy")
@@ -56,7 +56,7 @@ func run():
  check(g.harvest_tokens.is_empty(),"an earlier eligible state does not qualify at death")
  e.settle(g.harvest_run,false,g.harvest_tokens,g.harvest_deaths,g.encounter_types());check(e.defeated.has("hollow"),"first defeat reveals permanently even if party later loses")
  g = fresh();g.boss.harvest_condition = "poisoned";g.boss.hp = 1;g.apply_poison(0,3,1);g.tick_poison(3)
- check(g.harvest_tokens.size() == 1,"poison lethal tick checks condition before decay/death cleanup")
+ check(g.harvest_tokens.size() == 3,"poison lethal tick checks condition before decay/death cleanup")
  g = fresh();var worm: int = g.spawn_friendly(0,Vector2i(2,2));g.damage(worm,99,true)
  check(g.harvest_tokens.is_empty(),"friendly summon deaths never yield Essence")
  g = fresh();g.damage(3,99,true);e.settle(g.harvest_run,true,g.harvest_tokens,g.harvest_deaths,g.encounter_types())

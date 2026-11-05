@@ -1,8 +1,8 @@
 extends RefCounted
-## PDF v1: fixed prototype reward effects/costs; combat values below are provisional.
+## PDF v1 creature rewards plus original v0.33 boss rewards; balance is provisional.
 const Wilds = preload("res://prototype/wilds.gd")
 const FACE_FIRST = 60
-const FACE_COUNT = 69
+const FACE_COUNT = 73
 const FACES = [
  ["Bone Growth","Skill","Bone. Gain 1 Block and optionally Move 1."],
  ["Bone Strike","Attack","Bone. Adjacent enemy: deal 1 damage per Bone result rolled this turn, spent results count; this face counts if rolled."],
@@ -12,7 +12,11 @@ const FACES = [
  ["Shared Burden","Skill","Choose another of your results rolled this round, spent or ready. An ally within 2 spends a ready die to resolve a copy immediately as a single-action interrupt. Their other dice and normal turn are unchanged. No Shared Burden copy loops."],
  ["Retreat","Movement","Move up to 2. If you end farther from every living enemy than at the start, gain 1 Block."],
  ["Momentum Strike","Attack","After moving 2 spaces this turn: adjacent enemy takes 1 damage. After 3+ spaces: Numeric +1 damage instead."],
- ["Evasive Counter","Defense","Reaction when targeted: +1 Block before the Attack. If it removes no HP, optionally Move 1 after the entire Attack resolves."]
+ ["Evasive Counter","Defense","Reaction when targeted: +1 Block before the Attack. If it removes no HP, optionally Move 1 after the entire Attack resolves."],
+ ["Ember Cut","Attack","Adjacent enemy: deal 2 damage. If HP is lost, gain 1 Block."],
+ ["Brood Needle","Attack","Enemy in clear sight within 2: deal 1 damage. If HP is lost, apply Poison 1."],
+ ["Quiet Note","Skill","Heal yourself 1 HP and clear your Weakness."],
+ ["Iron Shelter","Defense","Gain 2 Block, or 3 Block if you already have Block."]
 ]
 const TYPES = {
  "mire_leech":{"name":"Mire Leech","rank":"normal","condition":"regular","hp":4,"faces":[]},
@@ -30,6 +34,14 @@ const TYPES = {
  "cinder_mite":{"name":"Cinder Mite","rank":"normal","condition":"regular","faces":[]}
 }
 const RECIPES = {
+ "ember_cut":{"enemy":"hollow","category":"Attack Face","cost":2,"face":69},
+ "brood_needle":{"enemy":"nugh","category":"Attack Face","cost":2,"face":70},
+ "quiet_note":{"enemy":"cantor","category":"Skill Face","cost":2,"face":71},
+ "iron_shelter":{"enemy":"bugh","category":"Defense Face","cost":2,"face":72},
+ "memory_embers":{"enemy":"hollow","category":"Memory","cost":3,"name":"Memory of Embers","effect":"Your first actual enemy HP damage each own turn grants 1 Block."},
+ "memory_brood":{"enemy":"nugh","category":"Memory","cost":3,"name":"Memory of the Brood","effect":"Your first Poison application each own turn adds 1 extra Poison. Your friendly Nu’gh counts."},
+ "memory_silence":{"enemy":"cantor","category":"Memory","cost":3,"name":"Memory of Silence","effect":"The first Skill you resolve each own turn grants 1 Block."},
+ "memory_iron":{"enemy":"bugh","category":"Memory","cost":3,"name":"Memory of Iron","effect":"The first Defense you resolve each own turn grants 1 extra Block."},
  "mire_soul":{"enemy":"mire_leech","category":"Soul · bound","cost":3,"soul":"mire","name":"Soul of the Mire","effect":Wilds.SOULS.mire.effect},
  "glasswing_soul":{"enemy":"glasswing_moth","category":"Soul · bound","cost":3,"soul":"glasswing","name":"Glasswing Soul","effect":Wilds.SOULS.glasswing.effect},
  "iron_soul":{"enemy":"iron_husk","category":"Soul · bound","cost":3,"soul":"iron","name":"Ironbound Soul","effect":Wilds.SOULS.iron.effect},
@@ -69,7 +81,6 @@ func decode(data: Dictionary):
 func discovered(type: String) -> bool:return TYPES.get(type,{}).get("rank","normal") == "normal" or defeated.has(type)
 func recipes_for(type: String) -> Array:
  var result: Array = []
- if not discovered(type):return result
  for key in RECIPES:
   if RECIPES[key].enemy == type:result.append(key)
  return result
@@ -106,16 +117,29 @@ func settle(run_id: String, victory: bool, tokens: Array, deaths: Array, encount
  return true
 func profile(base: Dictionary) -> Dictionary:
  var result := base.duplicate(true)
- for face in range(60,69):result["earned."+str(face)] = owned(face)
+ for face in range(60,FACE_COUNT):result["earned."+str(face)] = owned(face)
  for hero in range(3):
-  result["memory.loss."+str(hero)] = memories[hero] == "memory_loss"
+  for key in memory_keys():result["memory."+key.trim_prefix("memory_")+"."+str(hero)] = memories[hero] == key
   result["weapon.dagger."+str(hero)] = weapons[hero] == "dagger"
  return result
-func equip_memory(hero: int) -> bool:
- if hero not in [-1,0,1,2] or not unlocked.has("memory_loss"):return false
- for i in range(3):memories[i] = ""
- if hero >= 0:memories[hero] = "memory_loss"
+func memory_keys() -> Array:
+ return RECIPES.keys().filter(func(key):return RECIPES[key].category == "Memory")
+func equip_memory(hero: int, memory: String = "memory_loss") -> bool:
+ if hero not in [-1,0,1,2] or memory not in memory_keys() or not unlocked.has(memory):return false
+ for i in range(3):
+  if memories[i] == memory:memories[i] = ""
+ if hero >= 0:memories[hero] = memory
  return true
+func debug_unlock(key: String, recipient: int) -> bool:
+ if not RECIPES.has(key):return false
+ var recipe: Dictionary = RECIPES[key]
+ if recipe.has("soul"):return grant_soul(recipient,recipe.soul)
+ if recipe.has("face"):
+  if owned(recipe.face)>0:return false
+  copies[str(recipe.face)] = 1
+ elif unlocked.has(key):return false
+ unlocked[key] = true;return true
+
 func equip_soul(hero: int, soul: String) -> bool:
  if hero not in range(3) or (soul != "" and soul not in souls[hero]):return false
  equipped_souls[hero] = soul;return true

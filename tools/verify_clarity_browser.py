@@ -28,10 +28,10 @@ with sync_playwright() as pw:
    raise AssertionError(('unreachable',node))
   print('viewport',width,height,flush=True)
   fixture('clarity_intents');data=state();assert len(data['intents'])==3 and data['intents'][0]['policy']=='Lowest HP' and data['intents'][1]['policy']=='Furthest hero'
-  text=snap('intents');assert 'TARGET' in text and 'Smoking Strike' in text and 'PRIORITY' in text,text;tap(text='Back to battle');tap(name='EnemyIntentsButton');tap(text='Back to battle')
+  text=snap('intents');assert 'Smoking' in text and 'Strike' in text and 'Lowest HP' in text,text;tap(text='Back');tap(name='EnemyIntent0' if mobile else 'EnemyIntentsButton');tap(text='Back')
   fixture('clarity_borrow');data=state();assert len([v for v in data['controls'] if v['name'].startswith('RolledChoice')])==9;assert not any(v['name'].startswith('ViewDie') for v in data['controls']);snap('borrow-nine-rolled')
   tap(name='RolledChoice1_0');text=snap('borrow-spent-guard');assert 'Guard' in text and 'Block' in text,text
-  tap(text='Use selected result');assert not state()['pending'] and state()['selected']==0;assert state()['results'][0][0]==4 and state()['used'][1][0]
+  tap(text='Use');assert not state()['pending'] and state()['selected']==0;assert state()['results'][0][0]==4 and state()['used'][1][0]
   fixture('clarity_engrave');data=state();assert data['live_builds'][0][0].count(41)==2 and data['notices'][0]['faces'].count(41)==2
   text=snap('engrave-new-side');assert 'NEW SIDE' in text and 'Engrave' in text,text;tap(text='Continue')
   for mode,kind in [('clarity_poison','poison_tick'),('clarity_heal','heal'),('clarity_stun','stun')]:
@@ -40,10 +40,10 @@ with sync_playwright() as pw:
    data=state();assert kind in data['effects'],data
    # Read model-backed AudioStreamPlayer during the actual generated SFX.
    assert proof['kind']==kind and proof['playing'],proof
-   if kind=='poison_tick':tap(text='Continue');p.wait_for_timeout(160)
+   if kind=='poison_tick':assert not state()['notices'];p.wait_for_timeout(160)
    snap(kind)
   fixture('wilds_camp');p.wait_for_timeout(1200)
-  if mobile:tap(text='Soul of the Mire · 3 Essence')
+  if mobile:tap(name='MobileRecipe_mire_soul')
   text=snap('recipe-before-paying');assert 'Soul of the Mire' in text and ('Essence' in text),text
   assert not errors,errors
   row={'viewport':[width,height],'result':'passed','browser_errors':errors,'tested':['readable live named intents','persistent intent button','nine rolled face picker','spent face copy and confirmation','Engrave physical side and notice','Poison damage effect and actual audio playback','healing effect and actual audio playback','Stun effect and actual audio playback','free recipe preview']};results=[v for v in results if v['viewport']!=row['viewport']];results.append(row);(out/'checkpoint.json').write_text(json.dumps(results,indent=2));print(json.dumps(row),flush=True);c.close()

@@ -64,7 +64,7 @@ func run():
  root.size = Vector2i(844,390);app.refresh_mobile_layout();await process_frame;await process_frame
  app.page = "battle";app.rebuild();await process_frame
  board = UI.board_rect(app)
- var controls = find(app.ui,"MobileBattleActions")
+ var controls = find(app.ui,"MobileDie0")
  check(board.end.x < controls.position.x and board.end.y <= root.content_scale_size.y,"landscape places controls beside board")
  app.set_mobile_mode(false,false);app.rebuild();await process_frame
  check(root.content_scale_size == Vector2i(1440,900) and app.game.heroes[0].pos == destination,"return to desktop preserves combat")
