@@ -1,9 +1,9 @@
 extends RefCounted
 ## Experimental rules are gated by trial.enabled. Normal encounters do not use them.
-const PATHS = {
- "venom":{"name":"Venom pact","text":"First HP-damaging Attack each own turn adds Poison 1. Healing restores 1 less HP.","faces":[70,59,69]},
- "guard":{"name":"Iron vow","text":"Fully blocking a positive enemy Attack readies +1 damage on your next Attack. 5 maximum HP.","faces":[72,68,51]},
- "stride":{"name":"Wayfarer","text":"After moving 2 spaces in your own turn, your next Attack gains +1 damage, once that turn. 5 maximum HP.","faces":[67,66,53]}
+const MEMORIES = {
+ "venom":{"name":"Memory of Venom","text":"Your first own-turn Attack that damages an enemy adds Poison 1. Healing you receive restores 1 less HP."},
+ "guard":{"name":"Memory of Guard","text":"When Block prevents all HP damage from an enemy Attack, your next Attack against an enemy deals +1 damage. Maximum HP -1."},
+ "stride":{"name":"Memory of Momentum","text":"Move at least 2 spaces during your turn: your next Attack against an enemy deals +1 damage, once that turn. Maximum HP -1."}
 }
 const SOULS = {
  "hollow":{"name":"Cinder Soul","text":"First HP-damaging Attack each own turn adds Poison 1. Start each encounter with 1 Poison."},
@@ -12,7 +12,13 @@ const SOULS = {
  "bugh":{"name":"Warden Soul","text":"Preserve up to 2 Block at turn start. Movement abilities travel 1 less space, minimum 1."}
 }
 static func enabled(g) -> bool:return bool(g.balance.get("trial.enabled",false))
-static func path(g, hero: int) -> String:return str(g.balance.get("trial.paths",["venom","guard","stride"])[hero])
+const WEAPONS = {
+ "dagger":{"name":"Dagger","text":"Poke: 1 adjacent-enemy damage, once per own turn after you have damaged an enemy. Costs no die."},
+ "venom":{"name":"Poison Dagger","text":"Poke: deal 1 damage to an adjacent enemy; if it loses HP, apply Poison 1. Once per own turn after you have damaged an enemy. Costs no die."},
+ "heavy":{"name":"Heavy Dagger","text":"Poke: deal 2 damage to an adjacent enemy, then lose 1 HP. Once per own turn after you have damaged an enemy. Costs no die. No HP cost after victory."}
+}
+static func memory(g, hero: int) -> String:return str(g.balance.get("trial.memories",["venom","guard","stride"])[hero])
+static func weapon(g, hero: int) -> String:return str(g.balance.get("trial.weapons",["dagger","dagger","dagger"])[hero])
 static func soul(g, hero: int) -> String:return str(g.balance.get("trial.souls",["","",""])[hero])
 static func setup(g) -> void:
  g.trial_state = {}
@@ -25,7 +31,7 @@ static func setup(g) -> void:
  var saved: Array = g.balance.get("trial.hp",[])
  for id in range(3):
   var h: Dictionary = g.heroes[id]
-  h.max_hp = 6 if path(g,id)=="venom" else 5
+  h.max_hp = 6 if memory(g,id)=="venom" else 5
   if soul(g,id)=="nugh":h.max_hp -= 1
   h.hp = mini(h.max_hp,int(saved[id])) if saved.size()==3 else h.max_hp
   if h.hp<=0:h.dead = true;h.used = [true,true,true]
@@ -40,26 +46,24 @@ static func attack_bonus(g, d: int, target: int, weapon: bool) -> Dictionary:
  var result := {"bonus":0,"venom":false,"heavy":false}
  if not enabled(g) or not g.enemies(g.active,target):return result
  var h: Dictionary = g.heroes[g.active]
- if h.get("trial_counter",false):result.bonus += 1;h.trial_counter = false;g.note("Iron vow: counterattack +1.")
- if path(g,g.active)=="stride" and int(h.get("moved_turn",0))>=2 and not h.get("trial_stride_used",false) and g.burden_interrupt.is_empty():
-  result.bonus += 1;h.trial_stride_used = true;g.note("Wayfarer: movement empowers this Attack +1.")
+ if h.get("trial_counter",false):result.bonus += 1;h.trial_counter = false;g.note("Memory of Guard: counterattack +1.")
+ if memory(g,g.active)=="stride" and int(h.get("moved_turn",0))>=2 and not h.get("trial_stride_used",false) and g.burden_interrupt.is_empty():
+  result.bonus += 1;h.trial_stride_used = true;g.note("Memory of Momentum: movement empowers this Attack +1.")
  result.bonus += int(h.get("trial_echo",0));h.trial_echo = 0
- if not weapon:
-  var key := "%d:%d:%d" % [g.active,d,h.rolls[d]]
-  var mod: String = g.balance.get("trial.mods",{}).get(key,"")
-  if mod=="venom":result.bonus -= 1;result.venom = true
-  if mod=="heavy":result.bonus += 1;result.heavy = true
+ var equipped: String = str(g.balance.get("trial.weapons",["dagger","dagger","dagger"])[g.active])
+ if weapon and equipped=="venom":result.venom = true
+ if weapon and equipped=="heavy":result.bonus += 1;result.heavy = true
  return result
 static func after_hit(g, target: int, lost: int, mod: Dictionary) -> void:
  if not enabled(g) or lost<=0 or g.outcome!="" or not g.enemies(g.active,target) or g.unit_data(target).hp<=0:return
  var h: Dictionary = g.heroes[g.active];var own: bool = g.burden_interrupt.is_empty()
- if own and path(g,g.active)=="venom" and not h.get("trial_venom_used",false):
+ if own and memory(g,g.active)=="venom" and not h.get("trial_venom_used",false):
   h.trial_venom_used = true;g.apply_poison(g.active,target,1)
  if own and soul(g,g.active)=="hollow" and not h.get("trial_cinder_used",false):
   h.trial_cinder_used = true;g.apply_poison(g.active,target,1)
  if mod.venom:g.apply_poison(g.active,target,1)
 static func after_attack(g, mod: Dictionary) -> void:
- if enabled(g) and mod.heavy and g.outcome=="":g.damage(g.active,1,true,"Heavy edge cost",g.active)
+ if enabled(g) and mod.heavy and g.outcome=="":g.damage(g.active,1,true,"Heavy Dagger cost",g.active)
 static func poison_spread(g, source: int, target: int) -> void:
  if not enabled(g) or source not in range(3) or g.active!=source or not g.burden_interrupt.is_empty() or soul(g,source)!="nugh" or g.heroes[source].get("trial_brood_used",false):return
  g.heroes[source].trial_brood_used = true
@@ -78,8 +82,8 @@ static func incoming(g, id: int, amount: int, unavoidable: bool, attacker: int) 
   g.record_event("terrain","Cover reduces ranged damage by 1.",source,id,1);return maxi(0,amount-1)
  return amount
 static func blocked(g, id: int, incoming: int, lost: int, absorbed: int, attacker: int) -> void:
- if not enabled(g) or id not in range(3) or incoming<=0 or lost>0 or absorbed<=0 or attacker<3 or g.friendly(attacker) or path(g,id)!="guard":return
- g.heroes[id].trial_counter = true;g.record_event("buff","Iron vow: next Attack +1 after a perfect block.",id,id,1)
+ if not enabled(g) or id not in range(3) or incoming<=0 or lost>0 or absorbed<=0 or attacker<3 or g.friendly(attacker) or memory(g,id)!="guard":return
+ g.heroes[id].trial_counter = true;g.record_event("buff","Memory of Guard: next Attack +1 after a perfect block.",id,id,1)
 static func blocked_cell(g, cell: Vector2i) -> bool:
  return enabled(g) and cell in g.trial_state.get("crates",[])
 static func smash(g, d: int, cell: Vector2i) -> bool:
@@ -105,11 +109,11 @@ static func guide(g) -> String:
  if not g.trial_state.get("spikes",[]).is_empty():text += "Red spikes: landing on a tile deals 1 unavoidable damage, including forced movement. Staying there causes no extra ticks.\n"
  text += "Gold striped tiles: a Ram’s charge is locked to those tiles until the next enemy turn. Step aside to avoid its 3 damage.\n"
  for id in range(3):
-  var key := path(g,id);text += "\n"+g.unit_name(id)+" · "+PATHS[key].name+"\n"+PATHS[key].text
+  var key := memory(g,id);text += "\n"+g.unit_name(id)+"\nBody: Broken Body · 6 base HP\nMemory: "+MEMORIES[key].name+"\n"+MEMORIES[key].text+"\nWeapon: "+WEAPONS[weapon(g,id)].name+"\n"+WEAPONS[weapon(g,id)].text
   var h: Dictionary = g.heroes[id]
   if h.get("trial_counter",false):text += "\nCounterattack +1 READY"
   if key=="stride" and int(h.get("moved_turn",0))>=2 and not h.get("trial_stride_used",false):text += "\nMovement bonus +1 READY"
   if int(h.get("trial_echo",0))>0:text += "\nEcho +1 READY"
   var s := soul(g,id)
-  if SOULS.has(s):text += "\n"+SOULS[s].name+": "+SOULS[s].text
+  text += "\nSoul: "+(SOULS[s].name+" · "+SOULS[s].text if SOULS.has(s) else "Beginning Soul · spend one rolled Blank as Move 1, once per own turn.")
  return text

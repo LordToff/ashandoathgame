@@ -38,7 +38,7 @@ static func screen(app, heading: String, key: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
  app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.34",Vector2(18,58),15,MUTED,size.x-36)
+ app.label_at("ASH & OATH · MOBILE · v0.35",Vector2(18,58),15,MUTED,size.x-36)
  var width: float = minf(720,size.x-24)
  var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
@@ -329,7 +329,7 @@ static func battle(app) -> void:
 static func more(app) -> void:
  var column: VBoxContainer = app.BattlePanels.panel(app,"Actions","")
  var grid := GridContainer.new();grid.columns = 2;grid.add_theme_constant_override("h_separation",10);grid.add_theme_constant_override("v_separation",10);column.add_child(grid)
- if app.trial_fight:btn(app,grid,"Trial field guide",func():app.mobile_more = false;app.show_trial_guide = true;app.rebuild(),GOLD)
+ if app.trial_fight:btn(app,grid,"Equipment & arena help",func():app.mobile_more = false;app.show_trial_guide = true;app.rebuild(),GOLD)
  btn(app,grid,"Poke",func():app.mobile_more = false;app.choosing_poke = true;app.rebuild(),GOLD,app.game.poke_targets().is_empty())
  btn(app,grid,"Skip face",func():app.game.decline(app.selected);app.friendly_confirm = -1;app.selected = -1;app.mobile_more = false;app.rebuild(),MUTED,app.selected<0)
  for item in [["Log","show_history"],["Enemies","show_enemy_cards"],["Supplies","show_supplies"],["Menu","show_menu"]]:

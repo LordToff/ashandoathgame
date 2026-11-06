@@ -2,11 +2,12 @@ extends RefCounted
 ## Separate experimental run/collection. Never writes Expedition or ordinary builds.
 const B = preload("res://prototype/battle.gd")
 const R = preload("res://prototype/trial_rules.gd")
+const STARTER_FACES = [[70,59,69],[72,68,51],[67,66,53]]
 const SAVE = "user://ash-trials-v34.json"
 const BOSSES = ["hollow","nugh","cantor","bugh"]
 const BOSS_NAMES = ["The Hollow","Nu’gh","Veyl, Brass Cantor","Bu’gh, Iron Warden"]
 var phase := "lobby"
-var paths: Array = ["venom","guard","stride"]
+var memories: Array = ["venom","guard","stride"]
 var souls: Array = ["","",""]
 var selected_boss := 0
 var hero := 0
@@ -16,28 +17,27 @@ var essence := 3
 var hp: Array = []
 var builds: Array = []
 var pool: Dictionary = {}
-var mods: Dictionary = {}
+var weapons: Array = ["dagger","dagger","dagger"]
+var bodies: Array = ["broken","broken","broken"]
 var completed_bosses: Array = []
 var history: Array = []
 var message := ""
 var current: Dictionary = {}
 var reward_mode := ""
 var reward_face := 70
-var reward_mod := "venom"
+var reward_weapon := "venom"
 var settled := false
 func _init(restore: bool = true):
  if restore:load_save()
 func start(seed_number: int = 0) -> void:
  seed_value = seed_number if seed_number!=0 else int(Time.get_ticks_usec())
- stage = 0;essence = 3;hp = [];builds = [];pool = {};mods = {};history = [];current = {};settled = false;reward_mode = "";message = "Choose your first route. HP carries between encounters."
+ weapons = ["dagger","dagger","dagger"]
+ stage = 0;essence = 3;hp = [];builds = [];pool = {};history = [];current = {};settled = false;reward_mode = "";message = "Choose your first route. HP carries between encounters."
+ var starting: Array = starting_builds()
  for id in range(3):
-  var build: Array = B.default_build()
-  match paths[id]:
-   "venom":build[1][0] = 70;build[2][2] = 59
-   "guard":build[0][2] = 72;build[2][0] = 41
-   "stride":build[0][0] = 67;build[1][1] = 66;build[2][0] = 8
+  var build: Array = starting[id]
   builds.append(build)
-  var maximum: int = (6 if paths[id]=="venom" else 5)-(1 if souls[id]=="nugh" else 0)
+  var maximum: int = maximum_hp(id)
   hp.append(maximum)
   for die in build:
    for face in die:
@@ -58,7 +58,7 @@ func choose(index: int) -> bool:
  phase = "combat" if current.kind in ["fight","boss"] else current.kind
  history.append("Stop %d: %s" % [stage+1,current.kind]);save();return true
 func profile() -> Dictionary:
- var result := {"trial.enabled":true,"trial.paths":paths.duplicate(),"trial.souls":souls.duplicate(),"trial.hp":hp.duplicate(),"trial.mods":mods.duplicate(),"trial.purse":essence,"trial.terrain":"cover"}
+ var result := {"trial.enabled":true,"trial.memories":memories.duplicate(),"trial.souls":souls.duplicate(),"trial.hp":hp.duplicate(),"trial.weapons":weapons.duplicate(),"trial.bodies":bodies.duplicate(),"trial.purse":essence,"trial.terrain":"cover"}
  for id in range(3):
   result["soul.eligible."+str(id)] = true;result["soul.mode."+str(id)] = "move";result["soul.distance."+str(id)] = 1;result["soul.allowance."+str(id)] = 1;result["weapon.dagger."+str(id)] = true
  for key in pool:result["earned."+key] = int(pool[key])
@@ -88,7 +88,7 @@ func bank_reward() -> bool:
  if phase!="reward":return false
  essence += 2;message = "Saved the reward as +2 Trial Essence.";advance();return true
 func add_face(face: int, die: int, side: int) -> bool:
- if phase!="reward" or essence<2 or die not in range(3) or side not in range(6) or face not in R.PATHS[paths[hero]].faces:return false
+ if phase!="reward" or essence<2 or die not in range(3) or side not in range(6) or face not in reward_faces(hero):return false
  var old: int = builds[hero][die][side]
  if old==face:return false
  var candidate := builds.duplicate(true);candidate[hero][die][side] = face
@@ -98,17 +98,26 @@ func add_face(face: int, die: int, side: int) -> bool:
  if error!="":
   if face>=60:pool[str(face)] = old_count
   message = error;return false
- builds = candidate;essence -= 2;mods.erase("%d:%d:%d" % [hero,die,side]);message = "Installed "+B.FACES[face]+" for this Trial.";advance();return true
-func temper(die: int, side: int, kind: String) -> bool:
- if phase!="reward" or essence<2 or die not in range(3) or side not in range(6) or kind not in ["venom","heavy"]:return false
- if not B.Catalog.is_attack(builds[hero][die][side]):message = "Choose an Attack side.";return false
- var key := "%d:%d:%d" % [hero,die,side]
- if mods.has(key):message = "This side already has an edge. Choose another Attack side.";return false
- mods[key] = kind;essence -= 2;message = "Tempered that physical side for this Trial.";advance();return true
+ builds = candidate;essence -= 2;message = "Installed "+B.FACES[face]+" for this Trial.";advance();return true
+func equip_weapon(key: String) -> bool:
+ if phase!="reward" or essence<2 or not R.WEAPONS.has(key) or weapons[hero]==key:return false
+ weapons[hero] = key;essence -= 2;message = R.WEAPONS[key].name+" equipped in "+["Vesper","Rook","Wren"][hero]+"’s Weapon slot.";advance();return true
+func maximum_hp(id: int) -> int:return (6 if memories[id]=="venom" else 5)-(1 if souls[id]=="nugh" else 0)
+func reward_faces(id: int) -> Array:return STARTER_FACES[id]
+func starting_builds() -> Array:
+ var result: Array = []
+ for key in ["venom","guard","stride"]:
+  var build: Array = B.default_build()
+  match key:
+   "venom":build[1][0] = 70;build[2][2] = 59
+   "guard":build[0][2] = 72;build[2][0] = 41
+   "stride":build[0][0] = 67;build[1][1] = 66;build[2][0] = 8
+  result.append(build)
+ return result
 func camp(rest: bool) -> bool:
  if phase!="camp":return false
  if rest:
-  for id in range(3):hp[id] = mini((6 if paths[id]=="venom" else 5)-(1 if souls[id]=="nugh" else 0),int(hp[id])+2)
+  for id in range(3):hp[id] = mini(maximum_hp(id),int(hp[id])+2)
   message = "Camp restores 2 HP to every hero, including fallen heroes."
  else:essence += 2;message = "Gathered 2 Trial Essence instead of resting."
  advance();return true
@@ -130,8 +139,8 @@ func advance() -> void:
 func fail(reason: String) -> void:
  phase = "failed";message = reason;reward_mode = "";save()
 func save() -> void:
- var data := {}
- for key in ["phase","paths","souls","selected_boss","stage","seed_value","essence","hp","builds","pool","mods","completed_bosses","history","message","current","settled"]:data[key] = get(key)
+ var data := {"equipment_version":35}
+ for key in ["phase","memories","weapons","bodies","souls","selected_boss","stage","seed_value","essence","hp","builds","pool","completed_bosses","history","message","current","settled"]:data[key] = get(key)
  var file := FileAccess.open(SAVE,FileAccess.WRITE)
  if file:file.store_string(JSON.stringify(data))
  if OS.has_feature("web"):JavaScriptBridge.eval("try{localStorage.setItem('ash-and-oath-trials',"+JSON.stringify(JSON.stringify(data))+")}catch(e){}",true)
@@ -146,10 +155,13 @@ func load_save() -> void:
  var data = parser.data
  if not data is Dictionary:return
  if data.get("completed_bosses") is Array:completed_bosses = data.completed_bosses.filter(func(key):return key in BOSSES)
- for key in ["paths","souls"]:
+ if not data.has("memories") and data.get("paths") is Array:data.memories = data.paths
+ for key in ["memories","souls","weapons","bodies"]:
   if data.get(key) is Array and data[key].size()==3:set(key,data[key])
  for id in range(3):
-  if not R.PATHS.has(paths[id]):paths[id] = R.PATHS.keys()[id]
+  if not R.MEMORIES.has(memories[id]):memories[id] = R.MEMORIES.keys()[id]
+  if not R.WEAPONS.has(weapons[id]):weapons[id] = "dagger"
+  bodies[id] = "broken"
   if souls[id] not in completed_bosses:souls[id] = ""
  selected_boss = clampi(int(data.get("selected_boss",0)),0,3)
  var loaded_phase: String = str(data.get("phase","lobby"))
@@ -159,7 +171,9 @@ func load_save() -> void:
  if not saved_builds is Array or saved_builds.size()!=3:return
  for key in ["stage","seed_value","essence"]:set(key,maxi(0,int(data.get(key,0))))
  if stage>5:stage = 5
- for key in ["pool","mods","current"]:
+ if int(data.get("equipment_version",34))<35 and data.get("mods") is Dictionary:
+  essence += data.mods.size()*2;data.message = "Old dice upgrades refunded as %d Essence. Rewards now offer Weapons." % (data.mods.size()*2)
+ for key in ["pool","current"]:
   if data.get(key) is Dictionary:set(key,data[key])
  if data.get("hp") is Array and data.hp.size()==3:hp = data.hp.map(func(value):return clampi(int(value),0,6))
  else:return

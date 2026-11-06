@@ -594,7 +594,7 @@ func damage(id: int, amount: int, unavoidable: bool = false, reason: String = ""
   if ch.face == 25 and outcome == "": damage(id,v("face25.backlash"),false,"Contained Power backlash")
 
 func heal(id: int, value: int = 1) -> void:
- if TrialRules.enabled(self) and TrialRules.path(self,id)=="venom":value = maxi(0,value-1)
+ if TrialRules.enabled(self) and TrialRules.memory(self,id)=="venom":value = maxi(0,value-1)
  var h: Dictionary = heroes[id]
  if h.dead or value <= 0: return
  if h.hp == 0:

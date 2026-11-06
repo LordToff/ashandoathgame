@@ -10,8 +10,8 @@ func check(ok: bool, why: String):
  checks += 1
  if not ok:failures += 1;printerr("TRIAL FAIL: ",why)
 func fresh(group: int = 0, paths: Array = ["venom","guard","stride"], souls: Array = ["","",""]):
- var run = Run.new(false);run.paths = paths;run.souls = souls;run.start(34)
- var profile: Dictionary = run.profile();profile["trial.terrain"] = "none";profile["face1.damage"] = 2 # Fixed hit size isolates perk/edge arithmetic.
+ var run = Run.new(false);run.memories = paths;run.souls = souls;run.start(34)
+ var profile: Dictionary = run.profile();profile["trial.terrain"] = "none";profile["face1.damage"] = 2 # Fixed hit size isolates Memory arithmetic.
  var g = Fight.new();g.group_index = group;g.start(run.builds,34,true,true,profile)
  g.order = [0,1,2,3];g.cursor = 0;g.active = 0;g.pending = {};g.forced_die = -1;g.boss.hp = 20;g.boss.max_hp = 20
  for h in g.heroes:h.used = [false,false,false];h.reaction = [];h.results = [1,4,2];h.rolls = [0,0,0];h.poison = 0;h.hp = h.max_hp
@@ -25,11 +25,11 @@ func reward_run():
 func button(root: Node, name: String):return root.find_child(name,true,false)
 func _initialize():call_deferred("run_tests")
 func run_tests():
- for a in R.PATHS:
-  for b in R.PATHS:
-   for c in R.PATHS:
-    var run = Run.new(false);run.paths = [a,b,c];run.start(34)
-    check(run.validate(run.builds)=="","all 27 path parties obey ordinary construction/copy limits")
+ for a in R.MEMORIES:
+  for b in R.MEMORIES:
+   for c in R.MEMORIES:
+    var run = Run.new(false);run.memories = [a,b,c];run.start(34)
+    check(run.validate(run.builds)=="","all 27 Memory parties obey ordinary construction/copy limits")
  var g = fresh();g.hero_action(0,3)
  check(g.boss.poison==1,"Venom first damaging Attack applies Poison")
  g.heroes[0].used[0] = false;g.hero_action(0,3);check(g.boss.poison==1,"Venom once per own turn")
@@ -96,13 +96,13 @@ func run_tests():
  var saved: Dictionary = run.pool.duplicate();check(not run.add_face(70,0,4) and run.essence==5 and run.pool.get("70")==saved.get("70"),"reward cannot remove required Blank or charge on failure")
  check(run.add_face(69,0,0) and run.stage==1 and run.essence==3 and run.builds[0][0][0]==69,"paid face replaces legal physical side")
  check(not run.add_face(69,0,1),"cannot claim second face reward")
- run = reward_run();check(run.temper(0,0,"venom") and run.mods["0:0:0"]=="venom" and run.essence==3,"edge payment and physical-side ownership")
- g = fresh(0,["guard","guard","stride"]);g.balance["trial.mods"] = {"0:0:0":"venom"};hp_before = g.boss.hp;g.hero_action(0,3)
- check(hp_before-g.boss.hp==1 and g.boss.poison==1,"Venom edge trades one direct damage for Poison")
- g = fresh(0,["guard","guard","stride"]);g.balance["trial.mods"] = {"0:0:1":"heavy"};hp_before = g.boss.hp;g.hero_action(0,3)
- check(hp_before-g.boss.hp==2 and g.heroes[0].hp==5,"unrolled modified side has no effect")
- g = fresh(0,["guard","guard","stride"]);g.balance["trial.mods"] = {"0:0:0":"heavy"};hp_before = g.boss.hp;g.hero_action(0,3)
- check(hp_before-g.boss.hp==3 and g.heroes[0].hp==4,"Heavy edge damage and HP tradeoff")
+ run = reward_run();check(run.equip_weapon("venom") and run.weapons[0]=="venom" and run.essence==3,"Weapon reward occupies one Weapon slot and pays once")
+ check(not run.equip_weapon("heavy"),"second reward cannot be claimed")
+ g = fresh(0,["guard","guard","stride"]);g.balance["trial.weapons"] = ["venom","dagger","dagger"];g.heroes[0].damaged_enemy_turn = true;g.poke(3)
+ check(g.boss.poison==1,"Poison Dagger Poke applies Poison on HP loss")
+ g = fresh(0,["guard","guard","stride"]);g.balance["trial.weapons"] = ["heavy","dagger","dagger"];hp_before = g.boss.hp;g.hero_action(0,3)
+ check(hp_before-g.boss.hp==2 and g.heroes[0].hp==5,"Weapon reward does not modify die abilities")
+ hp_before = g.boss.hp;g.poke(3);check(hp_before-g.boss.hp==2 and g.heroes[0].hp==4,"Heavy Dagger Poke trades one HP for two damage")
  run = reward_run();check(run.bank_reward() and run.essence==7 and run.stage==1 and not run.bank_reward(),"saving reward trades offer for currency once")
  run.choose(0);run.hp = [0,2,4];check(run.camp(true) and run.hp==[2,4,5] and run.stage==2,"Camp heals and revives without exceeding path maximum")
  run.stage = 3;run.phase = "route";run.choose(0);var bank: int = run.essence;check(run.event(false) and run.essence==bank+1 and not run.event(false),"safe cache reward once")
@@ -125,12 +125,12 @@ func run_tests():
  g = fresh();g.trial_state.cover = [g.unit_data(4).pos];g.action_owner = 0;hp_before = g.unit_data(4).hp;g.damage(4,2,false,"Shot",0)
  check(hp_before-g.unit_data(4).hp==1,"cover also protects one-cell enemies")
  var normal = B.new();normal.start([B.default_build(),B.default_build(),B.default_build()],34)
- check(normal.trial_state.is_empty() and normal.heroes.all(func(h):return h.max_hp==6),"ordinary combat has no Trial terrain or path penalties")
+ check(normal.trial_state.is_empty() and normal.heroes.all(func(h):return h.max_hp==6),"ordinary combat has no Trial terrain or Memory penalties")
  var app=load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
  app.trials = Run.new(false);var normal_builds: Array = app.builds.duplicate(true);var normal_bank: Dictionary = app.expedition.camp.encode().duplicate(true)
  for size in [Vector2i(360,640),Vector2i(390,844),Vector2i(844,390),Vector2i(1440,900)]:
   root.size = size;app.set_mobile_mode(size.x<1440,false);await process_frame;await process_frame;app.open_trials();await process_frame
-  check(button(app.ui,"TrialPath")!=null and button(app.ui,"TrialBoss")!=null,"Trial lobby renders on phone and desktop")
+  check(button(app.ui,"TrialMemory")!=null and button(app.ui,"TrialBoss")!=null,"Trial lobby renders on phone and desktop")
  app.trials.start(34);app.choose_trial_route(0);app.dice_tray.cancel();app.rolling_time = 0;app.game.pending = {};app.game.active = 0;app.rebuild();await process_frame
  check(app.trial_fight and app.builds==normal_builds,"Trial uses separate party build")
  app.game.damage(3,999,true)

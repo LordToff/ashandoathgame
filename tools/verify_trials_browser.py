@@ -37,7 +37,7 @@ with sync_playwright() as pw:
   print('viewport',width,height,flush=True)
   fixture('trials_main');normal=state();tap(text='Trials' if mobile else 'Trials · experimental expeditions')
   assert state()['page']=='trials' and state()['trial']['phase']=='lobby';snap('lobby')
-  select('TrialPath',1);assert state()['trial']['paths'][0]=='guard';select('TrialPath',0)
+  select('TrialMemory',1);assert state()['trial']['memories'][0]=='guard';select('TrialMemory',0)
   select('TrialBoss',2);assert 'Veyl' in node(name='TrialBoss')['text'];select('TrialBoss',0)
   tap(name='TrialPreview');text=snap('field-guide');assert 'Venom' in text or 'Iron vow' in text,text;tap(text='Back')
   tap(text='Begin Trial');assert state()['trial']['phase']=='route' and state()['trial']['stage']==0;snap('route')
@@ -45,10 +45,10 @@ with sync_playwright() as pw:
   assert state()['builds']==normal['builds'] and state()['bank']==normal['bank']
   if mobile:
    end=node(name='MobileEndTurn' if state()['active']<3 else 'MobileEnemyStep');assert end['y']+end['h']<=state()['viewport'][1]
-   tap(name='MobileMore');tap(text='Trial field guide');snap('combat-guide');tap(text='Back')
+   tap(name='MobileMore');tap(text='Equipment & arena help');snap('combat-guide');tap(text='Back')
    tap(name='MobileMore');tap(text='Menu');tap(text='Main menu · leave Trial')
   else:
-   tap(text='Menu');tap(text='Trial field guide');snap('combat-guide');tap(text='Back');tap(text='Menu');tap(text='Main menu · leave Trial')
+   tap(text='Menu');tap(text='Equipment & arena help');snap('combat-guide');tap(text='Back');tap(text='Menu');tap(text='Main menu · leave Trial')
   assert state()['page']=='main' and state()['trial']['phase']=='failed' and state()['bank']==normal['bank']
   fixture('trials_crates');tap(name='MobileDie0' if mobile else 'BattleDie0')
   d=state();bx,by,edge,_=d['board'];scale=width/d['viewport'][0]
@@ -60,23 +60,23 @@ with sync_playwright() as pw:
   fixture('trials_reward');tap(name='TrialRewardFace');assert state()['trial']['phase']=='reward'
   tap(name='TrialSlot4');assert state()['trial']['phase']=='reward' and state()['trial']['essence']==7
   select('TrialRewardChoice',2);tap(name='TrialSlot0');d=state();assert d['trial']['phase']=='route' and d['trial']['builds'][0][0][0]==69 and d['trial']['essence']==5
-  fixture('trials_reward');tap(name='TrialRewardTemper');select('TrialEdge',1);tap(name='TrialSlot0');assert state()['trial']['mods']['0:0:0']=='heavy' and state()['trial']['phase']=='route'
-  fixture('trials_win');assert state()['trial']['phase']=='reward' and state()['bank']==normal['bank'];snap('victory');tap(text='Continue');assert state()['page']=='trials';tap(text='Save reward · +2 Essence');assert state()['trial']['stage']==1
+  fixture('trials_reward');tap(name='TrialRewardWeapon');select('TrialWeaponChoice',1);tap(name='TrialEquipWeapon');assert state()['trial']['weapons'][0]=='heavy' and state()['trial']['phase']=='route'
+  fixture('trials_win');assert state()['trial']['phase']=='reward' and state()['bank']==normal['bank'];snap('victory');tap(text='Continue');assert state()['page']=='trials';tap(text='Take +2 Essence');assert state()['trial']['stage']==1
   tap(name='TrialRoute0');tap(name='TrialRest');assert state()['trial']['stage']==2;snap('camp-and-route')
   # A safe checkpoint restores through the normal game save, not fixture editing.
   p.reload();p.wait_for_timeout(5500);p.wait_for_function('typeof window.essenceProof==="function"');tap(text='Trials' if mobile else 'Trials · experimental expeditions');assert state()['trial']['stage']==2 and state()['trial']['phase']=='route'
   fixture('trials_boss_win');assert state()['trial']['completed']==['hollow'];tap(text='Continue');text=snap('boss-soul');assert 'Cinder Soul' in text,text
-  tap(text='New Trial');assert state()['trial']['phase']=='lobby';select('TrialSoul',1);assert state()['trial']['souls'][0]=='hollow';snap('equipped-boss-soul')
+  tap(text='New Trial');assert state()['trial']['phase']=='lobby';tap(name='TrialSlot_soul');select('TrialSoul',1);assert state()['trial']['souls'][0]=='hollow';snap('equipped-boss-soul')
   if width in [390,1440]:
-   fixture('trials_debug');v,x,y=reach(name='TrialSoulCard_bugh')
+   fixture('trials_debug');v,x,y=reach(name='TrialSoulCard_bugh');p.wait_for_timeout(800);v,x,y=reach(name='TrialSoulCard_bugh')
    if mobile:session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
    else:p.mouse.move(x,y);p.mouse.down()
-   p.wait_for_timeout(900)
+   p.wait_for_timeout(1400)
    if mobile:session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
    else:p.mouse.up()
    p.wait_for_timeout(250);assert state()['trial']['completed']==['bugh'] and state()['bank']==normal['bank']
   assert not errors,errors
-  row={'viewport':[width,height],'result':'passed','browser_errors':errors,'tested':['main-menu Trials entry','path and boss selection','field guide','actual route to combat','fixed combat controls','separate ordinary builds and bank','abandon fight','touch/click barricade breaking','charge lane display','illegal Blank replacement refused','paid face replacement','paid physical-side edge','victory reward and Camp route','safe checkpoint reload','boss Soul unlock and equipment']};
+  row={'viewport':[width,height],'result':'passed','browser_errors':errors,'tested':['main-menu Trials entry','Memory slot and boss selection','field guide','actual route to combat','fixed combat controls','separate ordinary builds and bank','abandon fight','touch/click barricade breaking','charge lane display','illegal Blank replacement refused','paid face replacement','paid Weapon slot replacement','victory reward and Camp route','safe checkpoint reload','boss Soul unlock and equipment']};
   if width in [390,1440]:row['tested'].append('gated Trial Soul Debug hold')
   results=[old for old in results if old["viewport"]!=row["viewport"]];results.append(row);(out/'checkpoint.json').write_text(json.dumps(results,indent=2));print(json.dumps(row),flush=True);c.close()
  (out/'results.json').write_text(json.dumps({'result':'passed','devices':results},indent=2));b.close()

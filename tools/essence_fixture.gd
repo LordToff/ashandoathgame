@@ -36,8 +36,11 @@ func proof(args):
   var data := {"rolling":app.dice_tray.busy,"bank":app.expedition.camp.bank,"copies":app.expedition.camp.copies,"memories":app.expedition.camp.memories,"active":app.game.active,"page":app.page,"builds":app.builds,"weapons":app.expedition.camp.weapons,"souls":app.expedition.camp.souls,"equipped_souls":app.expedition.camp.equipped_souls}
   var controls: Array = [];mobile_controls(app.ui,controls);data.controls = controls;data.viewport = [app.get_viewport_rect().size.x,app.get_viewport_rect().size.y];data.mobile = app.mobile_mode;data.board = [app.MobileUI.board_rect(app).position.x,app.MobileUI.board_rect(app).position.y,app.MobileUI.board_rect(app).size.x,app.MobileUI.board_rect(app).size.y];data.debug = app.debug_mode;data.unlocked = app.expedition.camp.unlocked;data.collection = app.show_collection;data.enemy_block = app.game.boss.get("block",0) if app.game.heroes.size()==3 else 0;data.intents = app.game.enemy_intents() if app.game.heroes.size()==3 else [];data.sfx = app.status_sounds;data.effects = app.effects.map(func(f):return f.kind);data.notices = app.combat_notices;data.selected = app.selected;data.pending = app.game.pending;data.feedback_playing = app.feedback_audio.playing;data.feedback_kind = app.feedback_streams.find_key(app.feedback_audio.stream);data.live_builds = app.game.heroes.map(func(h):return h.build);data.results = app.game.heroes.map(func(h):return h.results)
   if app.game.heroes.size() == 3:data.hp = app.game.heroes.map(func(h):return h.hp);data.block = app.game.heroes.map(func(h):return h.block);data.positions = app.game.heroes.map(func(h):return [h.pos.x,h.pos.y]);data.dagger_used = app.game.heroes.map(func(h):return h.get("dagger_used",false));data.used = app.game.heroes.map(func(h):return h.used);data.boss_hp = app.game.boss.hp
-  data.trial = {"phase":app.trials.phase,"stage":app.trials.stage,"essence":app.trials.essence,"paths":app.trials.paths,"souls":app.trials.souls,"completed":app.trials.completed_bosses,"builds":app.trials.builds,"hp":app.trials.hp,"mods":app.trials.mods,"view":app.trial_view,"fight":app.trial_fight}
+  data.trial = {"phase":app.trials.phase,"stage":app.trials.stage,"essence":app.trials.essence,"memories":app.trials.memories,"souls":app.trials.souls,"completed":app.trials.completed_bosses,"builds":app.trials.builds,"hp":app.trials.hp,"weapons":app.trials.weapons,"view":app.trial_view,"fight":app.trial_fight}
   data.terrain = app.game.trial_state
+  var preview: Dictionary = app.ability_preview()
+  data.preview = {"tiles":preview.tiles.map(func(c):return [c.x,c.y]),"blocked":preview.blocked.map(func(c):return [c.x,c.y]),"targets":preview.targets,"reach":preview.reach,"mode":preview.mode}
+  data.serial = app.game.roll_serial;data.rerolls = app.game.heroes.map(func(h):return h.rerolls)
   data.popups = []
   for control in app.ui.find_children("*","OptionButton",true,false):
    var popup: PopupMenu = control.get_popup()
@@ -46,7 +49,15 @@ func proof(args):
     data.popups.append({"control":str(control.name),"x":popup.position.x,"y":popup.position.y,"w":popup.size.x,"h":popup.size.y,"top":panel.get_margin(SIDE_TOP),"bottom":panel.get_margin(SIDE_BOTTOM),"items":range(popup.item_count).map(func(index):return popup.get_item_text(index))})
   JavaScriptBridge.get_interface("window").essenceState = JSON.stringify(data);return
  reset_ui()
- if mode=="trials_main":
+ if mode in ["range35","blocked35","heal35","reroll35","focus35"]:
+  app.game = M.new();app.game.prototype_pack = true;app.game.start(app.builds,35,false,true,{});app.game.active = 0;app.game.cursor = app.game.order.find(0);app.game.pending = {};app.game.forced_die = -1;app.page = "battle"
+  for h in app.game.heroes:h.results = [35,4,0];h.used = [false,false,false];h.reaction = [];h.rolls = [0,0,0]
+  app.game.heroes[0].pos = Vector2i(4,4);app.game.heroes[1].pos = Vector2i(4,3) if mode=="blocked35" else Vector2i(4,7);app.game.heroes[2].pos = Vector2i(8,8);app.game.boss.pos = Vector2i(4,2);app.game.unit_data(4).pos = Vector2i(0,0)
+  if mode=="heal35":app.game.heroes[0].results[0] = 19
+  if mode=="reroll35":app.game.heroes[0].results[0] = 1;app.game.heroes[0].rerolls = 1
+  if mode=="focus35":app.game.heroes[0].results = [6,1,0]
+  app.selected = -1;app.combat_inspected = -1;app.preview_inspect_only = false;app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
+ elif mode=="trials_main":
   app.trials = app.Trials.new(false);app.go_main()
  elif mode=="trials_debug":
   app.trials = app.Trials.new(false);app.debug_mode = true;app.page = "trials";app.trial_view = "guide"

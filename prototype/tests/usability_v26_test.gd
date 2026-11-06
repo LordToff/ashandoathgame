@@ -75,7 +75,7 @@ func run():
  scene.game.note("Full log includes this detail");scene.ui.get_node("LogExtensiveTab").pressed.emit()
  check(not scene.compact_log and scene.ui.get_node("SideChronicle").text.contains("Full log includes this detail"),"Extensive tab shows unfiltered details")
  scene.game.heroes[0].results = [6,5,0];scene.game.heroes[0].used = [false,true,false];scene.game.heroes[0].reaction = [1];scene.selected = 0;scene.select_combat_die(1)
- check(scene.combat_notices.any(func(n):return n.title.contains("FOCUS")),"selecting Focus then another die shows the result")
+ check(scene.combat_notices.is_empty() and scene.game.forced_die==1,"Focus shows its new roll without an acknowledgement")
  scene.restart_to_menu()
  check(scene.page == "main" and scene.draft_modal and scene.gifts == [[],[],[]],"restart opens actual main menu and clears party choices")
  check(not scene.show_options and scene.combat_notices.is_empty(),"restart clears combat overlays")
