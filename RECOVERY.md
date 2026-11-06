@@ -12,7 +12,7 @@ The dedicated repository retains source history and the previous Pages history. 
 
 A GitHub repository backs up committed source and published files. It cannot guarantee that a cloud runtime never fails. Commit and push completed work; ignored caches, running processes and uncommitted files are not repository backups.
 
-Current source for v0.33 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
+Current source for v0.34 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
 
 ## Recover in a new environment
 
@@ -81,3 +81,7 @@ Enemy priority scoring and stable random tie selection are in prototype/enemy_ta
 ## v0.33 phone flow, boss rewards and Debug
 
 Combat controls in mobile_ui.gd use fixed rows, without a battle-action ScrollContainer. Enemy intent names open focused details. Poison ticks never queue combat_notices or floating HP text; green smoke reads actual status in draw_effects. Earned faces 69–72 and four boss Memories are original requested content; bosses yield 3 matching Essence, ordinary creatures 1. Keep the 48-design free pool and old IDs stable. Memories share one copy of each type, with one slot per hero. Debug defaults off: stationary 650 ms holds on locked Collection cards/Forge recipes grant one owned item; movement cancels. Web Debug preference uses ash-and-oath-debug localStorage, native user://ash-debug.cfg; reward ownership still uses the existing ledger. Run mobile_flow_v33_test.gd and tools/verify_mobile_flow_browser.py plus clarity/Essence/hub/Wilds checks. Test fixtures must never ship.
+
+## v0.34 Trials
+
+Main menu → Trials renders through trials_ui.gd on both layouts. trials.gd owns the independent run/checkpoint and boss-Soul collection (user://ash-trials-v34.json, web ash-and-oath-trials localStorage). trial_encounter.gd adds original Shieldbearer, Mender, Ram, Cutpurse and Sentry groups through the EventBattle special-action hook. trial_rules.gd gates all experimental base-model hooks behind trial.enabled; preserve unchanged normal combat when absent. Five route stops precede the chosen existing boss. No Trial reward may call normal Essence settlement, supplies or party build mutation. Combat reload/abandon fails the Trial; safe nodes resume. Run trials_v34_test.gd and tools/verify_trials_browser.py with the isolated Essence fixture, plus normal combat, Essence, equipment, Wilds, phone and boss regressions. Fixture callbacks stay outside shipping exports. The normal 73-face catalog and 48 free designs are unchanged.
