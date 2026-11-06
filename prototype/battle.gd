@@ -1,6 +1,8 @@
 class_name AshBattle
 extends RefCounted
 
+const TrialRules = preload("res://prototype/trial_rules.gd")
+var trial_state: Dictionary = {}
 const Targeting = preload("res://prototype/enemy_targeting.gd")
 var intent_seed := 0
 var enemy_slot := 0
@@ -147,6 +149,7 @@ func start(builds: Array, seed_value: int = 0, soul: bool = false, balanced: boo
   return false if a == b else (av > bv if av != bv else (a == 3 or (b != 3 and a < b))))
  initiative_base = order.duplicate()
  prepare_encounter()
+ TrialRules.setup(self)
  note("The dice remember. Initiative is fixed for this encounter.")
  new_round()
 
@@ -212,6 +215,7 @@ func status_map(id: int) -> Dictionary:
  return result
 
 func report_changes() -> void:
+ TrialRules.moved(self)
  if action_before.is_empty(): return
  var previous: Dictionary = action_before; action_before = {}
  for id in range(4):
@@ -356,9 +360,11 @@ func activate() -> void:
   h.debt_penalty = maxi(h.debt_penalty,h.debt_next); h.debt_next = 0
   boss.binds = boss.binds.filter(func(bind):return bind.owner != active)
   if h.channel.is_empty() or h.channel.face != 31:
-   if h.block > 0: record_event("expire","%s loses %d unspent Block at turn start." % [unit_name(active),h.block],active,active)
-   h.block = 0
+   var retained: int = mini(h.block,2) if TrialRules.enabled(self) and TrialRules.soul(self,active)=="bugh" else 0
+   if h.block>retained:record_event("expire","%s loses %d unspent Block at turn start." % [unit_name(active),h.block-retained],active,active)
+   h.block = retained
   h.memory_embers_used = false;h.memory_brood_used = false;h.memory_silence_used = false;h.memory_iron_used = false
+  TrialRules.turn_start(self,active)
   h.opening = true; reset_soul_allowance(active); h.engrave_growth = 0
   if not h.channel.is_empty():
    h.channel.block_lost = 0
@@ -418,6 +424,7 @@ func finish_turn() -> void:
   heroes[active].moved_turn = 0
   heroes[active].damaged_enemy_turn = false;heroes[active].dagger_used = false
   heroes[active].event_salve_used = false
+  TrialRules.turn_start(self,active)
   heroes[active].opening = true; reset_soul_allowance(active)
   roll_context = "Recovery · fresh Action Dice"
   roll_serial += 1
@@ -440,6 +447,7 @@ func distance(a: int, b: int, at: Vector2i = Vector2i(-99,-99)) -> int:
 
 func legal(id: int, p: Vector2i) -> bool:
  for c in cells(id,p):
+  if TrialRules.blocked_cell(self,c):return false
   if c.x < 0 or c.y < 0 or c.x >= 9 or c.y >= 9: return false
   for u in range(unit_count()):
    if u == id or unit_data(u).get("dead",false): continue
@@ -534,7 +542,7 @@ func damage(id: int, amount: int, unavoidable: bool = false, reason: String = ""
   damage_minion(id,amount,unavoidable,reason);return
  var h: Dictionary = boss if id == 3 else heroes[id]
  if id < 3 and h.dead: return
- amount = maxi(0,amount)
+ amount = TrialRules.incoming(self,id,maxi(0,amount),unavoidable,attacker)
  var broken_channel: Dictionary = h.channel.duplicate() if id < 3 else {}
  var initial_hp: int = h.hp
  var incoming: int = maxi(0,amount)
@@ -568,6 +576,7 @@ func damage(id: int, amount: int, unavoidable: bool = false, reason: String = ""
    h.defy = false;h.black_oath = false;h.echo_due = false;h.mods = {};h.smoke = {}
 
  var lost: int = initial_hp-h.hp
+ TrialRules.blocked(self,id,incoming,lost,absorbed,attacker)
  credit_enemy_damage(id,lost)
  var label: String = reason if reason != "" else (action_label if action_label != "" else "Damage")
  var result := "%s — %s → %s: %d incoming; %d blocked" % [label,unit_name(action_owner),unit_name(id),incoming,absorbed]
@@ -585,6 +594,7 @@ func damage(id: int, amount: int, unavoidable: bool = false, reason: String = ""
   if ch.face == 25 and outcome == "": damage(id,v("face25.backlash"),false,"Contained Power backlash")
 
 func heal(id: int, value: int = 1) -> void:
+ if TrialRules.enabled(self) and TrialRules.path(self,id)=="venom":value = maxi(0,value-1)
  var h: Dictionary = heroes[id]
  if h.dead or value <= 0: return
  if h.hp == 0:
@@ -600,6 +610,7 @@ func face(id: int, d: int) -> int:
  return heroes[id].results[d]
 
 func spend(d: int, store_smoke: bool = false) -> void:
+ TrialRules.spent(self,d)
  var h: Dictionary = heroes[active]
  if not h.used[d] and burden_interrupt.is_empty():
   var category: String = Catalog.category(face(active,d))
@@ -623,6 +634,7 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
  if h.dead or h.hp <= 0:return false
  if h.used[d] or (forced_die >= 0 and forced_die != d): return false
  var f := face(active,d)
+ if TrialRules.blocked_cell(self,destination):return TrialRules.smash(self,d,destination)
  if f == 6 and focus_reason(d,target) != "":return false
  if not resuming_friendly_attack and prepare_friendly_evasive(d,target,destination):return true
  begin_action(active,action_name(active,f),target if f != 6 else -1,d)
@@ -1098,11 +1110,12 @@ func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: boo
  var h: Dictionary = heroes[active]
  var attack_face: int = -1 if weapon_attack else face(active,d)
  var reach: int = 1 if weapon_attack else face_range(attack_face)
+ var trial_mod: Dictionary = TrialRules.attack_bonus(self,d,target,weapon_attack)
  var offered: int = int(h.get("offering_boost",0))
  if offered > 0:
   h.offering_boost = 0
   record_event("buff","Sorrow’s Offering: next Attack gains +%d damage before normal modifiers; blessing consumed." % offered,active,target,offered)
- var value := maxi(0,modified_value(d,base+offered+attack_bonus(target))-hero_weakness(h))
+ var value := maxi(0,modified_value(d,base+offered+attack_bonus(target)+int(trial_mod.bonus))-hero_weakness(h))
  if numeric_attack and h.numeric_zero: value = 0
  var repeats := 1
  if h.backstab >= round_no and target == 3 and rear(active): repeats += v("face10.repeat"); h.backstab = 0
@@ -1133,6 +1146,7 @@ func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: boo
   if target == 3 or (unit.hp > 0 and not unit.dead): unit.block += bypass
   var hit_loss: int = maxi(0,before-unit.hp)
   lost += hit_loss
+  TrialRules.after_hit(self,target,hit_loss,trial_mod)
   # Personal on-hit rewards also resolve on a killing hit; no further damage follows victory.
   if attack_face == 36 and hit_loss >= v("face36.threshold"): h.block += hit_loss*v("face36.multiplier")
   if attack_face == 41:
@@ -1148,6 +1162,7 @@ func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: boo
    boss.bargain.charges -= 1
    if boss.bargain.charges == 0:
     var owner: int = boss.bargain.owner; boss.bargain = {}; damage(owner,v("face27.backlash"),true,"Blood Bargain backlash")
+ TrialRules.after_attack(self,trial_mod)
  return lost
 
 func rear(id: int) -> bool:
@@ -1174,6 +1189,7 @@ func sight(a: int, b: int, limit: int) -> bool:
     else: p.y += signi(dy); iy += 1
     touched.append(p)
    for cell in touched:
+    if TrialRules.blocked_cell(self,cell):clear = false
     for u in range(unit_count()):
      if u in [a,b] or unit_data(u).get("dead",false): continue
      if cell in cells(u): clear = false
@@ -1294,14 +1310,14 @@ func catalog_action(d: int, target: int, destination: Vector2i) -> bool:
    if distance(active,3) <= v("face53.range"): h.num_boost += v("face53.boost")
   54:
    if destination.x != -99:
-    if destination not in reachable(active,v("face54.move"),false): return false
+    if destination not in reachable(active,move_steps(54),false): return false
     h.pos = destination
    h.block += v("face54.block")
   55:
    if target < 0 or target >= 3 or heroes[target].dead or (target != active and distance(active,target) > face_range(f)): return false
    heal(target,numeric_for(f,h))
   57:
-   if destination not in reachable(active,v("face57.move"),false): return false
+   if destination not in reachable(active,move_steps(57),false): return false
    h.pos = destination; h.block += v("face57.block")
   58:
    if h.get("rooted",0) > 0 or (target in [0,1,2] and heroes[target].get("rooted",0) > 0):return false
@@ -1317,9 +1333,11 @@ func catalog_action(d: int, target: int, destination: Vector2i) -> bool:
 func leap_cells(id: int) -> Array:
  var result: Array = []
  if heroes[id].get("rooted",0) > 0:return result
- for x in range(-v("face53.move"),v("face53.move")+1):
-  for y in range(-v("face53.move"),v("face53.move")+1):
-   if absi(x)+absi(y) > 0 and absi(x)+absi(y) <= v("face53.move"):
+ var steps: int = v("face53.move")
+ if TrialRules.enabled(self) and TrialRules.soul(self,id)=="bugh":steps = maxi(1,steps-1)
+ for x in range(-steps,steps+1):
+  for y in range(-steps,steps+1):
+   if absi(x)+absi(y) > 0 and absi(x)+absi(y) <= steps:
     var p: Vector2i = heroes[id].pos+Vector2i(x,y)
     if legal(id,p): result.append(p)
  return result
@@ -1563,9 +1581,9 @@ func soul_remaining(id: int) -> int:
  var used: int = int(h.get("soul_moves_used",0))
  return maxi(0,soul_limit(id)-used)
 func move_steps(f: int) -> int:
- if f == 60:return 1
- if f == 66:return 2
- return soul_distance(active) if f == 0 else v("face%d.move" % f)
+ if f == 0:return soul_distance(active)
+ var steps: int = 1 if f==60 else 2 if f==66 else v("face%d.move" % f)
+ return maxi(1,steps-1) if TrialRules.enabled(self) and TrialRules.soul(self,active)=="bugh" else steps
 func face_range(f: int) -> int:
  if f in [63,64,65]:return 2+(1 if f == 63 and balance.get("memory.loss."+str(active),false) else 0)
  if f == 70:return 2
@@ -1755,6 +1773,7 @@ func living_minions(faction: String = "enemy") -> Array:
   if not minions[i].dead and minions[i].hp > 0 and (faction == "all" or minions[i].get("faction","enemy") == faction):ids.append(i+4)
  return ids
 func damage_minion(id: int, amount: int, unavoidable: bool = false, reason: String = "") -> void:
+ amount = TrialRules.incoming(self,id,maxi(0,amount),unavoidable,action_owner)
  var worm := unit_data(id)
  if worm.dead:return
  var absorbed := 0 if unavoidable else mini(worm.block,maxi(0,amount))
@@ -1870,6 +1889,7 @@ func apply_poison(source: int, target: int, amount: int) -> void:
  var before: int = int(victim.get("poison",0))
  victim.poison = before+amount;victim.poison_source = source
  record_event("poison","%s applies +%d Poison to %s: %d → %d. At activation, take damage equal to Poison, then reduce it by 1." % [unit_name(source),amount,unit_name(target),before,victim.poison],source,target,amount)
+ TrialRules.poison_spread(self,source,target)
 func activate_friendly(id: int) -> void:
  if unit_data(id).dead or outcome != "":return
  tick_poison(id)
@@ -1973,7 +1993,7 @@ func essence_action(d: int, target: int, destination: Vector2i) -> bool:
    if not burden_interrupt.is_empty():return false
    pending = {"kind":"essence_burden_source","hero":active,"die":d};return true
   66:
-   if destination not in reachable(active,2,false):return false
+   if destination not in reachable(active,move_steps(66),false):return false
    var farther := true
    for enemy in attack_targets(active,99):
     if distance(active,enemy,destination) <= distance(active,enemy):farther = false

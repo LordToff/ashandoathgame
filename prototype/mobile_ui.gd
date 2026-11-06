@@ -38,7 +38,7 @@ static func screen(app, heading: String, key: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
  app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.33",Vector2(18,58),15,MUTED,size.x-36)
+ app.label_at("ASH & OATH · MOBILE · v0.34",Vector2(18,58),15,MUTED,size.x-36)
  var width: float = minf(720,size.x-24)
  var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
@@ -54,6 +54,7 @@ static func heroes(app, parent: Control, camp: bool) -> void:
    app.rebuild(),app.COLORS[hero] if (app.camp_hero if camp else app.build_hero) == hero else MUTED)
 static func render(app) -> void:
  match app.page:
+  "trials":app.TrialUI.render(app)
   "main":main_menu(app)
   "forge":
    if app.draft_modal:draft(app)
@@ -67,12 +68,16 @@ static func render(app) -> void:
   if app.combat_notices[0].has("faces"):app.BattlePanels.engrave(app)
   else:modal(app,app.notice_ui)
   return
+ if app.show_trial_guide:app.TrialUI.guide(app);return
  if app.show_collection:app.BattlePanels.collection(app);return
  if app.show_intents:app.BattlePanels.intents(app);return
  if app.mobile_more:more(app);return
  if app.shove_target>=0:shove(app);return
  if app.choosing_poke and app.rolling_time <= 0:modal(app,app.poke_ui);return
- if app.show_enemy_cards:modal(app,app.enemy_cards_ui);return
+ if app.show_enemy_cards:
+  if app.trial_fight:app.show_enemy_cards = false;app.show_trial_guide = true;app.TrialUI.guide(app)
+  else:modal(app,app.enemy_cards_ui)
+  return
  if app.show_soundtrack:modal(app,app.soundtrack_settings_ui);return
  if app.show_options:options(app);return
  if app.show_history:modal(app,app.history_ui);return
@@ -82,7 +87,10 @@ static func render(app) -> void:
  if app.show_supplies:modal(app,app.supplies_ui);return
  if app.show_menu:menu(app);return
  if app.page == "battle":
-  if app.game.outcome != "":modal(app,app.outcome_ui);return
+  if app.game.outcome != "":
+   if app.trial_fight:app.TrialUI.outcome(app)
+   else:modal(app,app.outcome_ui)
+   return
   if not app.game.pending.is_empty():
    if app.rolled_choice_pending():app.BattlePanels.picker(app)
    else:modal(app,app.pending_ui)
@@ -101,7 +109,8 @@ static func main_menu(app) -> void:
  btn(app,column,"Options",app.open_settings,MUTED)
  btn(app,column,"Desktop mode",func():app.set_mobile_mode(false),MUTED).name = "MobileDesktopMode"
  text(column,"Mobile mode saves on this device. Earned rewards use the same local save.",18)
- footer(app,["Camp","Creatures"],[app.open_camp,func():app.camp_tab = 3;app.open_camp()])
+ btn(app,column,"Trials · experimental expeditions",app.open_trials).name = "MobileTrials"
+ footer(app,["Camp","Trials"],[app.open_camp,app.open_trials])
 
 static func draft(app) -> void:
  var column := screen(app,"Choose bonus faces","draft-"+str(app.build_hero)+app.draft_category)
@@ -261,7 +270,10 @@ static func battle(app) -> void:
  var board := board_rect(app);var x: float = board.end.x+12 if landscape else 12
  var width: float = size.x-x-12
  var active: int = app.game.active
- app.label_at(app.game.unit_name(active)+" · R"+str(app.game.round_no),Vector2(12,8),23,GOLD,board.size.x if landscape else size.x-24,true)
+ var actor: String = "Enemies" if app.trial_fight and active==3 else app.game.unit_name(active)
+ var heading: String = actor+" · R"+str(app.game.round_no)
+ if app.trial_fight:heading += " · %d Essence" % int(app.game.trial_state.get("purse",0))
+ app.label_at(heading,Vector2(12,8),19 if app.trial_fight else 23,GOLD,board.size.x if landscape else size.x-24,true)
  var party_width: float = board.size.x if landscape else size.x-24
  for hero in range(3):
   var h: Dictionary = app.game.heroes[hero];var w: float = (party_width-12)/3
@@ -317,6 +329,7 @@ static func battle(app) -> void:
 static func more(app) -> void:
  var column: VBoxContainer = app.BattlePanels.panel(app,"Actions","")
  var grid := GridContainer.new();grid.columns = 2;grid.add_theme_constant_override("h_separation",10);grid.add_theme_constant_override("v_separation",10);column.add_child(grid)
+ if app.trial_fight:btn(app,grid,"Trial field guide",func():app.mobile_more = false;app.show_trial_guide = true;app.rebuild(),GOLD)
  btn(app,grid,"Poke",func():app.mobile_more = false;app.choosing_poke = true;app.rebuild(),GOLD,app.game.poke_targets().is_empty())
  btn(app,grid,"Skip face",func():app.game.decline(app.selected);app.friendly_confirm = -1;app.selected = -1;app.mobile_more = false;app.rebuild(),MUTED,app.selected<0)
  for item in [["Log","show_history"],["Enemies","show_enemy_cards"],["Supplies","show_supplies"],["Menu","show_menu"]]:
@@ -375,6 +388,7 @@ static func info(app) -> void:
   app.label_at(app.mobile_info,Vector2.ZERO,22,MUTED,420,false,true)
   app.button("Back",Vector2.ZERO,Vector2(420,68),func():app.mobile_info = "";app.show_collection = app.info_return_collection;app.info_return_collection = false;app.rebuild()))
 static func menu(app) -> void:
+ if app.trial_fight:app.TrialUI.menu(app);return
  modal(app,func():
   app.label_at("Game menu",Vector2.ZERO,28,GOLD)
   app.button("Return to battle",Vector2.ZERO,Vector2(400,68),func():app.show_menu = false;app.rebuild())
@@ -382,6 +396,7 @@ static func menu(app) -> void:
    app.button(item[0],Vector2.ZERO,Vector2(400,68),func():app.show_menu = false;app.set(item[1],true);app.rebuild())
   app.button("Main menu · leave encounter",Vector2.ZERO,Vector2(400,68),app.go_main))
 static func options(app) -> void:
+ if app.trial_fight:app.TrialUI.options(app);return
  modal(app,func():
   app.label_at("Options",Vector2.ZERO,28,GOLD)
   app.button("Debug unlocks: "+("On" if app.debug_mode else "Off"),Vector2.ZERO,Vector2(420,68),func():app.set_debug_mode(not app.debug_mode))

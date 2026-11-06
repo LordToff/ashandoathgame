@@ -1,3 +1,5 @@
+v0.34: Main menu → **Trials**. Three build paths, five branching stops, role enemies, cover/barricades/spikes, face and edge rewards, four Trial boss Souls and safe checkpoints. Normal progression is separate. [Changes](../docs/Changes-v0.34.md).
+
 v0.33: Fixed mobile combat controls; ability names/colors; tappable enemy intents and Block; Poison smoke/SFX without popups; boss Essence, four abilities and four Memories; optional long-hold Debug unlocks. [Changes](../docs/Changes-v0.33.md).
 
 v0.32: **Enemy intents** shows live targets, priorities and effects. Face-up copy choices show only rolled results with inspection and confirmation. Poison HP loss, healing and Stun have distinct SFX; Engrave displays its new installed side. Inspect Essence recipes before spending. [Changes](../docs/Changes-v0.32.md).

@@ -19,6 +19,7 @@ func mobile_controls(node: Node, list: Array):
   list.append({"clip":[clip.position.x,clip.position.y,clip.size.x,clip.size.y],"name":str(node.name),"text":node.text if node is Button else "", "x":rect.position.x,"y":rect.position.y,"w":rect.size.x,"h":rect.size.y,"disabled":node.disabled if node is BaseButton else false})
  for child in node.get_children():mobile_controls(child,list)
 func reset_ui():
+ app.trial_fight = false;app.show_trial_guide = false;app.trial_view = "run"
  app.show_collection = false;app.mobile_more = false;app.debug_hold.clear();app.show_intents = false;app.choice_preview = Vector2i(-1,-1);app.status_sounds.clear();app.status_cooldown = 0;app.choosing_reroll = false;app.mobile_info = "";app.mobile_scrolls.clear()
  app.dice_tray.cancel();app.rolling_time = 0;app.choosing_poke = false;app.creature_fight = false;app.camp_tab = 0;app.show_enemy_cards = false;app.show_menu = false;app.show_options = false;app.show_history = false;app.show_supplies = false;app.show_soundtrack = false;app.draft_modal = false;app.lab = false;app.training = false;app.event_fight = false;app.combat_notices.clear();app.selected = -1
  app.gifts = [[34,47],[34,47],[34,47]];app.builds = [B.bonus_build([34,47]),B.bonus_build([34,47]),B.bonus_build([34,47])]
@@ -35,9 +36,33 @@ func proof(args):
   var data := {"rolling":app.dice_tray.busy,"bank":app.expedition.camp.bank,"copies":app.expedition.camp.copies,"memories":app.expedition.camp.memories,"active":app.game.active,"page":app.page,"builds":app.builds,"weapons":app.expedition.camp.weapons,"souls":app.expedition.camp.souls,"equipped_souls":app.expedition.camp.equipped_souls}
   var controls: Array = [];mobile_controls(app.ui,controls);data.controls = controls;data.viewport = [app.get_viewport_rect().size.x,app.get_viewport_rect().size.y];data.mobile = app.mobile_mode;data.board = [app.MobileUI.board_rect(app).position.x,app.MobileUI.board_rect(app).position.y,app.MobileUI.board_rect(app).size.x,app.MobileUI.board_rect(app).size.y];data.debug = app.debug_mode;data.unlocked = app.expedition.camp.unlocked;data.collection = app.show_collection;data.enemy_block = app.game.boss.get("block",0) if app.game.heroes.size()==3 else 0;data.intents = app.game.enemy_intents() if app.game.heroes.size()==3 else [];data.sfx = app.status_sounds;data.effects = app.effects.map(func(f):return f.kind);data.notices = app.combat_notices;data.selected = app.selected;data.pending = app.game.pending;data.feedback_playing = app.feedback_audio.playing;data.feedback_kind = app.feedback_streams.find_key(app.feedback_audio.stream);data.live_builds = app.game.heroes.map(func(h):return h.build);data.results = app.game.heroes.map(func(h):return h.results)
   if app.game.heroes.size() == 3:data.hp = app.game.heroes.map(func(h):return h.hp);data.block = app.game.heroes.map(func(h):return h.block);data.positions = app.game.heroes.map(func(h):return [h.pos.x,h.pos.y]);data.dagger_used = app.game.heroes.map(func(h):return h.get("dagger_used",false));data.used = app.game.heroes.map(func(h):return h.used);data.boss_hp = app.game.boss.hp
+  data.trial = {"phase":app.trials.phase,"stage":app.trials.stage,"essence":app.trials.essence,"paths":app.trials.paths,"souls":app.trials.souls,"completed":app.trials.completed_bosses,"builds":app.trials.builds,"hp":app.trials.hp,"mods":app.trials.mods,"view":app.trial_view,"fight":app.trial_fight}
+  data.terrain = app.game.trial_state
+  data.popups = []
+  for control in app.ui.find_children("*","OptionButton",true,false):
+   var popup: PopupMenu = control.get_popup()
+   if popup.visible:
+    var panel: StyleBox = popup.get_theme_stylebox("panel")
+    data.popups.append({"control":str(control.name),"x":popup.position.x,"y":popup.position.y,"w":popup.size.x,"h":popup.size.y,"top":panel.get_margin(SIDE_TOP),"bottom":panel.get_margin(SIDE_BOTTOM),"items":range(popup.item_count).map(func(index):return popup.get_item_text(index))})
   JavaScriptBridge.get_interface("window").essenceState = JSON.stringify(data);return
  reset_ui()
- if mode == "flow_player":
+ if mode=="trials_main":
+  app.trials = app.Trials.new(false);app.go_main()
+ elif mode=="trials_debug":
+  app.trials = app.Trials.new(false);app.debug_mode = true;app.page = "trials";app.trial_view = "guide"
+ elif mode=="trials_reward":
+  app.trials = app.Trials.new(false);app.trials.start(34);app.trials.choose(0);app.trials.phase = "reward";app.trials.essence = 7;app.trials.message = "Choose a reward";app.page = "trials"
+ elif mode=="trials_crates":
+  app.trials = app.Trials.new(false);app.trials.start(34);app.trials.choose(0);app.start_trial_battle();app.game.pending = {};app.game.active = 0;app.game.cursor = app.game.order.find(0);app.game.heroes[0].pos = Vector2i(2,6);app.game.heroes[0].results = [1,4,2];app.game.heroes[0].used = [false,false,false];app.game.heroes[0].reaction = [];app.game.trial_state.crates = [Vector2i(2,5),Vector2i(6,5)];app.game.trial_state.cover = [];app.game.trial_state.spikes = [];app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
+ elif mode=="trials_charge":
+  app.trials = app.Trials.new(false);app.trials.start(34);app.trials.choose(0);app.start_trial_battle();app.game.pending = {};app.game.active = 0;app.game.heroes[0].pos = Vector2i(3,6);app.game.trial_state.charges = [{"source":3,"tiles":[Vector2i(3,5),Vector2i(3,6),Vector2i(3,7)]}];app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
+ elif mode=="trials_win":
+  app.trials = app.Trials.new(false);app.trials.start(34);app.trials.choose(0);app.start_trial_battle();app.game.pending = {}
+  for id in range(3,app.game.unit_count()):
+   if not app.game.friendly(id):app.game.damage(id,999,true)
+ elif mode=="trials_boss_win":
+  app.trials = app.Trials.new(false);app.trials.start(34);app.trials.stage = 5;app.trials.choose(0);app.start_trial_battle();app.game.damage(3,999,true)
+ elif mode == "flow_player":
   setup_clarity(2)
   for hero in range(3):app.game.heroes[hero].pos=Vector2i(hero*3,7)
   app.game.boss.block=4

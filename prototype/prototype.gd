@@ -1,5 +1,13 @@
 extends Control
 
+const Trials = preload("res://prototype/trials.gd")
+const TrialUI = preload("res://prototype/trials_ui.gd")
+const TrialEncounter = preload("res://prototype/trial_encounter.gd")
+var trials = Trials.new()
+var trial_fight := false
+var trial_view := "run"
+var trial_die := 0
+var show_trial_guide := false
 const BattlePanels = preload("res://prototype/battle_panels.gd")
 var info_return_collection := false
 var show_collection := false
@@ -329,6 +337,10 @@ func rebuild() -> void:
  for c in ui.get_children(): ui.remove_child(c); c.queue_free()
  if mobile_mode:
   MobileUI.render(self);queue_redraw();return
+ if page == "trials":
+  TrialUI.render(self)
+  if mobile_info!="":MobileUI.info(self)
+  queue_redraw();return
  if page in ["main","camp","forge"]:
   if page == "main":HubUI.main_menu(self)
   elif page == "camp":CampUI.render(self)
@@ -353,7 +365,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.33",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.34",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -381,6 +393,7 @@ func rebuild() -> void:
  if show_collection:BattlePanels.collection(self)
  if show_intents:BattlePanels.intents(self)
  if show_enemy_cards:enemy_cards_ui()
+ if show_trial_guide:TrialUI.guide(self)
  if choosing_poke and rolling_time <= 0:poke_ui()
  if not combat_notices.is_empty() and rolling_time <= 0:notice_ui()
  queue_redraw()
@@ -544,18 +557,19 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.33 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.34 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.33 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.33 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.34 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.34 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.33 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.34 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.33 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.34 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
+ if trial_fight:goal = "TRIAL · %d Essence · Menu → field guide for pacts, terrain and public enemy dice." % int(game.trial_state.get("purse",0))
  label_at(goal,Vector2(28,857),14,MUTED,706,false,true)
  if game.last_boss_result != "":
   var outcome_label := label_at("LAST ENEMY RESULT · "+game.last_boss_result,Vector2(752,849),14,Color("e6c394"),664,false,true)
@@ -656,6 +670,7 @@ func overlay() -> void:
  var box := Panel.new(); box.position = Vector2(350,222); box.size = Vector2(680,445); box.add_theme_stylebox_override("panel",style(Color("19212d"),GOLD)); ui.add_child(box)
 
 func outcome_ui() -> void:
+ if trial_fight:TrialUI.outcome(self);return
  overlay()
  if creature_fight:
   settle_essence()
@@ -735,7 +750,7 @@ func _gui_input(event: InputEvent) -> void:
   if page == "battle" and game.encounter_id == "bugh" and hover in game.sweep_tiles:tooltip_text += "\nCRUSHING SWEEP: %d damage on this fixed tile before the next boss dice. Escape or fully guard to break Bulwark." % game.sweep_damage
   if page == "battle" and hover in game.fire_tiles:tooltip_text += "\nFIRE TILE: end your turn here → %d normal damage. A later positive Smoking Strike also detonates it for %d." % [game.v("boss.fire.end_turn"),game.v("boss.smoking.fire_damage")]
  if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-  if page != "battle" or is_instance_valid(balance_editor) or show_collection or mobile_more or show_intents or show_menu or show_lab_tools or show_options or show_soundtrack or show_lab_setup or show_dice or show_turn or show_changes or show_help or show_history or rolling_time > 0 or not game.pending.is_empty() or game.outcome != "" or game.active == 3 or selected < 0: return
+  if page != "battle" or is_instance_valid(balance_editor) or show_trial_guide or show_collection or mobile_more or show_intents or show_menu or show_lab_tools or show_options or show_soundtrack or show_lab_setup or show_dice or show_turn or show_changes or show_help or show_history or rolling_time > 0 or not game.pending.is_empty() or game.outcome != "" or game.active == 3 or selected < 0: return
   var c := Vector2i((event.position-ORIGIN)/CELL)
   if not Rect2(ORIGIN,Vector2.ONE*CELL*9).has_point(event.position): return
   var f: int = game.face(game.active,selected)
@@ -747,7 +762,8 @@ func _gui_input(event: InputEvent) -> void:
    friendly_confirm = target; hint = "FRIENDLY FIRE: click this ally again to confirm the attack."; rebuild(); return
   friendly_confirm = -1
   var done := false
-  if f in [0,2,3,53,54,57,59,60,66]: done = game.hero_action(selected,-1,c)
+  if Model.TrialRules.blocked_cell(game,c):done = game.hero_action(selected,-1,c)
+  elif f in [0,2,3,53,54,57,59,60,66]: done = game.hero_action(selected,-1,c)
   elif f == 8:
    if shove_target == -1 and target >= 0 and target != game.active and game.distance(game.active,target) <= game.face_range(8):
     shove_target = target; hint = "Choose a push direction from the arrows beside the board."; rebuild(); return
@@ -768,7 +784,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
  if not combat_notices.is_empty():return
  if event.is_action_pressed("ui_cancel"):
   if is_instance_valid(balance_editor):balance_editor.queue_free();balance_editor = null
-  choosing_poke = false;mobile_info = "";show_intents = false
+  choosing_poke = false;mobile_info = "";show_intents = false;show_trial_guide = false
   selected = -1; shove_target = -1; show_active_effects = false; show_soundtrack = false; show_options = false; show_menu = false; show_lab_tools = false; show_help = false; inspect_action = "";combat_inspected = -1; show_supplies = false; show_history = false; show_changes = false; show_dice = false; show_turn = false; show_lab_setup = false; rebuild()
 
 func _draw() -> void:
@@ -782,7 +798,7 @@ func _draw() -> void:
   return
  draw_texture_rect(CHAMBER,Rect2(0,0,1440,900),false)
  draw_line(Vector2(24,76),Vector2(1408,76),Color("303846"))
- if page in ["main","forge","setup","events","camp"]:return
+ if page in ["main","forge","setup","events","camp","trials"]:return
  if page == "forge":
   panel(Rect2(68,351,736,336)); panel(Rect2(850,278,472,563))
  else:
@@ -838,6 +854,7 @@ func draw_board() -> void:
     draw_line(p+Vector2(9,52),p+Vector2(27,70),Color(.95,.69,.31,.65),2)
     draw_line(p+Vector2(49,7),p+Vector2(68,26),Color(.95,.69,.31,.65),2)
     draw_string(BODY,p+Vector2(9,20),str(game.sweep_damage),HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color("ffe1a0"))
+   draw_trial_cell(c,p)
    if c in highlights: draw_circle(p+Vector2.ONE*CELL/2,3,Color("82c5b0"))
    if c in game.brand_cells:
     draw_pixel_fire(p+Vector2.ONE*CELL/2,0.55, x+y*9)
@@ -996,7 +1013,7 @@ func history_ui() -> void:
  var text_lines: Array[String] = []
  for entry in game.event_log:
   if compact_log and entry.kind in ["guide","info"]:continue
-  if log_filter == "Combat" and entry.kind not in ["armor","guard_break","warning","cocoon_break","hatch","brood","consume","phase","hazard","fire","fire_arm","action","attack","damage","block","block_gain","heal","buff","debuff","expire","mutation","retarget","collision","stun","decline","focus","summon","minion_death","soul_link","minion_action","fallback","boss_result","resonance","core","roll","poison","poison_tick","reaction","move"]: continue
+  if log_filter == "Combat" and entry.kind not in ["theft","recover","escape","terrain","evade","trial_death","trial_result","armor","guard_break","warning","cocoon_break","hatch","brood","consume","phase","hazard","fire","fire_arm","action","attack","damage","block","block_gain","heal","buff","debuff","expire","mutation","retarget","collision","stun","decline","focus","summon","minion_death","soul_link","minion_action","fallback","boss_result","resonance","core","roll","poison","poison_tick","reaction","move"]: continue
   if log_filter == "Turns" and entry.kind not in ["turn","round","roll"]: continue
   text_lines.append(format_event(entry,true))
  lines.text = "\n\n".join(text_lines); ui.add_child(lines)
@@ -1343,13 +1360,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.33 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.34 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.33",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.34",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1526,6 +1543,9 @@ func lab_setup_ui() -> void:
 
 
 func soul_toggle(at: Vector2, in_lab: bool, width: float = 0) -> void:
+ if trial_fight:
+  button("Trial field guide · pacts & terrain",at,Vector2(width if width>0 else 328,30),func():show_trial_guide = true;rebuild(),GOLD).name = "TrialCombatGuide"
+  return
  var toggle := CheckButton.new();toggle.name = "TestSoulToggle"
  var override_on: bool = game.reward if in_lab and (lab or training) else reward_soul
  toggle.text = ("Test Soul: " if lab or training else "Sandbox override: ")+"Blank → Move %d · " % balance_number("soul.move") + ("ON" if override_on else "OFF")
@@ -1555,6 +1575,7 @@ func set_soul_enabled(enabled: bool, live: bool = true) -> void:
  rebuild()
 
 func options_ui() -> void:
+ if trial_fight:TrialUI.options(self);return
  var shade := ColorRect.new();shade.color = Color(0.02,0.03,0.05,0.9);shade.size = Vector2(1440,900);ui.add_child(shade)
  setup_panel(Rect2(158,92,1124,716),GOLD)
  button("Debug unlocks: "+("ON" if debug_mode else "OFF"),Vector2(194,694),Vector2(620,48),func():set_debug_mode(not debug_mode),GOLD).name = "DebugToggle"
@@ -1617,6 +1638,7 @@ func draw_unit_sprite(id: int, rect: Rect2) -> void:
  draw_texture_rect_region(SPRITES,rect,Rect2(Vector2(id%2,id/2)*half,half))
 
 func menu_ui() -> void:
+ if trial_fight:TrialUI.menu(self);return
  overlay()
  label_at("GAME MENU",Vector2(399,255),27,GOLD,600,true)
  button("Tutorial / Ability Lab",Vector2(399,325),Vector2(275,45),func():show_menu = false;start_lab(),Color("82c8b9"))
@@ -1691,7 +1713,7 @@ func draw_pixel_fire(center: Vector2, alpha: float, seed_value: int, burst: bool
 func inspection_at_mouse() -> String:
  return inspection_at(get_local_mouse_position())
 func inspection_at(at: Vector2) -> String:
- if page != "battle" or show_collection or mobile_more or show_intents or show_menu or show_lab_tools or show_options or show_soundtrack or show_lab_setup or show_dice or show_turn or show_changes or show_help or show_history or not game.pending.is_empty():return ""
+ if page != "battle" or show_trial_guide or show_collection or mobile_more or show_intents or show_menu or show_lab_tools or show_options or show_soundtrack or show_lab_setup or show_dice or show_turn or show_changes or show_help or show_history or not game.pending.is_empty():return ""
  if Rect2(1112,151,304,687).has_point(at) and hover_key != "":return hover_key
  for die in range(3):
   if Rect2(760+die*220,66,208,36).has_point(at):return "boss:"+str(die)
@@ -2097,7 +2119,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.33",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.34",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2172,6 +2194,7 @@ func supplies_ui() -> void:
  button("Close supplies",Vector2(399,580),Vector2(550,45),func():show_supplies = false;rebuild(),MUTED)
 
 func can_use_supply(kind: String) -> bool:
+ if trial_fight:return false
  if game.active not in [0,1,2] or game.outcome != "" or not game.pending.is_empty() or lab or training:return false
  var hero: Dictionary = game.heroes[game.active]
  if hero.dead or hero.hp <= 0:return false
@@ -2204,6 +2227,7 @@ func enter_boss() -> void:
  expedition.stage = "boss";expedition.save();begin()
 
 func restart_to_menu() -> void:
+ if trial_fight:go_main();return
  choosing_poke = false
  if event_fight:expedition.finish_combat(false)
  event_fight = false;creature_fight = false;lab = false;training = false;page = "main";build_hero = 0
@@ -2251,6 +2275,10 @@ func craft_recipe(key: String) -> void:
  if error == "":camp_remove_mode = false;expedition.save()
  rebuild()
 func open_camp() -> void:
+ if trial_fight:
+  if game.outcome!="":trials.finish(game)
+  else:trials.fail("The Trial was left during a fight.")
+  continue_trial();return
  if page == "battle" and game.outcome == "":abandon_encounter()
  show_menu = false;show_options = false;show_enemy_cards = false;draft_modal = false
  if page == "battle" and game.outcome != "" and not lab and not training:
@@ -2259,6 +2287,7 @@ func open_camp() -> void:
    camp_tab = 0;camp_type = game.encounter_id;camp_recipe = expedition.camp.recipes_for(camp_type)[0];essence_page = int(CampUI.SPECIES.find(camp_type)/3)
  page = "camp";rebuild()
 func settle_essence() -> void:
+ if game.balance.get("trial.enabled",false):return
  if lab or training or game.outcome == "":return
  if expedition.camp.settle(game.harvest_run,game.outcome == "victory",game.harvest_tokens,game.harvest_deaths,game.encounter_types()):
   var earned: Array[String] = []
@@ -2269,6 +2298,8 @@ func settle_essence() -> void:
   camp_message = "Victory: banked "+", ".join(earned)+". Previously banked Essence is safe." if game.outcome == "victory" else "Defeat: encounter tokens discarded. Previously banked Essence, discoveries and owned rewards remain safe."
   expedition.save()
 func enemy_cards_ui() -> void:
+ if trial_fight:
+  show_enemy_cards = false;show_trial_guide = true;return
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = Vector2(1440,900);ui.add_child(shade)
  label_at("ENEMY CARDS · ESSENCE HARVESTING",Vector2(55,36),30,GOLD,1310,true)
  label_at("Tokens sit on defeated cards, never on grid cells. Victory banks them; defeat discards only this encounter’s tokens.",Vector2(57,95),16,MUTED,1300)
@@ -2393,6 +2424,10 @@ func finish_party_selection() -> void:
  else:open_setup()
 
 func abandon_encounter() -> void:
+ if trial_fight:
+  if game.outcome!="":trials.finish(game)
+  else:trials.fail("The Trial was left during a fight. Collected Trial Souls remain.")
+  trial_fight = false;show_trial_guide = false
  choosing_poke = false
  if page != "battle":return
  if game.outcome != "" and not lab and not training:settle_essence()
@@ -2514,6 +2549,7 @@ func bind_unlock(pick: Button, kind: String, key: String, hero: int) -> void:
   if event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and event.pressed:
    debug_hold = {"button":pick,"kind":kind,"key":key,"hero":hero,"origin":get_viewport().get_mouse_position(),"started":Time.get_ticks_msec()})
 func debug_locked(kind: String, key: String, hero: int) -> bool:
+ if kind=="trial_soul":return Trials.BOSSES.has(key) and key not in trials.completed_bosses
  if kind == "soul":return hero in range(3) and key not in expedition.camp.souls[hero]
  if not Essence.RECIPES.has(key):return false
  var recipe: Dictionary = Essence.RECIPES[key]
@@ -2521,6 +2557,7 @@ func debug_locked(kind: String, key: String, hero: int) -> bool:
  return expedition.camp.owned(recipe.face)==0 if recipe.has("face") else not expedition.camp.unlocked.has(key)
 func debug_unlock(kind: String, key: String, hero: int) -> bool:
  if not debug_mode or not debug_locked(kind,key,hero):return false
+ if kind=="trial_soul":trials.completed_bosses.append(key);trials.save();return true
  var changed: bool = expedition.camp.grant_soul(hero,key) if kind == "soul" else expedition.camp.debug_unlock(key,hero)
  if changed:
   expedition.save();camp_message = "Unlocked · "+(Wilds.soul_name(key) if kind == "soul" else expedition.camp.reward_name(key))
@@ -2528,3 +2565,58 @@ func debug_unlock(kind: String, key: String, hero: int) -> bool:
 func show_mobile_details() -> void:
  if game.active not in range(3):return
  mobile_info = face_help(game.face(game.active,mobile_die));rebuild()
+
+func open_trials() -> void:
+ abandon_encounter()
+ page = "trials";trial_view = "run";show_menu = false;show_options = false;mobile_info = "";show_trial_guide = false
+ rebuild()
+func choose_trial_route(index: int) -> void:
+ if not trials.choose(index):return
+ if trials.phase=="combat":start_trial_battle()
+ else:rebuild()
+func start_trial_battle() -> void:
+ if trials.phase!="combat":return
+ var error: String = trials.validate(trials.builds)
+ if error!="":trials.fail(error);page = "trials";rebuild();return
+ var profile: Dictionary = trials.profile()
+ if trials.current.kind=="boss":
+  var key: String = trials.current.boss
+  game = Bugh.new() if key=="bugh" else Cantor.new() if key=="cantor" else Nugh.new() if key=="nugh" else Model.new()
+ else:
+  game = TrialEncounter.new();game.group_index = int(trials.current.group);game.elite = bool(trials.current.elite)
+  profile["trial.terrain"] = TrialEncounter.GROUPS[game.group_index].terrain
+ game.start(trials.builds,trials.seed_value+trials.stage*97,true,true,profile)
+ trial_fight = true;event_fight = false;creature_fight = false;lab = false;training = false;draft_modal = false;page = "battle"
+ show_menu = false;show_options = false;show_history = false;show_enemy_cards = false;show_intents = false;show_dice = false;show_help = false;show_changes = false;show_supplies = false;show_trial_guide = false;mobile_more = false;mobile_info = ""
+ seen_event = 0;seen_roll = 0;roll_seen = 0;selected = -1;shove_target = -1;friendly_confirm = -1;choosing_reroll = false;choosing_poke = false;combat_notices.clear()
+ inspect_action = "";combat_inspected = -1;inspect_actor = -1;roll_feedback = {};show_active_effects = false
+ status_sounds.clear();effects.clear();floaters.clear();snapshots.clear();visual_positions.clear();movement_tracks.clear()
+ hint = "TRIAL · HP carries forward. Menu → Trial field guide explains your pacts and arena."
+ rebuild()
+func continue_trial() -> void:
+ if game.outcome!="":trials.finish(game)
+ trial_fight = false;page = "trials";trial_view = "run";show_history = false;show_menu = false;show_options = false;show_trial_guide = false;show_enemy_cards = false;mobile_info = "";mobile_more = false
+ if is_instance_valid(dice_tray):dice_tray.cancel()
+ rolling_time = 0;combat_notices.clear();effects.clear();floaters.clear();rebuild()
+func draw_trial_cell(cell: Vector2i, p: Vector2) -> void:
+ if not Model.TrialRules.enabled(game) or game.trial_state.is_empty():return
+ var state: Dictionary = game.trial_state
+ if cell in state.cover:
+  draw_rect(Rect2(p+Vector2(10,44),Vector2(56,18)),Color("477e9d"))
+  draw_rect(Rect2(p+Vector2(10,44),Vector2(56,18)),Color("a1d5e8"),false,2)
+  draw_string(BODY,p+Vector2(15,38),"COVER",HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color("a1d5e8"))
+ if cell in state.crates:
+  draw_rect(Rect2(p+Vector2.ONE*10,Vector2.ONE*56),Color("755334"))
+  draw_rect(Rect2(p+Vector2.ONE*10,Vector2.ONE*56),Color("d3a268"),false,3)
+  draw_line(p+Vector2.ONE*13,p+Vector2.ONE*63,Color("d3a268"),5)
+  draw_line(p+Vector2(13,63),p+Vector2(63,13),Color("d3a268"),5)
+ if cell in state.spikes:
+  draw_rect(Rect2(p+Vector2.ONE*5,Vector2.ONE*66),Color(.55,.15,.15,.55))
+  for index in range(3):
+   var at := p+Vector2(12+index*19,55)
+   draw_colored_polygon(PackedVector2Array([at,at+Vector2(7,-30),at+Vector2(14,0)]),Color("e9c2b4"))
+ for mark in state.charges:
+  if cell not in mark.tiles:continue
+  draw_rect(Rect2(p+Vector2.ONE*5,Vector2.ONE*66),Color("e6c16e"),false,4)
+  draw_line(p+Vector2(12,58),p+Vector2(58,12),Color("e6c16e"),4)
+  draw_string(BODY,p+Vector2(10,22),"3",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("ffe6ac"))

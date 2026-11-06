@@ -1,6 +1,7 @@
 extends RefCounted
 ## Priorities are shared by the model and its live intent cards.
 const RULES = {
+ "Mark Charge":"furthest","Pilfer":"closest",
  "Advance":"highest_hp","Iron Advance":"highest_hp","Smoking Strike":"lowest_hp","Strike":"lowest_hp",
  "Skirmish":"closest","Ashen Chain":"furthest","Cinder Brand":"damage_last_round","Distort":"buffs",
  "Fracture":"buffs","Drive Back":"most_block","Gnashing Maw":"lowest_hp","Hushed Chime":"buffs",

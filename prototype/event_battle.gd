@@ -45,10 +45,14 @@ func boss_step() -> void:
 var queued_actions: Array = []
 func continue_monsters():
  while not queued_actions.is_empty() and pending.is_empty() and outcome == "":
+  if TrialRules.enabled(self):
+   TrialRules.moved(self)
+   if outcome!="":break
   var entry: Dictionary = queued_actions.pop_front();var id: int = entry.id;var action: String = entry.action
   if unit_data(id).hp <= 0:continue
   begin_action(id,action)
   if action == "Bound":note("Bound result: no action.");continue
+  if special_monster_action(id,action):continue
   if action == "Mend":
    var wounded: Array = ([3]+living_minions()).filter(func(target):return unit_data(target).hp > 0 and unit_data(target).hp < unit_data(target).max_hp and distance(id,target) <= 2)
    if not wounded.is_empty():
@@ -116,3 +120,5 @@ func creature_help(type: String) -> String:
  return {"mire_leech":"4 HP. Venom Bite 1 at reach 1; actual HP loss adds Poison 1. Scuttle 2, Guard 1.","glasswing_moth":"3 HP. Needle 1 at range 3 with line of sight. Scuttle 2, Guard 1.","iron_husk":"5 HP. Bash 2 at reach 1. Scuttle 1, Iron Guard +2 Block. No passive armor."}.get(type,"Scuttle 2 (Movement: 3), Bite 1, Guard 1. Support can Mend 1 within 2.")
 func fallback() -> void:
  note("No legal creature target after Reactions; hold position.")
+
+func special_monster_action(_id: int, _action: String) -> bool:return false
