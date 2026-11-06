@@ -12,7 +12,7 @@ The dedicated repository retains source history and the previous Pages history. 
 
 A GitHub repository backs up committed source and published files. It cannot guarantee that a cloud runtime never fails. Commit and push completed work; ignored caches, running processes and uncommitted files are not repository backups.
 
-Current source for v0.34 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
+Current source for v0.35 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
 
 ## Recover in a new environment
 
@@ -85,3 +85,7 @@ Combat controls in mobile_ui.gd use fixed rows, without a battle-action ScrollCo
 ## v0.34 Trials
 
 Main menu → Trials renders through trials_ui.gd on both layouts. trials.gd owns the independent run/checkpoint and boss-Soul collection (user://ash-trials-v34.json, web ash-and-oath-trials localStorage). trial_encounter.gd adds original Shieldbearer, Mender, Ram, Cutpurse and Sentry groups through the EventBattle special-action hook. trial_rules.gd gates all experimental base-model hooks behind trial.enabled; preserve unchanged normal combat when absent. Five route stops precede the chosen existing boss. No Trial reward may call normal Essence settlement, supplies or party build mutation. Combat reload/abandon fails the Trial; safe nodes resume. Run trials_v34_test.gd and tools/verify_trials_browser.py with the isolated Essence fixture, plus normal combat, Essence, equipment, Wilds, phone and boss regressions. Fixture callbacks stay outside shipping exports. The normal 73-face catalog and 48 free designs are unchanged.
+
+## v0.35 readability and equipment
+
+Trial equipment uses memories/souls/bodies/weapons arrays. trial_rules.gd defines three test Memories and Dagger/Poison Dagger/Heavy Dagger; only Poke changes with the Weapon. Starter dice are independent of Memory. Legacy paths become Memories; legacy mods refund 2 Trial Essence each and are never applied. equipment_version 35 prevents repeat refunds. Keep the existing Trial save path for migration. battle_preview.gd is read-only and renders full reach, sight-blocked cells, targets and actual movement destinations. No preview may consume RNG or alter a die. Ordinary creature rendering uses cell-sized HP/Block, without the boss shadow. Action Reroll/Focus never append combat_notices; their real dice presentation remains. Run clarity_v35_test.gd, the updated trials/usability suites, tools/verify_readability_browser.py and tools/verify_trials_browser.py. Shipping exports exclude fixture hooks.

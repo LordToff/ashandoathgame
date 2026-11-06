@@ -1,11 +1,11 @@
-# Ash & Oath v0.34
+# Ash & Oath v0.35
 
-[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.34)
+[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.35)
 
-Main menu → Trials: three build paths, five branching stops, role enemy groups, terrain, face/edge rewards, and four boss Souls with tradeoffs. Trial parties, currency and saved safe checkpoints use a separate collection. Normal builds and Camp rewards are preserved. Mobile mode supports portrait and landscape.
+Trials uses Body, Memory, Soul and Weapon, with plain equipment descriptions and old dice upgrades refunded. Full ability reach and blocked sight are visible on the board. Ordinary creatures fit one cell. Rerolls show their result without a text acknowledgement. Normal builds and Camp rewards are preserved.
 
-[Changes](CHANGES_v0.34.md) · [Validation](Validation-v0.34.md) · [Rules](current-rules.html) · [PDF](AshAndOath-Current-Rules-v0.34.pdf)
+[Changes](CHANGES_v0.35.md) · [Validation](Validation-v0.35.md) · [Rules](current-rules.html) · [PDF](AshAndOath-Current-Rules-v0.35.pdf)
 
 Browser checks cover 390×844, 360×640, 844×390 and desktop 1440×900. Physical phone hardware and Windows downloads were not tested/rebuilt. Difficulty remains provisional. Sprites remain human-authored Kenney CC0 pixel art.
 
-Source: 134d9834c0c8e55dde8a8b8a32f34647eb969565
+Source: 2293e14fdbad433632030d17f1abaacbe5bb5b7f
