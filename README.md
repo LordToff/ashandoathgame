@@ -1,11 +1,11 @@
-# Ash & Oath v0.35
+# Ash & Oath v0.36
 
-[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.35)
+[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.36)
 
-Trials uses Body, Memory, Soul and Weapon, with plain equipment descriptions and old dice upgrades refunded. Full ability reach and blocked sight are visible on the board. Ordinary creatures fit one cell. Rerolls show their result without a text acknowledgement. Normal builds and Camp rewards are preserved.
+Main menu → **Trials** contains compact action forecasts, ritual/spirit objectives, Spear/Jab and Hammer/Crack weapon faces, four-slot equipment combinations, an interruptible Hollow attack, and a persistent Trial Forge/wishlist. Each new weapon replaces one normal Strike side. Normal Camp and encounters keep their rules and inventory.
 
-[Changes](CHANGES_v0.35.md) · [Validation](Validation-v0.35.md) · [Rules](current-rules.html) · [PDF](AshAndOath-Current-Rules-v0.35.pdf)
+[Changes](CHANGES_v0.36.md) · [Validation](Validation-v0.36.md) · [Rules](current-rules.html) · [PDF](AshAndOath-Current-Rules-v0.36.pdf)
 
-Browser checks cover 390×844, 360×640, 844×390 and desktop 1440×900. Physical phone hardware and Windows downloads were not tested/rebuilt. Difficulty remains provisional. Sprites remain human-authored Kenney CC0 pixel art.
+Checks cover portrait 390×844 / 360×640, landscape 844×390 and desktop 1440×900. Physical phone hardware and Windows downloads were not tested/rebuilt. Trial balance remains experimental. Existing creature/Soul art remains Kenney CC0 pixel sprites; Trial objects use flat geometry in game code.
 
-Source: 2293e14fdbad433632030d17f1abaacbe5bb5b7f
+Source: 0e253589f7b48592bcfcc153a08e39f2720f11cd
