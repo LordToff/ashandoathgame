@@ -435,7 +435,6 @@ func begin() -> void:
  rebuild()
 
 func battle_ui() -> void:
- if trial_fight:trial_objective_button()
  if inspect_actor != game.active:
   inspect_actor = game.active;combat_inspected = -1;inspect_action = "";show_active_effects = false;roll_feedback = {};selected = game.forced_die
  var actor: String = "ENCOUNTER ENDED" if game.outcome != "" else (game.boss_name().split(" · ")[0].split(",")[0].to_upper()+"’S TURN" if game.active == 3 else game.heroes[game.active].name.to_upper()+"’S TURN")
@@ -455,9 +454,14 @@ func battle_ui() -> void:
   intent.text = ["I","II","III"][d]+" · "+action+" → "+preview.target_text
   intent.add_theme_font_size_override("font_size",13);intent.tooltip_text = preview.policy+"\n"+preview.detail
  var threshold := int(floor(game.boss.max_hp*game.v("boss.phase.percent")/100.0))
- var intent_panel := button("ENEMY INTENTS · targets & effects",Vector2(1128,152),Vector2(280,40),func():show_intents = true;rebuild(),GOLD);intent_panel.name = "EnemyIntentsButton";intent_panel.add_theme_font_size_override("font_size",14)
- var phase_button := button(("ORDINARY MONSTERS · rules" if game.encounter_id == "event" else ("PHASE II ACTIVE" if game.phase_two else "UPGRADES AT %d HP" % threshold))+" · view changes",Vector2(760,110),Vector2(328,28),func():inspect_action = "__phase__";combat_inspected = -1;show_active_effects = false;detailed_ability = false;rebuild(),Color("e8a56a") if game.phase_two else GOLD)
- label_at("No phase · defeat all" if game.encounter_id == "event" else "%d abilities upgrade at half HP" % game.phase_upgrades().size(),Vector2(1128,115),14,Color("e8b885"),280)
+ var intent_panel := button("Enemy intents" if trial_fight else "ENEMY INTENTS · targets & effects",Vector2(1128,152),Vector2(160 if trial_fight else 280,40),func():show_intents = true;rebuild(),GOLD);intent_panel.name = "EnemyIntentsButton";intent_panel.add_theme_font_size_override("font_size",14)
+ var objective_group: bool = trial_fight and game.encounter_id=="event" and str(game.get("objective_mode")) in ["ritual","spirit"]
+ var phase_caption: String = Trials.C.OBJECTIVES[game.objective_mode].name+" · rules" if objective_group else ("ORDINARY MONSTERS · rules" if game.encounter_id=="event" else "PHASE II ACTIVE" if game.phase_two else "UPGRADES AT %d HP" % threshold)+" · view changes"
+ var phase_button := button(phase_caption,Vector2(760,110),Vector2(328,28),func():
+  if objective_group:show_trial_guide = true
+  else:inspect_action = "__phase__";combat_inspected = -1;show_active_effects = false;detailed_ability = false
+  rebuild(),Color("e8a56a") if game.phase_two else GOLD)
+ label_at("Complete the objective" if objective_group else "No phase · defeat all" if game.encounter_id == "event" else "%d abilities upgrade at half HP" % game.phase_upgrades().size(),Vector2(1128,115),14,Color("e8b885"),280)
  phase_button.name = "BossPhaseSummary";phase_button.add_theme_font_size_override("font_size",14);phase_button.tooltip_text = ""
  soul_toggle(Vector2(760,159),true,328)
  for i in range(3):
@@ -555,7 +559,7 @@ func battle_ui() -> void:
   var description := RichTextLabel.new();description.name = "CurrentBossDetails";description.position = Vector2(760,310);description.size = Vector2(328,280);description.add_theme_font_size_override("normal_font_size",18);description.text = boss_ability_summary(current) if current != "Turn complete" else "Advance to the next hero.";ui.add_child(description)
   label_at("Last: "+(game.last_action if game.last_action != "" else "No action yet"),Vector2(760,625),14,MUTED,328,false,true)
   button(game.boss_step_label(),Vector2(760,682),Vector2(328,54),func():game.boss_step();selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
- label_at("BATTLE LOG",Vector2(1128,164),17,GOLD,280)
+ if not trial_fight:label_at("BATTLE LOG",Vector2(1128,164),17,GOLD,280)
  button("Expand log",Vector2(1296,159),Vector2(104,29),func():show_history = true;log_filter = "All";rebuild(),MUTED).add_theme_font_size_override("font_size",11)
  log_tabs(Vector2(1128,205),272)
  var latest := RichTextLabel.new();latest.name = "SideChronicle";latest.bbcode_enabled = true;latest.position = Vector2(1128,250);latest.size = Vector2(272,570);latest.add_theme_font_size_override("normal_font_size",15);latest.scroll_following = true
@@ -587,9 +591,10 @@ func battle_ui() -> void:
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
  if trial_fight:goal = "TRIAL · %d Essence · Menu → help for equipment, terrain and public enemy dice." % int(game.trial_state.get("purse",0))
- label_at(goal,Vector2(28,857),14,MUTED,706,false,true)
+ if trial_fight and game.has_method("objective_summary") and game.objective_summary()!="":trial_objective_button()
+ else:label_at(goal,Vector2(28,857),14,MUTED,706,false,true)
  if game.last_boss_result != "":
-  var outcome_label := label_at("LAST ENEMY RESULT · "+game.last_boss_result,Vector2(752,849),14,Color("e6c394"),664,false,true)
+  var outcome_label := label_at("LAST ENEMY RESULT · "+game.last_boss_result,Vector2(752,849),14,Color("e6c394"),360 if trial_fight else 664,false,true)
   outcome_label.name = "BossResolution"
   outcome_label.tooltip_text = game.last_boss_result
 

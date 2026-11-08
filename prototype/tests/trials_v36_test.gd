@@ -159,6 +159,12 @@ func run_tests() -> void:
  app.trials.start(36);app.choose_trial_route(1);app.dice_tray.cancel();app.rolling_time = 0;ready(app.game);app.game.heroes[0].pos = Vector2i(2,6);app.selected = 0;app.inspect_actor = app.game.active;app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
  stone = app.game.objective_ids("ritual")[0];hp = app.game.unit_data(stone).hp;app.stage_trial_choice(stone)
  check(not app.trial_choice.is_empty() and app.game.unit_data(stone).hp==hp and not app.game.heroes[0].used[0],"actual target tap stages forecast without spending or damaging")
+ await process_frame
+ var banner: Control = app.ui.find_child("TrialObjective",true,false)
+ check(banner!=null and not app.ui.get_children().any(func(node):return node is Label and node.get_global_rect().intersects(banner.get_global_rect())),"desktop objective banner has no overlaid goal text")
+ var intents: Control = app.ui.find_child("EnemyIntentsButton",true,false)
+ var expand: Button = app.ui.get_children().filter(func(node):return node is Button and node.text=="Expand log")[0]
+ check(not intents.get_global_rect().intersects(expand.get_global_rect()),"desktop Trial intents and log buttons do not overlap")
  app.confirm_trial_choice();check(app.trial_choice.is_empty() and app.game.unit_data(stone).hp==hp-1 and app.game.heroes[0].used[0],"Confirm resolves the real action exactly once")
  app.game.heroes[0].used[0] = false;app.stage_trial_choice(stone);app.game.event_id += 1;app.confirm_trial_choice()
  check(app.game.unit_data(stone).hp==hp-1,"stale forecasts cannot resolve after combat state changes")
