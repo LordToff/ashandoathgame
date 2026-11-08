@@ -56,18 +56,22 @@ const MOVEMENT = [["Ashstep","Movement","Slip through ash: move up to 2 orthogon
 static func extended_ids() -> Array:
  return range(9,54) + [57,58,59]
 static func name_for(id: int) -> String:
+ if id in [73,74]:return "Jab" if id==73 else "Crack"
  if id >= 60 and id < FACE_COUNT:return Essence.FACES[id-60][0]
  if id == 59:return "Summon Nu’gh"
  if id < 9: return ["Blank","Strike","Step","Stride","Guard","Reaction","Focus","First Aid","Shove"][id]
  if id >= 57: return MOVEMENT[id-57][0]
  return EXTRA[id-9][0] if id < 54 else GENERATED[id-54][0]
 static func category(id: int) -> String:
+ if id in [73,74]:return "Attack"
  if id >= 60 and id < FACE_COUNT:return Essence.FACES[id-60][1]
  if id == 59:return "Skill"
  if id < 9: return ["Blank","Attack","Movement","Movement","Defense","Defense","Skill","Skill","Skill"][id]
  if id >= 57: return "Movement"
  return EXTRA[id-9][1] if id < 54 else GENERATED[id-54][1]
 static func text(id: int) -> String:
+ if id==73:return "Trial Spear face, replacing normal Strike. After moving at least 2 spaces this own turn, deal 1 damage to an enemy within 2. Once per own turn; consumes this die. Invalid attempts spend nothing."
+ if id==74:return "Trial Hammer face, replacing normal Strike. After using another Attack this own turn, remove up to 2 Block from an adjacent enemy. No HP damage. Once per own turn; consumes this die. Invalid attempts spend nothing."
  if id >= 60 and id < FACE_COUNT:return Essence.FACES[id-60][2]
  if id == 59:return "Summon one friendly Nu’gh on an adjacent empty tile: 1 HP, Move 2, bite range 1, Numeric 1,1,0,0,0,0. HP damage applies Poison 1. Acts after its owner’s turn. While alive, all copies become Command Nu’gh: activate it immediately as well. One worm per hero."
  if id in [25,31,49]: return EXTRA[id-9][2] + " Prototype limit: one active Channel per hero; a second cannot replace it."
@@ -80,7 +84,7 @@ static func is_reaction(id: int) -> bool:
 static func is_attack(id: int) -> bool:
  return category(id) == "Attack"
 static func can_copy(id: int) -> bool:
- return id in [1,2,3,4,7,8,19,20,21,22,34,35,36,37,38,39,40,42,43,47,50,51,52,53,54,55,57,58,59,60,61,62,63,64,66,67,69,70,71,72]
+ return id in [73,74,1,2,3,4,7,8,19,20,21,22,34,35,36,37,38,39,40,42,43,47,50,51,52,53,54,55,57,58,59,60,61,62,63,64,66,67,69,70,71,72]
 
 static func readiness(id: int) -> String:
  if id in [9,11]: return "LIMITED · see effect notes"

@@ -19,7 +19,7 @@ func spend(d: int, store_smoke: bool = false) -> void:
  var id := active
  var was_used: bool = heroes[id].used[d]
  var category: String = Catalog.category(face(id,d))
- var name: String = FACES[face(id,d)]
+ var name: String = Catalog.name_for(face(id,d))
  super.spend(d,store_smoke)
  if was_used or suppress_resonance or outcome != "":return
  if category == "Attack":change_resonance(v("cantor.attack_charge"),unit_name(id)+" resolves "+name,id)

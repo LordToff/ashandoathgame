@@ -38,7 +38,7 @@ static func screen(app, heading: String, key: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
  app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.35",Vector2(18,58),15,MUTED,size.x-36)
+ app.label_at("ASH & OATH · MOBILE · v0.36",Vector2(18,58),15,MUTED,size.x-36)
  var width: float = minf(720,size.x-24)
  var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
@@ -296,16 +296,24 @@ static func battle(app) -> void:
   var b := touch(app,entry.action,Vector2(enemy_x+i*(w+8),64 if landscape else 144),Vector2(w,60),func():app.intent_focus = Vector2i(entry.source,entry.slot);app.show_intents = true;app.rebuild(),app.BattlePanels.intent_color(entry.action),false,"EnemyIntent"+str(i))
   b.add_theme_font_size_override("font_size",16)
   if active == 3 and i == app.game.boss_visible_index():b.add_theme_stylebox_override("normal",app.style(Color("303c4b"),GOLD))
+ if app.trial_fight:app.trial_objective_button()
  var die_y: float = size.y-228
  if active < 3:
   var h: Dictionary = app.game.heroes[active]
-  for die in range(3):
-   var face: int = app.game.face(active,die);var w: float = (width-16)/3
-   var b := touch(app,app.Catalog.name_for(face),Vector2(x+die*(w+8),die_y),Vector2(w,82),func():app.mobile_die = die;app.select_combat_die(die),app.color_for_face(face),not app.game.pending.is_empty() or app.game.outcome != "" or h.dead or h.hp<=0,"MobileDie"+str(die))
-   if h.used[die] and die not in h.reaction and (h.channel.is_empty() or h.channel.die != die):app.mark_spent(b)
-   elif app.selected == die:b.add_theme_stylebox_override("normal",app.style(Color("293747"),app.color_for_face(face)))
+  if app.trial_fight and not app.trial_choice.is_empty():
+   app.setup_panel(Rect2(x,die_y,width,82),Color("b7d2ef"))
+   var forecast: Label = app.label_at(app.trial_choice.forecast.text,Vector2(x+10,die_y+8),16,Color("e5e8e9"),width-20,false,true)
+   forecast.name = "TrialForecast";forecast.max_lines_visible = 3;forecast.clip_text = true;forecast.tooltip_text = app.trial_choice.forecast.text
+  else:
+   for die in range(3):
+    var face: int = app.game.face(active,die);var w: float = (width-16)/3
+    var b := touch(app,app.Catalog.name_for(face),Vector2(x+die*(w+8),die_y),Vector2(w,82),func():app.mobile_die = die;app.select_combat_die(die),app.color_for_face(face),not app.game.pending.is_empty() or app.game.outcome != "" or h.dead or h.hp<=0,"MobileDie"+str(die))
+    if h.used[die] and die not in h.reaction and (h.channel.is_empty() or h.channel.die != die):app.mark_spent(b)
+    elif app.selected == die:b.add_theme_stylebox_override("normal",app.style(Color("293747"),app.color_for_face(face)))
   var action_y: float = size.y-138;var w: float = (width-16)/3
-  touch(app,"Details",Vector2(x,action_y),Vector2(w,60),app.show_mobile_details,MUTED,false,"MobileDetails")
+  touch(app,"Cancel" if app.trial_fight and not app.trial_choice.is_empty() else "Details",Vector2(x,action_y),Vector2(w,60),func():
+   if app.trial_fight and not app.trial_choice.is_empty():app.trial_choice.clear();app.rebuild()
+   else:app.show_mobile_details(),MUTED,false,"MobileDetails")
   touch(app,"Reroll",Vector2(x+w+8,action_y),Vector2(w,60),func():
    app.friendly_confirm = -1
    if app.selected >= 0 and app.game.reroll_reason(app.selected) == "":app.perform_reroll(app.selected)
@@ -313,10 +321,17 @@ static func battle(app) -> void:
   var immediate: bool = app.selected >= 0 and not h.used[app.selected] and app.game.face(active,app.selected) in [0,4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65,71,72]
   if app.selected >= 0 and app.game.face(active,app.selected) == 0:immediate = not app.game.reward or app.game.soul_remaining(active)<=0 or app.game.soul_mode(active) in ["heal","block"]
   if app.selected >= 0 and app.game.face(active,app.selected) == 59 and app.game.owned_worm(active)>=0:immediate = true
-  touch(app,"Confirm hit" if app.friendly_confirm>=0 else "Use" if immediate else "Target",Vector2(x+2*(w+8),action_y),Vector2(w,60),func():
+  var trial_ready: bool = app.trial_fight and not app.trial_choice.is_empty()
+  touch(app,"Confirm" if trial_ready else "Confirm hit" if app.friendly_confirm>=0 else "Use" if immediate else "Target",Vector2(x+2*(w+8),action_y),Vector2(w,60),func():
+   if app.trial_fight and not app.trial_choice.is_empty():app.confirm_trial_choice();return
    var target: int = app.friendly_confirm;app.friendly_confirm = -1
    if app.game.hero_action(app.selected,target):app.selected = -1;app.roll_feedback = {}
-   app.rebuild(),GOLD,not immediate and app.friendly_confirm<0,"MobileResolve")
+   app.rebuild(),GOLD,not trial_ready and not immediate and app.friendly_confirm<0,"MobileResolve")
+  if app.trial_fight and app.selected>=0 and app.game.face(active,app.selected) in [73,74] and not trial_ready:
+   var reason: String = app.Model.TrialRules.weapon_reason(app.game,app.game.face(active,app.selected))
+   if reason!="":
+    var note: Label = app.label_at(reason,Vector2(x,die_y-27),14,Color("efba99"),width,false,true)
+    note.name = "TrialWeaponRequirement";note.max_lines_visible = 1;note.clip_text = true
   touch(app,"More",Vector2(x,size.y-70),Vector2(width*.32-4,60),func():app.mobile_more = true;app.rebuild(),MUTED,false,"MobileMore")
   touch(app,"End turn",Vector2(x+width*.32+4,size.y-70),Vector2(width*.68-4,60),func():app.friendly_confirm = -1;app.game.finish_turn();app.selected = -1;app.rebuild(),GOLD,not app.game.pending.is_empty() or app.game.outcome != "","MobileEndTurn")
  else:
@@ -330,6 +345,7 @@ static func more(app) -> void:
  var column: VBoxContainer = app.BattlePanels.panel(app,"Actions","")
  var grid := GridContainer.new();grid.columns = 2;grid.add_theme_constant_override("h_separation",10);grid.add_theme_constant_override("v_separation",10);column.add_child(grid)
  if app.trial_fight:btn(app,grid,"Equipment & arena help",func():app.mobile_more = false;app.show_trial_guide = true;app.rebuild(),GOLD)
+ if app.trial_fight and not app.trial_choice.is_empty():btn(app,grid,"Forecast details",func():app.mobile_info = app.trial_choice.forecast.text;app.mobile_more = false;app.rebuild(),GOLD)
  btn(app,grid,"Poke",func():app.mobile_more = false;app.choosing_poke = true;app.rebuild(),GOLD,app.game.poke_targets().is_empty())
  btn(app,grid,"Skip face",func():app.game.decline(app.selected);app.friendly_confirm = -1;app.selected = -1;app.mobile_more = false;app.rebuild(),MUTED,app.selected<0)
  for item in [["Log","show_history"],["Enemies","show_enemy_cards"],["Supplies","show_supplies"],["Menu","show_menu"]]:
@@ -341,6 +357,8 @@ static func shove(app) -> void:
  for i in range(4):
   var direction: Vector2i = app.Model.DIRS[i]
   btn(app,grid,["North","East","South","West"][i],func():
+   if app.trial_fight:
+    var target: int = app.shove_target;app.shove_target = -1;app.stage_trial_choice(target,direction);return
    if app.game.hero_action(app.selected,app.shove_target,direction):app.selected = -1
    app.shove_target = -1;app.rebuild(),GOLD,direction not in app.game.away_dirs(app.game.active,app.shove_target))
  footer(app,["Back"],[func():app.shove_target = -1;app.rebuild()])

@@ -17,3 +17,8 @@ Current atlases:
 Regenerate with `python tools/make_retro_sprites.py`. The original Kenney sheet is preserved unchanged; the adapter produces only selected/colour-varied copies. Credit to Kenney is included voluntarily although CC0 does not require attribution.
 
 The detailed image-generated artwork used by v0.28/v0.29 has been replaced in the current shipping asset paths. Historical browser builds retain their older art. Existing hero/boss art, other pixel creatures, fonts and audio remain unchanged. Gameplay and saves are unchanged.
+
+
+## v0.36 Trial objects
+
+Ritual stones, the Lost Spirit and the Rupture Core are drawn directly by `draw_trial_object()` in `prototype/prototype.gd`, with rectangles, a small flat palette and restrained motion. Their drawing fits one tile and uses no cast shadow. No new image-generation service, painted image or external art asset was used for these objects. Existing creature, Soul and Memory sprite sheets remain the Kenney Tiny Dungeon selections and palette variants described above.

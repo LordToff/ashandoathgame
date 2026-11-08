@@ -1,0 +1,297 @@
+{
+  "version": "0.36",
+  "engine": "4.6.3.stable",
+  "native_scripts": [
+    {
+      "test": "trials_v36",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "TRIALS v0.36: 339 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "clarity_v35",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CLARITY v0.35: 98 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "trials_v34",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "TRIALS v0.34: 183 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "mobile_flow_v33",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "MOBILE FLOW v0.33: 55 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "clarity_v32",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CLARITY v0.32: 62 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "essence_v27",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "ESSENCE V0.27: 115 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "hub_v28",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "HUB V0.28: 55 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "wilds_v29",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "WILDS V0.29: 66 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "mobile_v31",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "MOBILE v0.31: 17 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "usability_v26",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.26 usability: 69 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "playtest_v12",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.12 PLAYTEST: 51 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "trial_regression",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "TRIAL REGRESSIONS: 12 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "balance",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CUSTOM BALANCE: 51 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "warden_v24",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.24 WARDEN: 38 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "cantor_v20",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.20 CANTOR: 34 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "encounter_v19",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.19 ENCOUNTERS: 358 checks, 0 failures"
+      ]
+    },
+    {
+      "test": "summons_v22",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.22 SUMMONS: 269 checks, 0 failures; seeded friendly hits 33/120"
+      ]
+    },
+    {
+      "test": "worm_path_v221",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.22.1 WORM PATH: 75 checks, 0 failures"
+      ]
+    }
+  ],
+  "trial_features_browser": {
+    "result": "passed",
+    "devices": [
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "four-slot weapon selection",
+          "equipment combinations",
+          "paid Body crafting",
+          "wishlist pin and reload",
+          "ritual real target/confirm",
+          "read-only forecasts",
+          "Jab replaces Strike at range two",
+          "Crack replaces Strike and strips Block",
+          "Numeric uncertainty and cancel",
+          "First Aid on spirit",
+          "boss core interruption",
+          "objective completion and wishlist reward"
+        ]
+      },
+      {
+        "viewport": [
+          360,
+          640
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "four-slot weapon selection",
+          "equipment combinations",
+          "paid Body crafting",
+          "wishlist pin and reload",
+          "ritual real target/confirm",
+          "read-only forecasts",
+          "Jab replaces Strike at range two",
+          "Crack replaces Strike and strips Block",
+          "Numeric uncertainty and cancel",
+          "First Aid on spirit",
+          "boss core interruption",
+          "objective completion and wishlist reward"
+        ]
+      },
+      {
+        "viewport": [
+          844,
+          390
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "four-slot weapon selection",
+          "equipment combinations",
+          "paid Body crafting",
+          "wishlist pin and reload",
+          "ritual real target/confirm",
+          "read-only forecasts",
+          "Jab replaces Strike at range two",
+          "Crack replaces Strike and strips Block",
+          "Numeric uncertainty and cancel",
+          "First Aid on spirit",
+          "boss core interruption",
+          "objective completion and wishlist reward"
+        ]
+      },
+      {
+        "viewport": [
+          1440,
+          900
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "four-slot weapon selection",
+          "equipment combinations",
+          "paid Body crafting",
+          "wishlist pin and reload",
+          "ritual real target/confirm",
+          "read-only forecasts",
+          "Jab replaces Strike at range two",
+          "Crack replaces Strike and strips Block",
+          "Numeric uncertainty and cancel",
+          "First Aid on spirit",
+          "boss core interruption",
+          "objective completion and wishlist reward"
+        ]
+      }
+    ]
+  },
+  "trial_full_flow_browser": {
+    "result": "passed",
+    "devices": [
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "main-menu Trials entry",
+          "Memory slot and boss selection",
+          "field guide",
+          "actual route to combat",
+          "fixed combat controls",
+          "separate ordinary builds and bank",
+          "abandon fight",
+          "touch/click barricade breaking",
+          "charge lane display",
+          "illegal Blank replacement refused",
+          "paid face replacement",
+          "paid Weapon slot replacement",
+          "victory reward and Camp route",
+          "safe checkpoint reload",
+          "boss Soul unlock and equipment",
+          "gated Trial Soul Debug hold"
+        ]
+      }
+    ]
+  },
+  "normal_essence_browser": {
+    "normal_flow": "passed",
+    "deterministic_fixture_ui": "passed",
+    "errors": [],
+    "tested": [
+      "free recipe previews",
+      "genuine event to mixed encounter",
+      "individual defeated-card tokens",
+      "victory banking",
+      "same-cost second copy",
+      "legal refitting",
+      "Memory crafting/equip and healing",
+      "Shared Burden source/ally/return",
+      "Evasive post-Attack step",
+      "defeat preserves bank"
+    ]
+  },
+  "limitations": [
+    "Browser touch emulation, not physical iOS/Android or speaker testing.",
+    "Trial balance needs human playtesting.",
+    "Windows downloads unchanged.",
+    "Historical native UI shutdown ObjectDB/resource warnings remain; no script errors or failed assertions."
+  ]
+}

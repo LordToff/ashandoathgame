@@ -25,5 +25,8 @@ func _initialize():
  var essence = preload("res://prototype/essence.gd")
  result.wilds = {"souls":wilds.SOULS,"groups":wilds.GROUPS,"enemies":{}}
  for type in ["mire_leech","glasswing_moth","iron_husk"]:result.wilds.enemies[type] = {"name":essence.type_name(type),"hp":essence.TYPES[type].hp,"dice":creatures.creature_dice(type),"description":creatures.creature_help(type)}
+ var trial_rules = preload("res://prototype/trial_rules.gd")
+ var trial_content = preload("res://prototype/trial_content.gd")
+ result.trials = {"memories":trial_rules.MEMORIES,"souls":trial_rules.SOULS,"bodies":trial_rules.BODIES,"weapons":trial_rules.WEAPONS,"recipes":trial_content.RECIPES,"essence":trial_content.ESSENCE,"builds":trial_content.BUILDS,"objectives":trial_content.OBJECTIVES}
  result["original_dice"] = B.BOSS_DICE
  var f = FileAccess.open("/tmp/current-rules-data.json",FileAccess.WRITE);f.store_string(JSON.stringify(result,"  "));quit()

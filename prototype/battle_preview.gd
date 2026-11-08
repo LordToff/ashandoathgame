@@ -34,12 +34,15 @@ static func for_face(g, face: int) -> Dictionary:
 static func eligible(g, face: int, target: int) -> bool:
  var actor: int = g.active;var unit: Dictionary = g.unit_data(target)
  if face==52:return target!=actor and unit.hp>0
+ if g.TrialRules.immobile_object(g,target) and face==8:return false
  if g.Catalog.is_attack(face):
+  if face in [73,74]:return g.TrialRules.weapon_reason(g,face,target)==""
   if target==actor:return false
   if face in [61,67,69,70] and (not g.enemies(actor,target) or unit.hp<=0):return false
   if face==67 and int(g.heroes[actor].get("moved_turn",0))<2:return false
   return true
  if face==8:return target!=actor and unit.hp>0
+ if g.TrialRules.objective_unit(g,target) and unit.trial_object=="spirit":return face==7 and unit.hp>0
  if target>=3:return false
  if face in [15,19,58,63,64,65,44] and target==actor:return false
  if face in [11,58,64,65,44,45] and unit.hp<=0:return false

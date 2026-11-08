@@ -1,5 +1,9 @@
 extends Control
 
+const TrialForecast = preload("res://prototype/trial_forecast.gd")
+const TrialHollow = preload("res://prototype/trial_hollow.gd")
+var trial_choice: Dictionary = {}
+var trial_recipe := "venom"
 const Trials = preload("res://prototype/trials.gd")
 const TrialUI = preload("res://prototype/trials_ui.gd")
 const TrialEncounter = preload("res://prototype/trial_encounter.gd")
@@ -338,6 +342,7 @@ func panel(rect: Rect2, color: Color = Color("161d28"), border: Color = Color("3
 
 func rebuild() -> void:
  sync_presentation()
+ if not trial_choice.is_empty() and trial_choice.get("stamp",[])!=trial_choice_stamp():trial_choice.clear()
  for c in ui.get_children(): ui.remove_child(c); c.queue_free()
  if mobile_mode:
   MobileUI.render(self);queue_redraw();return
@@ -369,7 +374,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.35",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.36",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -430,6 +435,7 @@ func begin() -> void:
  rebuild()
 
 func battle_ui() -> void:
+ if trial_fight:trial_objective_button()
  if inspect_actor != game.active:
   inspect_actor = game.active;combat_inspected = -1;inspect_action = "";show_active_effects = false;roll_feedback = {};selected = game.forced_die
  var actor: String = "ENCOUNTER ENDED" if game.outcome != "" else (game.boss_name().split(" · ")[0].split(",")[0].to_upper()+"’S TURN" if game.active == 3 else game.heroes[game.active].name.to_upper()+"’S TURN")
@@ -502,7 +508,7 @@ func battle_ui() -> void:
 
   var instruction: String = "Choose a die, then its target. You can end your turn with dice left." if selected < 0 else hint
   if selected >= 0 and game.face(game.active,selected) == 6:instruction = "FOCUS: click another READY die to reroll it. Its new result must resolve next."
-  if game.forced_die >= 0:instruction = (roll_feedback.text if not roll_feedback.is_empty() and roll_feedback.get("die",-1) == game.forced_die else "New result: "+Model.FACES[game.face(game.active,game.forced_die)])+"\nResolve this die next, or Decline."
+  if game.forced_die >= 0:instruction = (roll_feedback.text if not roll_feedback.is_empty() and roll_feedback.get("die",-1) == game.forced_die else "New result: "+Catalog.name_for(game.face(game.active,game.forced_die)))+"\nResolve this die next, or Decline."
   elif not roll_feedback.is_empty() and roll_feedback.get("actor",-1) == game.active:instruction = roll_feedback.text
   if h.dead or h.hp <= 0:instruction = "This hero cannot act. End their turn to continue with the party."
   if h.hp > 0 and h.pos in game.fire_tiles and game.v("boss.fire.end_turn") > 0:
@@ -511,22 +517,28 @@ func battle_ui() -> void:
   if training:
    instruction = "Lesson %d/8: " % (training_step+1)+LESSONS[training_step]
    if training_step == 6:instruction = "Soul lesson: select a Blank and move up to %d cells. You have %d conversions this hero turn." % [game.v("soul.move"),game.v("soul.uses")]
-  var instruction_label := label_at(instruction,Vector2(760,502),15,Color("dce6ee"),328,false,true)
+  if trial_fight:instruction = trial_forecast_text() if selected>=0 else instruction
+  var instruction_label := label_at(instruction,Vector2(760,502),14 if trial_fight else 15,Color("dce6ee"),328,false,true)
   instruction_label.name = "ActionInstruction";instruction_label.mouse_filter = Control.MOUSE_FILTER_PASS
-  instruction_label.max_lines_visible = 2;instruction_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;instruction_label.tooltip_text = instruction
+  instruction_label.max_lines_visible = 3 if trial_fight else 2;instruction_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;instruction_label.tooltip_text = instruction
   if selected >= 0 and not h.used[selected]:
    var f: int = game.face(game.active,selected)
-   if (f == 59 and game.owned_worm(game.active) >= 0) or f in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65,71,72] or (f == 0 and (not game.reward or game.soul_remaining(game.active) <= 0 or game.soul_mode(game.active) in ["heal","block"])):
+   if trial_fight and not trial_choice.is_empty():
+    button("Confirm action",Vector2(760,556),Vector2(211,44),confirm_trial_choice,GOLD).name = "TrialConfirm"
+    button("Cancel",Vector2(981,556),Vector2(107,44),func():trial_choice.clear();rebuild(),MUTED).name = "TrialCancel"
+   elif (f == 59 and game.owned_worm(game.active) >= 0) or f in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65,71,72] or (f == 0 and (not game.reward or game.soul_remaining(game.active) <= 0 or game.soul_mode(game.active) in ["heal","block"])):
     button("Resolve selected face",Vector2(760,556),Vector2(211,44),func():
      if game.hero_action(selected):selected = -1;roll_feedback = {}
      rebuild(),GOLD,f == 0 and game.soul_mode(game.active) == "heal" and h.hp >= h.max_hp)
-   button("Decline",Vector2(981,556),Vector2(107,44),func():game.decline(selected);selected = -1;roll_feedback = {};rebuild(),MUTED)
+   if not trial_fight or trial_choice.is_empty():button("Decline",Vector2(981,556),Vector2(107,44),func():game.decline(selected);selected = -1;roll_feedback = {};rebuild(),MUTED)
   combat_reroll_ui()
 
   button("Return to "+game.unit_name(game.burden_interrupt.owner)+" →" if not game.burden_interrupt.is_empty() else "End hero turn   →",Vector2(760,682),Vector2(328,54),func():game.finish_turn();selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
   var poke_error: String = game.poke_reason()
   var poke_targets: Array = game.poke_targets()
   var poke_button := button("Weapon · no Dagger equipped" if not game.balance.get("weapon.dagger."+str(game.active),false) else "Dagger · Poke 1" if poke_error == "" else ("Dagger · Poke used" if h.get("dagger_used",false) else "Dagger · damage an enemy first"),Vector2(760,746),Vector2(328,34),func():choosing_poke = true;rebuild(),GOLD,poke_error != "" or poke_targets.is_empty())
+  if trial_fight and Model.TrialRules.weapon(game,game.active) in ["spear","hammer"]:
+   poke_button.text = Model.TrialRules.WEAPONS[Model.TrialRules.weapon(game,game.active)].name+" · uses rolled "+("Jab" if Model.TrialRules.weapon(game,game.active)=="spear" else "Crack")
   poke_button.name = "DaggerPoke";poke_button.add_theme_font_size_override("font_size",13)
   poke_button.tooltip_text = poke_error if poke_error != "" else ("No adjacent enemy." if poke_targets.is_empty() else "Once per turn. 1 normal Attack damage to an adjacent enemy. No die spent.")
   var tags: Array[String] = []
@@ -556,20 +568,21 @@ func battle_ui() -> void:
   for i in range(4):
    var dir: Vector2i = Model.DIRS[i]
    button(["North","East","South","West"][i],Vector2(760+(i%2)*170,780+(i/2)*43),Vector2(158,38),func():
+    if trial_fight:stage_trial_choice(shove_target,dir);shove_target = -1;rebuild();return
     if game.hero_action(selected,shove_target,dir):selected = -1;shove_target = -1
     rebuild(),GOLD,dir not in game.away_dirs(game.active,shove_target))
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.35 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.36 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.35 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.35 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.36 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.36 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.35 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.36 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.35 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.36 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -648,7 +661,7 @@ func pending_ui() -> void:
   if reaction_face != 5:
    for c in ui.get_children():
     if c is Label and c.position == Vector2(399,352): c.text = short_face_help(reaction_face); c.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; c.size = Vector2(550,120);c.clip_text = true;c.max_lines_visible = 6
-  button("Gain %d Block" % game.v("face5.block") if reaction_face == 5 else "Use " + Model.FACES[reaction_face],Vector2(399,481),Vector2(250,48),func(): game.react(true); rebuild())
+  button("Gain %d Block" % game.v("face5.block") if reaction_face == 5 else "Use " + Catalog.name_for(reaction_face),Vector2(399,481),Vector2(250,48),func(): game.react(true); rebuild())
   button("Hold reaction",Vector2(669,481),Vector2(250,48),func(): game.react(false); rebuild(),MUTED)
   if game.heroes[p.hero].smoke.get(p.get("die",-1),-1) in [2,3]:
    for i in range(4):
@@ -660,14 +673,14 @@ func pending_ui() -> void:
   for d in range(3):
    for side in range(6):
     var f: int = game.heroes[p.hero].build[d][side]
-    choice_button(Model.FACES[f],Vector2(377+side*98,416+d*66),Vector2(92,54),func(): game.fracture(d,side); rebuild(),color_for_face(f),f in [0,56])
+    choice_button(Catalog.name_for(Model.TrialRules.effective_face(game,p.hero,f,d,side)),Vector2(377+side*98,416+d*66),Vector2(92,54),func(): game.fracture(d,side); rebuild(),color_for_face(f),f in [0,56])
  elif p.kind == "push":
   label_at("Drive Back resolves automatically along the hit direction.",Vector2(399,301),20,GOLD,620,true)
  elif p.kind in ["stun","preroll_stun"]:
   label_at("Stunned · " + game.heroes[p.hero].name,Vector2(399,301),26,Color("ece6d9"),620,true)
   label_at("Choose one die to set aside before the shared roll." if p.kind == "preroll_stun" else "Choose one unresolved Action Die to set aside.",Vector2(399,356),16,MUTED)
   for d in range(3):
-   button("Die %d" % [d+1] if p.kind == "preroll_stun" else "Die %d · %s" % [d+1,Model.FACES[game.face(p.hero,d)]],Vector2(399,416+d*56),Vector2(520,45),func(): game.stun_die(d); rebuild(),GOLD,(p.kind != "preroll_stun" and game.heroes[p.hero].used[d]) or (p.kind == "preroll_stun" and not game.heroes[p.hero].channel.is_empty() and game.heroes[p.hero].channel.die == d))
+   button("Die %d" % [d+1] if p.kind == "preroll_stun" else "Die %d · %s" % [d+1,Catalog.name_for(game.face(p.hero,d))],Vector2(399,416+d*56),Vector2(520,45),func(): game.stun_die(d); rebuild(),GOLD,(p.kind != "preroll_stun" and game.heroes[p.hero].used[d]) or (p.kind == "preroll_stun" and not game.heroes[p.hero].channel.is_empty() and game.heroes[p.hero].channel.die == d))
 
 func overlay() -> void:
  var shade := ColorRect.new(); shade.color = Color(0.02,0.03,0.05,0.78); shade.size = Vector2(1440,900); ui.add_child(shade)
@@ -747,7 +760,7 @@ func _gui_input(event: InputEvent) -> void:
     var h: Dictionary = game.heroes[id]
     if hover == h.pos:
      tooltip_text = h.name+" · HP %d/%d · Block %d\n" % [h.hp,h.max_hp,h.block]+game.status_description(id)
-     if not h.channel.is_empty():tooltip_text += "\nChannel: "+Model.FACES[h.channel.face]+"\n"+Catalog.text(h.channel.face)
+     if not h.channel.is_empty():tooltip_text += "\nChannel: "+Catalog.name_for(h.channel.face)+"\n"+Catalog.text(h.channel.face)
   if page == "battle":
    for id in game.living_minions("all"):
     if hover == game.unit_data(id).pos:tooltip_text = game.unit_name(id)+" · HP %d/%d · Block %d\n" % [game.unit_data(id).hp,game.unit_data(id).max_hp,game.unit_data(id).block]+game.summon_description(id)
@@ -762,9 +775,11 @@ func _gui_input(event: InputEvent) -> void:
   for u in range(game.unit_count()):
    if game.unit_data(u).get("dead",false): continue
    if c in game.cells(u): target = u
-  if Catalog.is_attack(f) and f not in [61,67,69,70] and target >= 0 and game.friendly(target) and target != game.active and friendly_confirm != target:
+  if not trial_fight and Catalog.is_attack(f) and f not in [61,67,69,70] and target >= 0 and game.friendly(target) and target != game.active and friendly_confirm != target:
    friendly_confirm = target; hint = "FRIENDLY FIRE: click this ally again to confirm the attack."; rebuild(); return
   friendly_confirm = -1
+  if trial_fight and f in TrialForecast.TARGETED and f!=8:
+   stage_trial_choice(target if f not in [0,2,3,53,54,57,59,60,66] else -1,c if f in [0,2,3,53,54,57,59,60,66] or Model.TrialRules.blocked_cell(game,c) else Vector2i(-99,-99));return
   var done := false
   if Model.TrialRules.blocked_cell(game,c):done = game.hero_action(selected,-1,c)
   elif f in [0,2,3,53,54,57,59,60,66]: done = game.hero_action(selected,-1,c)
@@ -775,13 +790,14 @@ func _gui_input(event: InputEvent) -> void:
     var tp: Vector2i = game.unit_data(shove_target).pos
     var delta := c-tp
     var dir := Vector2i(signi(delta.x),0) if absi(delta.x) >= absi(delta.y) else Vector2i(0,signi(delta.y))
+    if trial_fight:stage_trial_choice(shove_target,dir);shove_target = -1;return
     done = game.hero_action(selected,shove_target,dir)
   elif f in [61,67,69,70]:done = game.hero_action(selected,target)
   elif f in [1,7,12,15,19,34,35,36,37,38,39,40,41,55,58]: done = game.hero_action(selected,target)
   if done: selected = -1; shove_target = -1; roll_feedback = {}; hint = "Choose another die, or end this hero’s turn."
   else:
    hint = explain_invalid(f,target,c)
-   game.record_event("invalid",game.unit_name(game.active)+" cannot resolve "+Model.FACES[f]+" there; no effect and the die remains available.",game.active)
+   game.record_event("invalid",game.unit_name(game.active)+" cannot resolve "+Catalog.name_for(f)+" there; no effect and the die remains available.",game.active)
   rebuild()
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -910,6 +926,12 @@ func draw_board() -> void:
   if weak_point_ready(i):draw_weak_point(p)
   if h.stun:draw_stunned(p)
  for id in game.living_minions("all"):draw_worm(id)
+ if not trial_choice.is_empty():
+  var pick: int = trial_choice.target
+  var marked: Array = game.cells(pick) if pick>=0 else [trial_choice.destination]
+  for cell in marked:
+   if cell.x not in range(9) or cell.y not in range(9):continue
+   draw_rect(Rect2(ORIGIN+Vector2(cell)*CELL+Vector2.ONE*3,Vector2.ONE*(CELL-6)),Color("fff0bd"),false,4)
  if game.encounter_id == "cantor":
   var cap: int = game.v("cantor.resonance_cap")
   for pip in range(cap):
@@ -1010,7 +1032,7 @@ func history_ui() -> void:
  var text_lines: Array[String] = []
  for entry in game.event_log:
   if compact_log and entry.kind in ["guide","info"]:continue
-  if log_filter == "Combat" and entry.kind not in ["theft","recover","escape","terrain","evade","trial_death","trial_result","armor","guard_break","warning","cocoon_break","hatch","brood","consume","phase","hazard","fire","fire_arm","action","attack","damage","block","block_gain","heal","buff","debuff","expire","mutation","retarget","collision","stun","decline","focus","summon","minion_death","soul_link","minion_action","fallback","boss_result","resonance","core","roll","poison","poison_tick","reaction","move"]: continue
+  if log_filter == "Combat" and entry.kind not in ["objective","interrupt","block_remove","intent","theft","recover","escape","terrain","evade","trial_death","trial_result","armor","guard_break","warning","cocoon_break","hatch","brood","consume","phase","hazard","fire","fire_arm","action","attack","damage","block","block_gain","heal","buff","debuff","expire","mutation","retarget","collision","stun","decline","focus","summon","minion_death","soul_link","minion_action","fallback","boss_result","resonance","core","roll","poison","poison_tick","reaction","move"]: continue
   if log_filter == "Turns" and entry.kind not in ["turn","round","roll"]: continue
   text_lines.append(format_event(entry,true))
  lines.text = "\n\n".join(text_lines); ui.add_child(lines)
@@ -1018,7 +1040,7 @@ func history_ui() -> void:
  button("Back to battle",Vector2(943,730),Vector2(279,45),func(): show_supplies = false; show_history = false; show_changes = false; show_dice = false; show_turn = false; show_lab_setup = false; rebuild())
 
 func format_event(entry: Dictionary, expanded: bool) -> String:
- var colors := {"attack":"efb29b","damage":"eea394","block":"9fc7e6","block_gain":"9fc7e6","buff":"91d1b4","debuff":"c9a4e3","heal":"91d1b4","turn":"e4c88f","round":"e4c88f","focus":"e4c88f","summon":"b9d0a6","minion_death":"d9c493","soul_link":"d5a0e4","fallback":"edc785","minion_action":"d5b7eb","boss_result":"edc785","resonance":"8edbe5","core":"f0dfa3","expire":"9aaaba","poison":"b7e86d","roll":"c6d6ed","move":"c0b398","guard_break":"87dcc6","armor":"b7c9d5","warning":"f0c579"}
+ var colors := {"objective":"c8a6eb","interrupt":"91d1b4","block_remove":"9fc7e6","attack":"efb29b","damage":"eea394","block":"9fc7e6","block_gain":"9fc7e6","buff":"91d1b4","debuff":"c9a4e3","heal":"91d1b4","turn":"e4c88f","round":"e4c88f","focus":"e4c88f","summon":"b9d0a6","minion_death":"d9c493","soul_link":"d5a0e4","fallback":"edc785","minion_action":"d5b7eb","boss_result":"edc785","resonance":"8edbe5","core":"f0dfa3","expire":"9aaaba","poison":"b7e86d","roll":"c6d6ed","move":"c0b398","guard_break":"87dcc6","armor":"b7c9d5","warning":"f0c579"}
  var color: String = colors.get(entry.kind,"becad3")
  var tag: String = "R%02d · #%03d · %s" % [entry.round,entry.id,entry.kind.replace("_"," ").to_upper()]
  return "[color=#%s][b]%s[/b][/color]%s%s" % [color,tag,"\n" if expanded else "  ",entry.text.replace("[","[lb]")]
@@ -1174,7 +1196,7 @@ func draft_ui() -> void:
  for id in Catalog.extended_ids():
   if draft_category != "All" and Catalog.category(id) != draft_category:continue
   if draft_timing != "All timings" and Catalog.timing(id) != draft_timing:continue
-  if draft_search != "" and not Model.FACES[id].to_lower().contains(draft_search.to_lower()):continue
+  if draft_search != "" and not Catalog.name_for(id).to_lower().contains(draft_search.to_lower()):continue
   count += 1
   var chosen: bool = id in gifts[build_hero]
   var card := Button.new();card.name = "Face"+str(id);card.text = Catalog.display_name(id)
@@ -1185,7 +1207,7 @@ func draft_ui() -> void:
   for color_name in ["font_color","font_hover_color","font_pressed_color","font_focus_color","font_disabled_color","font_hover_pressed_color"]:card.add_theme_color_override(color_name,Color(0,0,0,0))
   var hovered = card_style.duplicate();hovered.bg_color = Color("2b414b");hovered.border_color = color_for_face(id);card.add_theme_stylebox_override("hover",hovered)
   var pressed = hovered.duplicate();pressed.bg_color = Color("354c54");card.add_theme_stylebox_override("pressed",pressed);card.tooltip_text = ""
-  var card_title := Label.new();card_title.name = "CardTitle";card_title.text = Model.FACES[id];card_title.position = Vector2(16,12);card_title.size = Vector2(254,24);card_title.clip_text = true;card_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;card_title.add_theme_font_size_override("font_size",15);card_title.add_theme_color_override("font_color",Color("eee8dc"));card_title.mouse_filter = Control.MOUSE_FILTER_IGNORE;card_title.size = Vector2(254,24);card.add_child(card_title)
+  var card_title := Label.new();card_title.name = "CardTitle";card_title.text = Catalog.name_for(id);card_title.position = Vector2(16,12);card_title.size = Vector2(254,24);card_title.clip_text = true;card_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;card_title.add_theme_font_size_override("font_size",15);card_title.add_theme_color_override("font_color",Color("eee8dc"));card_title.mouse_filter = Control.MOUSE_FILTER_IGNORE;card_title.size = Vector2(254,24);card.add_child(card_title)
   var category_label := Label.new();category_label.text = Catalog.classification(id);category_label.position = Vector2(16,39);category_label.add_theme_font_size_override("font_size",11);category_label.add_theme_color_override("font_color",color_for_face(id));category_label.mouse_filter = Control.MOUSE_FILTER_IGNORE;card.add_child(category_label)
   var summary := RichTextLabel.new();var short_text := short_face_help(id).split("\n")[0];summary.text = "Equipped · click again to remove" if chosen else (short_text.left(62)+"…" if short_text.length()>62 else short_text);summary.position = Vector2(16,59);summary.scroll_active = false;summary.add_theme_font_size_override("normal_font_size",12);summary.add_theme_color_override("default_color",GOLD if chosen else MUTED);summary.mouse_filter = Control.MOUSE_FILTER_IGNORE;summary.size = Vector2(254,43);card.add_child(summary)
   if chosen:
@@ -1207,13 +1229,13 @@ func draft_ui() -> void:
   label_at("DIE "+["I","II","III"][die],base-Vector2(0,24),13,GOLD,200)
   for side in range(6):
    var face: int = builds[build_hero][die][side]
-   var slot := button(Model.FACES[face],base+Vector2(NET[side])*72,Vector2(70,70),func():
+   var slot := button(Catalog.name_for(face),base+Vector2(NET[side])*72,Vector2(70,70),func():
     inspected_gift = face;rebuild(),color_for_face(face))
    slot.name = "DraftDie%dSide%d" % [die,side];slot.clip_text = true;slot.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART;slot.add_theme_font_size_override("font_size",12);slot.size = Vector2(70,70);slot.tooltip_text = face_help(face)
    for state_name in ["normal","hover","pressed"]:
     slot.get_theme_stylebox(state_name).content_margin_left = 4;slot.get_theme_stylebox(state_name).content_margin_right = 4
    slot.set_drag_forwarding(func(_at):return face_drag_data(slot,face,die,side),func(_at,data):return face_drop_allowed(die,side,data),func(_at,data):place_dragged_face(die,side,data))
- var drop_hint := label_at(draft_error if draft_error != "" else "Picked: "+(" + ".join(gifts[build_hero].map(func(id):return Model.FACES[id])) if not gifts[build_hero].is_empty() else "Click any two cards on the left."),Vector2(700,544),13,GOLD if draft_error != "" else MUTED,680,false,true);drop_hint.name = "DraftDropHint";drop_hint.max_lines_visible = 2
+ var drop_hint := label_at(draft_error if draft_error != "" else "Picked: "+(" + ".join(gifts[build_hero].map(func(id):return Catalog.name_for(id))) if not gifts[build_hero].is_empty() else "Click any two cards on the left."),Vector2(700,544),13,GOLD if draft_error != "" else MUTED,680,false,true);drop_hint.name = "DraftDropHint";drop_hint.max_lines_visible = 2
  label_at(Catalog.display_name(inspected_gift),Vector2(700,590),20,color_for_face(inspected_gift),680,true,true).name = "GiftPreviewTitle"
  var detail := RichTextLabel.new();detail.name = "GiftDetail";detail.position = Vector2(700,626);detail.size = Vector2(680,108);detail.add_theme_font_size_override("normal_font_size",16);detail.text = short_face_help(inspected_gift);ui.add_child(detail)
  var chosen: bool = inspected_gift in gifts[build_hero]
@@ -1256,20 +1278,20 @@ func place_dragged_face(die: int, side: int, data: Variant) -> void:
  var result := face_drop_result(die,side,data)
  if result.error != "":draft_error = result.error;return
  builds[build_hero] = result.build;gifts[build_hero] = result.gifts;inspected_gift = int(data.face)
- draft_error = result.note if result.note != "" else "Placed "+Model.FACES[inspected_gift]+" on Die "+["I","II","III"][die]+"."
+ draft_error = result.note if result.note != "" else "Placed "+Catalog.name_for(inspected_gift)+" on Die "+["I","II","III"][die]+"."
  rebuild.call_deferred()
 
 func catalog_pending_ui(p: Dictionary) -> void:
  if p.kind == "slot":
-  label_at("Choose a Blank slot · " + Model.FACES[p.face],Vector2(390,290),22,GOLD,620,true)
+  label_at("Choose a Blank slot · " + Catalog.name_for(p.face),Vector2(390,290),22,GOLD,620,true)
   label_at("Choose exactly where the new face is installed. Grey slots are unavailable.",Vector2(390,340),13,MUTED,590,false,true)
   for d in range(3):
    for side in range(6):
     var f: int = game.heroes[p.target].build[d][side]
-    choice_button(str(d+1)+" · "+Model.FACES[f],Vector2(377+side*101,390+d*58),Vector2(95,48),func(): game.choose_slot(d,side); selected = -1; rebuild(),color_for_face(f),f != 0)
+    choice_button(str(d+1)+" · "+Catalog.name_for(f),Vector2(377+side*101,390+d*58),Vector2(95,48),func(): game.choose_slot(d,side); selected = -1; rebuild(),color_for_face(f),f != 0)
  elif p.kind == "channel":
   var ch: Dictionary = game.heroes[p.hero].channel
-  label_at("CHANNEL · " + Model.FACES[ch.face],Vector2(390,299),23,GOLD,600,true)
+  label_at("CHANNEL · " + Catalog.name_for(ch.face),Vector2(390,299),23,GOLD,600,true)
   label_at(short_face_help(ch.face),Vector2(390,352),15,MUTED,550,false,true)
   button("Maintain Channel",Vector2(399,524),Vector2(250,49),func(): game.channel_choice(true); rebuild())
   button("End and roll this die",Vector2(669,524),Vector2(280,49),func(): game.channel_choice(false); rebuild())
@@ -1287,13 +1309,13 @@ func catalog_pending_ui(p: Dictionary) -> void:
     var action: String = game.boss_dice()[d][side]
     choice_button(str(d+1)+" · "+action,Vector2(377+side*101,379+d*70),Vector2(95,58),func(): game.choose_bind(d,action); rebuild(),GOLD)
  else:
-  label_at(Model.FACES[p.face] + " · Choose a die",Vector2(390,298),22,GOLD,620,true)
+  label_at(Catalog.name_for(p.face) + " · Choose a die",Vector2(390,298),22,GOLD,620,true)
   label_at("Skip an unresolved die first; then choose a spent immediate face." if p.face == 23 else ("Choose the installed ability on the Blank die you selected." if p.face == 26 and p.stage == 1 else ("Copy any hero’s face-up result, including spent or held dice. Borrow Shape and Red Tile are excluded." if p.face == 16 else "Choose an eligible source; unavailable choices are grey.")),Vector2(390,343),13,MUTED,570,false,true)
   if p.face == 26 and p.stage == 1:
    for d in range(3):
     for side in range(6):
      var f: int = game.heroes[p.hero].build[d][side]
-     choice_button(str(d+1)+" · "+Model.FACES[f],Vector2(377+side*101,390+d*58),Vector2(95,48),func():
+     choice_button(str(d+1)+" · "+Catalog.name_for(f),Vector2(377+side*101,390+d*58),Vector2(95,48),func():
       if game.catalog_pick(p.hero,d,side): selected = game.forced_die
       rebuild(),color_for_face(f),not choice_eligible(p,p.hero,d,side))
   else:
@@ -1302,7 +1324,7 @@ func catalog_pending_ui(p: Dictionary) -> void:
      var h: Dictionary = game.heroes[hero]
      if h.results.is_empty(): continue
      var f: int = game.face(hero,d)
-     choice_button(h.name+" · Die "+str(d+1)+"\n"+Model.FACES[f],Vector2(387+d*202,390+hero*58),Vector2(195,48),func():
+     choice_button(h.name+" · Die "+str(d+1)+"\n"+Catalog.name_for(f),Vector2(387+d*202,390+hero*58),Vector2(195,48),func():
       if game.catalog_pick(hero,d): selected = game.forced_die
       rebuild(),color_for_face(f),not choice_eligible(p,hero,d))
   button("Spend with no effect",Vector2(399,593),Vector2(520,42),func(): game.pending = {}; game.decline(p.die); selected = -1; rebuild(),MUTED)
@@ -1357,13 +1379,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.35 · "+Model.FACES[lab_face]+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.36 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.35",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.36",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1437,8 +1459,8 @@ func dice_ui() -> void:
     rolled = game.boss_sides.size() == 3 and game.boss_sides[d] == side
    else:
     var build: Array = game.heroes[dice_hero].build if in_fight else builds[dice_hero]
-    id = build[d][side]; current = Model.FACES[id]
-    original = Model.FACES[game.initial_builds[dice_hero][d][side]] if in_fight else current
+    id = Model.TrialRules.effective_face(game,dice_hero,build[d][side],d,side) if in_fight else build[d][side]; current = Catalog.name_for(id)
+    original = Catalog.name_for(game.initial_builds[dice_hero][d][side]) if in_fight else current
     rolled = in_fight and game.heroes[dice_hero].rolls[d] == side
    var changed := current != original
    var title: String = "SIDE %d%s\n%s" % [side+1," · ROLLED" if rolled else "",current]
@@ -1461,7 +1483,7 @@ func dice_ui() -> void:
   var id: int = build[d][side]
   info = "DIE %s · SIDE %d · %s\n%s" % [["I","II","III"][d],side+1,Catalog.display_name(id),short_face_help(id)]
   if in_fight:
-   info += "\nRecorded roll: %s · %s. Installed sides may change while an earlier recorded result stays valid." % [Model.FACES[game.face(dice_hero,d)],"reaction held" if d in h.reaction else ("channel held" if not h.channel.is_empty() and h.channel.die == d else ("spent" if h.used[d] else "ready"))]
+   info += "\nRecorded roll: %s · %s. Installed sides may change while an earlier recorded result stays valid." % [Catalog.name_for(game.face(dice_hero,d)),"reaction held" if d in h.reaction else ("channel held" if not h.channel.is_empty() and h.channel.die == d else ("spent" if h.used[d] else "ready"))]
  var details := RichTextLabel.new();details.name = "DiceNetDetails";details.position = Vector2(130,675);details.size = Vector2(1175,117);details.add_theme_font_size_override("normal_font_size",17);details.text = info;ui.add_child(details)
  button("Back to game",Vector2(1060,815),Vector2(255,45),func(): show_dice = false; rebuild())
 
@@ -1732,7 +1754,7 @@ func combat_details_ui() -> void:
  var phase: bool = inspect_action == "__phase__"
  var heading := "ACTIVE EFFECTS" if show_active_effects else ("BOSS PHASES" if phase else ("BOSS ABILITY" if inspect_action != "" else "ABILITY · HOVER"))
  label_at(heading,Vector2(1130,168),13,GOLD,260)
- var title: String = game.unit_name(game.active) if show_active_effects else ("Half-health upgrades" if phase else (inspect_action if inspect_action != "" else Model.FACES[combat_inspected]))
+ var title: String = game.unit_name(game.active) if show_active_effects else ("Half-health upgrades" if phase else (inspect_action if inspect_action != "" else Catalog.name_for(combat_inspected)))
  var title_label := label_at(title,Vector2(1130,203),21,Color("f0e3c9"),264,true,true);title_label.max_lines_visible = 2
  if not show_active_effects and inspect_action == "":label_at(Catalog.classification(combat_inspected),Vector2(1130,265),14,color_for_face(combat_inspected),264)
  var text := RichTextLabel.new();text.name = "ActiveEffectDetails" if show_active_effects else ("BossActionDetails" if inspect_action != "" else "CombatAbilityDetails");text.position = Vector2(1130,300);text.size = Vector2(264,406);text.add_theme_font_size_override("normal_font_size",18);text.bbcode_enabled = true
@@ -1846,6 +1868,7 @@ func restore_hero_build() -> void:
  rebuild()
 
 func short_face_help(f: int) -> String:
+ if f in [73,74]:return Catalog.text(f)
  if f == 0:return face_help(0)
  var copy := AbilityCopy.new();copy.values = active_balance();copy.tuned = game.tuned if page == "battle" else balanced
  var text: String = copy.face(f)
@@ -1856,6 +1879,7 @@ func short_face_help(f: int) -> String:
  return text+reward_live_notes(f)
 
 func select_combat_die(d: int) -> void:
+ trial_choice.clear()
  choosing_poke = false
  var h: Dictionary = game.heroes[game.active]
  preview_actor = game.active;preview_inspect_only = h.used[d]
@@ -1875,6 +1899,9 @@ func select_combat_die(d: int) -> void:
   roll_feedback = {"actor":game.active,"text":"Die %s is spent / held. Inspect it here, or choose a READY die." % ["I","II","III"][d]}
  elif game.forced_die < 0 or game.forced_die == d:
   selected = d;shove_target = -1;roll_feedback = {};hint = selected_die_help(d)
+  if trial_fight and game.face(game.active,d) in TrialForecast.IMMEDIATE:
+   var forecast: Dictionary = TrialForecast.calculate(game,d)
+   if forecast.valid:stage_trial_choice();return
  rebuild()
 
 func combat_reroll_ui() -> void:
@@ -1891,6 +1918,7 @@ func combat_reroll_ui() -> void:
  b.tooltip_text = "Consumes a charge. Roll all six sides; the same face can appear again. Spent and channelled dice cannot be restored."
 
 func perform_reroll(d: int) -> void:
+ trial_choice.clear()
  if not game.action_reroll(d):hint = game.reroll_reason(d);rebuild();return
  choosing_reroll = false;selected = d;combat_inspected = game.face(game.active,d);roll_feedback = {}
  rebuild()
@@ -1992,6 +2020,7 @@ func draw_stunned(center: Vector2) -> void:
   draw_colored_polygon(star,Color("f2d585"))
 
 func draw_worm(id: int) -> void:
+ if Model.TrialRules.objective_unit(game,id):draw_trial_object(id);return
  var worm: Dictionary = game.unit_data(id)
  var center := effect_center(id)
  var frame := int(t*4+id)%2
@@ -2051,7 +2080,7 @@ func setup_ui() -> void:
  label_at("YOUR PARTY",Vector2(512,579),16,GOLD,600)
  for hero in range(3):
   var names: Array[String] = []
-  for f in gifts[hero]:names.append(Model.FACES[f]+("" if builds[hero].any(func(die):return f in die) else " (not equipped)"))
+  for f in gifts[hero]:names.append(Catalog.name_for(f)+("" if builds[hero].any(func(die):return f in die) else " (not equipped)"))
   label_at(["Vesper","Rook","Wren"][hero]+" · "+" + ".join(names),Vector2(512,618+hero*33),16,COLORS[hero],830)
  var error := ""
  for hero in range(3):
@@ -2120,7 +2149,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.35",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.36",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2369,7 +2398,7 @@ func enemy_pool(field: String) -> int:
  if game.encounter_id != "event":return int(game.boss[field])
  var total: int = int(game.boss[field]) if field != "block" or game.boss.hp > 0 else 0
  for id in range(4,game.unit_count()):
-  if not game.friendly(id) and (field != "block" or game.unit_data(id).hp > 0):total += int(game.unit_data(id)[field])
+  if not game.friendly(id) and not Model.TrialRules.objective_unit(game,id) and (field != "block" or game.unit_data(id).hp > 0):total += int(game.unit_data(id)[field])
  return total
 
 func reward_live_notes(face: int) -> String:
@@ -2552,6 +2581,7 @@ func bind_unlock(pick: Button, kind: String, key: String, hero: int) -> void:
   if event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and event.pressed:
    debug_hold = {"button":pick,"kind":kind,"key":key,"hero":hero,"origin":get_viewport().get_mouse_position(),"started":Time.get_ticks_msec()})
 func debug_locked(kind: String, key: String, hero: int) -> bool:
+ if kind=="trial_recipe":return Trials.C.RECIPES.has(key) and key not in trials.crafted
  if kind=="trial_soul":return Trials.BOSSES.has(key) and key not in trials.completed_bosses
  if kind == "soul":return hero in range(3) and key not in expedition.camp.souls[hero]
  if not Essence.RECIPES.has(key):return false
@@ -2560,6 +2590,7 @@ func debug_locked(kind: String, key: String, hero: int) -> bool:
  return expedition.camp.owned(recipe.face)==0 if recipe.has("face") else not expedition.camp.unlocked.has(key)
 func debug_unlock(kind: String, key: String, hero: int) -> bool:
  if not debug_mode or not debug_locked(kind,key,hero):return false
+ if kind=="trial_recipe":trials.crafted.append(key);trials.save();return true
  if kind=="trial_soul":trials.completed_bosses.append(key);trials.save();return true
  var changed: bool = expedition.camp.grant_soul(hero,key) if kind == "soul" else expedition.camp.debug_unlock(key,hero)
  if changed:
@@ -2567,7 +2598,7 @@ func debug_unlock(kind: String, key: String, hero: int) -> bool:
  return changed
 func show_mobile_details() -> void:
  if game.active not in range(3):return
- mobile_info = face_help(game.face(game.active,mobile_die))
+ mobile_info = (trial_choice.forecast.text+"\n\n" if not trial_choice.is_empty() else "")+face_help(game.face(game.active,mobile_die))
  var preview: Dictionary = ability_preview()
  if preview.mode!="none":mobile_info += "\n\nTinted tiles show range. Bright outlines show targets or places you can move. Red stripes show blocked sight."
  rebuild()
@@ -2581,16 +2612,17 @@ func choose_trial_route(index: int) -> void:
  if trials.phase=="combat":start_trial_battle()
  else:rebuild()
 func start_trial_battle() -> void:
+ trial_choice.clear()
  if trials.phase!="combat":return
  var error: String = trials.validate(trials.builds)
  if error!="":trials.fail(error);page = "trials";rebuild();return
  var profile: Dictionary = trials.profile()
  if trials.current.kind=="boss":
   var key: String = trials.current.boss
-  game = Bugh.new() if key=="bugh" else Cantor.new() if key=="cantor" else Nugh.new() if key=="nugh" else Model.new()
+  game = Bugh.new() if key=="bugh" else Cantor.new() if key=="cantor" else Nugh.new() if key=="nugh" else TrialHollow.new()
  else:
-  game = TrialEncounter.new();game.group_index = int(trials.current.group);game.elite = bool(trials.current.elite)
-  profile["trial.terrain"] = TrialEncounter.GROUPS[game.group_index].terrain
+  game = TrialEncounter.new();game.group_index = int(trials.current.group);game.elite = bool(trials.current.elite);game.objective_mode = str(trials.current.get("objective",""))
+  profile["trial.terrain"] = "cover" if game.objective_mode!="" else TrialEncounter.GROUPS[game.group_index].terrain
  game.start(trials.builds,trials.seed_value+trials.stage*97,true,true,profile)
  trial_fight = true;event_fight = false;creature_fight = false;lab = false;training = false;draft_modal = false;page = "battle"
  show_menu = false;show_options = false;show_history = false;show_enemy_cards = false;show_intents = false;show_dice = false;show_help = false;show_changes = false;show_supplies = false;show_trial_guide = false;mobile_more = false;mobile_info = ""
@@ -2600,6 +2632,7 @@ func start_trial_battle() -> void:
  hint = "TRIAL · HP carries forward. Menu → Equipment & arena help explains your equipment and arena."
  rebuild()
 func continue_trial() -> void:
+ trial_choice.clear()
  if game.outcome!="":trials.finish(game)
  trial_fight = false;page = "trials";trial_view = "run";show_history = false;show_menu = false;show_options = false;show_trial_guide = false;show_enemy_cards = false;mobile_info = "";mobile_more = false
  if is_instance_valid(dice_tray):dice_tray.cancel()
@@ -2634,3 +2667,57 @@ func ability_preview() -> Dictionary:
  if selected<0 and (not preview_inspect_only or preview_actor!=game.active):return BattlePreview.empty()
  var face: int = game.face(game.active,selected) if selected>=0 else combat_inspected
  return BattlePreview.for_face(game,face)
+
+func trial_choice_stamp() -> Array:
+ return [game.active,selected,game.roll_serial,game.event_id,game.round_no,game.cursor] if trial_fight and page=="battle" else []
+func stage_trial_choice(target: int = -1, destination: Vector2i = Vector2i(-99,-99)) -> void:
+ shove_target = -1
+ var forecast: Dictionary = TrialForecast.calculate(game,selected,target,destination)
+ if forecast.valid:
+  trial_choice = {"stamp":trial_choice_stamp(),"target":target,"destination":destination,"forecast":forecast}
+  hint = forecast.text
+ else:trial_choice.clear();hint = forecast.text
+ rebuild()
+func confirm_trial_choice() -> void:
+ if trial_choice.is_empty() or trial_choice.stamp!=trial_choice_stamp():trial_choice.clear();rebuild();return
+ var target: int = trial_choice.target;var destination: Vector2i = trial_choice.destination
+ trial_choice.clear()
+ if game.hero_action(selected,target,destination):selected = -1;shove_target = -1;roll_feedback = {};hint = "Choose another die, or end this hero’s turn."
+ rebuild()
+func trial_forecast_text() -> String:
+ if not trial_choice.is_empty():return trial_choice.forecast.text
+ if selected<0 or game.active not in range(3):return "Choose a die, then a target."
+ var f: int = game.face(game.active,selected)
+ if f in [73,74]:
+  var reason: String = Model.TrialRules.weapon_reason(game,f)
+  if reason!="":return reason
+ if f in TrialForecast.IMMEDIATE:
+  var result: Dictionary = TrialForecast.calculate(game,selected)
+  if result.valid:return result.text
+ return hint if hint!="" else "Tap a target to preview, then confirm."
+func trial_objective_button() -> void:
+ if not game.has_method("objective_summary") or game.objective_summary()=="":return
+ var at := Vector2(42,846);var dimensions := Vector2(684,36)
+ if mobile_mode:
+  var board: Rect2 = MobileUI.board_rect(self);at = board.position+Vector2(3,3);dimensions = Vector2(board.size.x-6,32)
+ var pick := button(game.objective_summary()+" · ?",at,dimensions,func():show_trial_guide = true;rebuild(),Color("b7d2ef"))
+ pick.name = "TrialObjective";pick.add_theme_font_size_override("font_size",13 if mobile_mode else 16)
+func draw_trial_object(id: int) -> void:
+ var u: Dictionary = game.unit_data(id);var p: Vector2 = ORIGIN+Vector2(u.pos)*CELL+Vector2.ONE*CELL/2
+ var spirit: bool = u.trial_object=="spirit";var col := Color("a9def2") if spirit else Color("cb9aec")
+ # Deliberate pixel geometry: one tile, no shadow, restrained animation.
+ if spirit:
+  var rise := roundf(sin(t*2)*2)
+  draw_rect(Rect2(p+Vector2(-12,-19+rise),Vector2(24,28)),Color("527eaf"))
+  draw_rect(Rect2(p+Vector2(-8,-23+rise),Vector2(16,28)),col)
+  for x in [-8,0,8]:draw_rect(Rect2(p+Vector2(x-4,9+rise),Vector2(8,8+(4 if x==0 else 0))),col)
+  for x in [-5,5]:draw_rect(Rect2(p+Vector2(x-2,-13+rise),Vector2(4,5)),Color("142b42"))
+ else:
+  draw_rect(Rect2(p+Vector2(-18,14),Vector2(36,8)),Color("69537d"))
+  draw_rect(Rect2(p+Vector2(-14,-19),Vector2(28,34)),Color("73528d"))
+  draw_rect(Rect2(p+Vector2(-10,-23),Vector2(20,36)),col)
+  draw_rect(Rect2(p+Vector2(-6,-14),Vector2(12,5)),Color("f3d9ff"))
+  draw_rect(Rect2(p+Vector2(-3,-9),Vector2(6,14)),Color("523067"))
+ draw_hp_dots(p+Vector2(0,30),u.hp,u.max_hp,col)
+ if u.block>0:draw_string(BODY,p+Vector2(14,18),"B%d" % u.block,HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color("a7d1ee"))
+ draw_string(BODY,p+Vector2(-22,-28),"SPIRIT" if spirit else "CORE" if u.trial_object=="core" else "RITUAL",HORIZONTAL_ALIGNMENT_LEFT,-1,11,col)

@@ -12,7 +12,7 @@ The dedicated repository retains source history and the previous Pages history. 
 
 A GitHub repository backs up committed source and published files. It cannot guarantee that a cloud runtime never fails. Commit and push completed work; ignored caches, running processes and uncommitted files are not repository backups.
 
-Current source for v0.35 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
+Current source for v0.36 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
 
 ## Recover in a new environment
 
@@ -89,3 +89,13 @@ Main menu → Trials renders through trials_ui.gd on both layouts. trials.gd own
 ## v0.35 readability and equipment
 
 Trial equipment uses memories/souls/bodies/weapons arrays. trial_rules.gd defines three test Memories and Dagger/Poison Dagger/Heavy Dagger; only Poke changes with the Weapon. Starter dice are independent of Memory. Legacy paths become Memories; legacy mods refund 2 Trial Essence each and are never applied. equipment_version 35 prevents repeat refunds. Keep the existing Trial save path for migration. battle_preview.gd is read-only and renders full reach, sight-blocked cells, targets and actual movement destinations. No preview may consume RNG or alter a die. Ordinary creature rendering uses cell-sized HP/Block, without the boss shadow. Action Reroll/Focus never append combat_notices; their real dice presentation remains. Run clarity_v35_test.gd, the updated trials/usability suites, tools/verify_readability_browser.py and tools/verify_trials_browser.py. Shipping exports exclude fixture hooks.
+
+## v0.36 Trial experiments
+
+The new data is in `trial_content.gd`; `trial_forecast.gd` resolves isolated model copies across Numeric outcomes without changing the live battle or its RNG. `trial_hollow.gd` is a Trial-only Hollow subclass with a round-two Rupture Core interrupt. `trial_encounter.gd` holds ritual/spirit objectives and shared spirit targeting. Object units have their own faction and never take enemy turns or become owned worms.
+
+Spear and Hammer project one first Strike side to Jab / Crack in rolls, previews and dice views. Physical ownership still uses Strike and the 73-face normal catalog. Keep at least one Strike while using these weapons. Invalid actions pay nothing; each successful weapon face spends its die, once per own turn. Other Strikes remain normal so Crack can be set up. Four-slot gear and crafting unlocks remain separate from ordinary Camp.
+
+The existing Trial save/key is retained. Version 36 adds loadout weapons, matching ingredient balances, crafted designs and one wishlist; old safe checkpoints still load. An interrupted fight fails the run but retains the collection. Always check that `enemy_intents()` is read-only (including the event log), or target-confirmation stamps can become stale from a redraw.
+
+Run `prototype/tests/trials_v36_test.gd`, the updated Trials suite and all current normal regressions. Browser checks use `tools/verify_trials_v36_browser.py` and the separate nonshipping Essence fixture. Fresh fixture imports use `--recovery-mode --editor --import --quit` to avoid template editor-plugin startup during imports. Use `ASH_FIXTURE_URL` for its loopback URL. Keep test callbacks out of shipping exports. Update the current rules snapshot, generator, HTML/PDF, patch notes and release validation before publishing.

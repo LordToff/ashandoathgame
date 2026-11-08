@@ -19,6 +19,7 @@ func mobile_controls(node: Node, list: Array):
   list.append({"clip":[clip.position.x,clip.position.y,clip.size.x,clip.size.y],"name":str(node.name),"text":node.text if node is Button else "", "x":rect.position.x,"y":rect.position.y,"w":rect.size.x,"h":rect.size.y,"disabled":node.disabled if node is BaseButton else false})
  for child in node.get_children():mobile_controls(child,list)
 func reset_ui():
+ app.trial_choice.clear()
  app.trial_fight = false;app.show_trial_guide = false;app.trial_view = "run"
  app.show_collection = false;app.mobile_more = false;app.debug_hold.clear();app.show_intents = false;app.choice_preview = Vector2i(-1,-1);app.status_sounds.clear();app.status_cooldown = 0;app.choosing_reroll = false;app.mobile_info = "";app.mobile_scrolls.clear()
  app.dice_tray.cancel();app.rolling_time = 0;app.choosing_poke = false;app.creature_fight = false;app.camp_tab = 0;app.show_enemy_cards = false;app.show_menu = false;app.show_options = false;app.show_history = false;app.show_supplies = false;app.show_soundtrack = false;app.draft_modal = false;app.lab = false;app.training = false;app.event_fight = false;app.combat_notices.clear();app.selected = -1
@@ -37,6 +38,15 @@ func proof(args):
   var controls: Array = [];mobile_controls(app.ui,controls);data.controls = controls;data.viewport = [app.get_viewport_rect().size.x,app.get_viewport_rect().size.y];data.mobile = app.mobile_mode;data.board = [app.MobileUI.board_rect(app).position.x,app.MobileUI.board_rect(app).position.y,app.MobileUI.board_rect(app).size.x,app.MobileUI.board_rect(app).size.y];data.debug = app.debug_mode;data.unlocked = app.expedition.camp.unlocked;data.collection = app.show_collection;data.enemy_block = app.game.boss.get("block",0) if app.game.heroes.size()==3 else 0;data.intents = app.game.enemy_intents() if app.game.heroes.size()==3 else [];data.sfx = app.status_sounds;data.effects = app.effects.map(func(f):return f.kind);data.notices = app.combat_notices;data.selected = app.selected;data.pending = app.game.pending;data.feedback_playing = app.feedback_audio.playing;data.feedback_kind = app.feedback_streams.find_key(app.feedback_audio.stream);data.live_builds = app.game.heroes.map(func(h):return h.build);data.results = app.game.heroes.map(func(h):return h.results)
   if app.game.heroes.size() == 3:data.hp = app.game.heroes.map(func(h):return h.hp);data.block = app.game.heroes.map(func(h):return h.block);data.positions = app.game.heroes.map(func(h):return [h.pos.x,h.pos.y]);data.dagger_used = app.game.heroes.map(func(h):return h.get("dagger_used",false));data.used = app.game.heroes.map(func(h):return h.used);data.boss_hp = app.game.boss.hp
   data.trial = {"phase":app.trials.phase,"stage":app.trials.stage,"essence":app.trials.essence,"memories":app.trials.memories,"souls":app.trials.souls,"completed":app.trials.completed_bosses,"builds":app.trials.builds,"hp":app.trials.hp,"weapons":app.trials.weapons,"view":app.trial_view,"fight":app.trial_fight}
+  data.trial.merge({"ingredients":app.trials.ingredients,"crafted":app.trials.crafted,"wishlist":app.trials.wishlist,"loadout_weapons":app.trials.loadout_weapons,"bodies":app.trials.bodies,"last_progress":app.trials.last_progress})
+  data.forecast = app.trial_choice
+  data.objective = app.game.objective_summary() if app.game.has_method("objective_summary") else ""
+  data.effective = app.game.heroes.map(func(h):return range(3).map(func(die):return app.game.face(app.game.heroes.find(h),die)))
+  data.event_count = app.game.event_id;data.rng = str(app.game.rng.state)
+  data.units = []
+  for id in range(app.game.unit_count()):
+   var unit: Dictionary = app.game.unit_data(id)
+   data.units.append({"id":id,"name":app.game.unit_name(id),"hp":unit.hp,"block":unit.block,"pos":[unit.pos.x,unit.pos.y],"object":unit.get("trial_object",""),"dead":unit.get("dead",false),"friendly":app.game.friendly(id)})
   data.terrain = app.game.trial_state
   var preview: Dictionary = app.ability_preview()
   data.preview = {"tiles":preview.tiles.map(func(c):return [c.x,c.y]),"blocked":preview.blocked.map(func(c):return [c.x,c.y]),"targets":preview.targets,"reach":preview.reach,"mode":preview.mode}
@@ -49,7 +59,39 @@ func proof(args):
     data.popups.append({"control":str(control.name),"x":popup.position.x,"y":popup.position.y,"w":popup.size.x,"h":popup.size.y,"top":panel.get_margin(SIDE_TOP),"bottom":panel.get_margin(SIDE_BOTTOM),"items":range(popup.item_count).map(func(index):return popup.get_item_text(index))})
   JavaScriptBridge.get_interface("window").essenceState = JSON.stringify(data);return
  reset_ui()
- if mode in ["range35","blocked35","heal35","reroll35","focus35"]:
+ if mode.begins_with("trial36_"):
+  app.trials = app.Trials.new(false);app.trials.memories[0] = "guard"
+  if mode=="trial36_lobby":app.page = "trials"
+  elif mode=="trial36_forge":
+   app.trials.ingredients = {"ward":3,"cinder":3,"shade":2,"hollow":1};app.trial_recipe = "fleet";app.page = "trials";app.trial_view = "craft"
+  else:
+   if mode=="trial36_jab":app.trials.loadout_weapons[0] = "spear"
+   if mode=="trial36_crack":app.trials.loadout_weapons[0] = "hammer"
+   app.trials.start(36)
+   if mode=="trial36_spirit":app.trials.stage = 2
+   if mode=="trial36_hollow":app.trials.stage = 5
+   if mode in ["trial36_ritual","trial36_ritual_win"]:app.trials.choose(1)
+   else:app.trials.choose(0)
+   app.start_trial_battle();app.game.active = 0;app.game.cursor = app.game.order.find(0);app.game.pending = {};app.game.forced_die = -1
+   for h in app.game.heroes:h.used = [false,false,false];h.results = [1,34,2];h.rolls = [0,0,0];h.reaction = []
+   app.game.heroes[0].pos = Vector2i(4,5);app.game.heroes[1].pos = Vector2i(0,8);app.game.heroes[2].pos = Vector2i(8,8)
+   if mode=="trial36_jab":app.game.heroes[0].pos = Vector2i(3,6);app.game.heroes[0].moved_turn = 2
+   elif mode=="trial36_crack":app.game.boss.block = 3;app.game.heroes[0].trial_attack_used = true;app.game.heroes[0].pos = Vector2i(3,5)
+   elif mode=="trial36_numeric":app.game.heroes[0].results[0] = 34;app.game.boss.block = 1;app.game.heroes[0].pos = Vector2i(3,5)
+   elif mode in ["trial36_ritual","trial36_ritual_win"]:
+    var ids: Array = app.game.objective_ids("ritual")
+    app.game.heroes[0].pos = Vector2i(2,6)
+    if mode=="trial36_ritual_win":
+     app.trials.pin("fleet")
+     for id in ids.slice(1):app.game.damage(id,99,true)
+     app.game.unit_data(ids[0]).hp = 1
+   elif mode=="trial36_spirit":
+    app.game.boss.pos = Vector2i(4,5);app.game.heroes[0].pos = Vector2i(3,6);app.game.heroes[0].results[0] = 7;app.game.unit_data(app.game.objective_ids("spirit")[0]).hp = 3
+   elif mode=="trial36_hollow":app.game.heroes[0].pos = Vector2i(4,7);app.game.heroes[0].results = [1,1,2]
+   app.game.trial_state.positions = {}
+   for id in range(app.game.unit_count()):app.game.trial_state.positions[id] = app.game.unit_data(id).pos
+   app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size();app.inspect_actor = app.game.active
+ elif mode in ["range35","blocked35","heal35","reroll35","focus35"]:
   app.game = M.new();app.game.prototype_pack = true;app.game.start(app.builds,35,false,true,{});app.game.active = 0;app.game.cursor = app.game.order.find(0);app.game.pending = {};app.game.forced_die = -1;app.page = "battle"
   for h in app.game.heroes:h.results = [35,4,0];h.used = [false,false,false];h.reaction = [];h.rolls = [0,0,0]
   app.game.heroes[0].pos = Vector2i(4,4);app.game.heroes[1].pos = Vector2i(4,3) if mode=="blocked35" else Vector2i(4,7);app.game.heroes[2].pos = Vector2i(8,8);app.game.boss.pos = Vector2i(4,2);app.game.unit_data(4).pos = Vector2i(0,0)

@@ -26,7 +26,7 @@ with sync_playwright() as pw:
     session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});p.wait_for_timeout(220)
    raise AssertionError(('unreachable',v))
   def tap(name=None,text=None):
-   v,x,y=reach(name,text);assert not v['disabled'],v;(p.touchscreen.tap if mobile else p.mouse.click)(x,y);p.wait_for_timeout(220)
+   v,x,y=reach(name,text);p.wait_for_timeout(750 if mobile else 120);v,x,y=reach(name,text);assert not v['disabled'],v;(p.touchscreen.tap if mobile else p.mouse.click)(x,y);p.wait_for_timeout(220)
   def select(name,index):
    tap(name=name);data=state();popup=next(item for item in data['popups'] if item['control']==name)
    row=(popup['h']-popup['top']-popup['bottom'])/len(popup['items']);scale=width/data['viewport'][0]
@@ -55,6 +55,8 @@ with sync_playwright() as pw:
   if mobile:x=(bx+(40+2.5*76-24)*edge/716)*scale;y=(by+(144+5.5*76-128)*edge/716)*scale
   else:x=40+2.5*76;y=144+5.5*76
   (p.touchscreen.tap if mobile else p.mouse.click)(x,y);p.wait_for_timeout(250)
+  assert state()['forecast'] and len(state()['terrain']['crates'])==2 and not state()['used'][0][0]
+  tap(name='MobileResolve' if mobile else 'TrialConfirm')
   assert len(state()['terrain']['crates'])==1 and state()['used'][0][0];snap('broken-barricade')
   fixture('trials_charge');snap('charge-warning');assert len(state()['terrain']['charges'][0]['tiles'])==3
   fixture('trials_reward');tap(name='TrialRewardFace');assert state()['trial']['phase']=='reward'

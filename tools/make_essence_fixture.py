@@ -8,7 +8,7 @@ parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);a
 src=Path(__file__).resolve().parents[1];dst=Path(args.output)
 if dst.exists():raise SystemExit("Choose a new empty output path; existing files will not be overwritten.")
 dst.mkdir(parents=True)
-for name in subprocess.check_output(['git','ls-files','-z'],cwd=src).decode().split('\0'):
+for name in subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard','-z'],cwd=src).decode().split('\0'):
  if not name:continue
  rel=Path(name)
  if rel.parts[0] in ['docs','downloads','tools','exports']:continue

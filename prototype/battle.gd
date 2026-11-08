@@ -3,6 +3,8 @@ extends RefCounted
 
 const TrialRules = preload("res://prototype/trial_rules.gd")
 var trial_state: Dictionary = {}
+# Only isolated forecast models set this; live Numeric always uses its real dice.
+var preview_numeric_side := -1
 const Targeting = preload("res://prototype/enemy_targeting.gd")
 var intent_seed := 0
 var enemy_slot := 0
@@ -111,11 +113,11 @@ static func validate(build: Array, gift: Variant = -1, profile: Dictionary = {})
    if int(f) == 0:blanks += 1
   if blanks < Balance.value(profile,"body.blanks"):return "Every six-sided die needs at least %d Blanks." % Balance.value(profile,"body.blanks")
  for i in range(1,9):
-  if counts[i] > Balance.value(profile,"owned."+str(i)) + (Balance.value(profile,"owned.bonus") if i in owned else 0): return "Not enough owned copies of " + FACES[i] + "."
+  if counts[i] > Balance.value(profile,"owned."+str(i)) + (Balance.value(profile,"owned.bonus") if i in owned else 0): return "Not enough owned copies of " + Catalog.name_for(i) + "."
  for i in range(9,60):
   if counts[i] > (Balance.value(profile,"owned.bonus") if i in owned else 0): return "Only owned bonus faces may be equipped."
  for id in range(60,Catalog.FACE_COUNT):
-  if counts[id] > int(profile.get("earned."+str(id),0)):return "Not enough crafted party copies of "+FACES[id]+"."
+  if counts[id] > int(profile.get("earned."+str(id),0)):return "Not enough crafted party copies of "+Catalog.name_for(id)+"."
  var totals := {"Movement":0,"Defense":0,"Skill":0}
  for id in range(1,Catalog.FACE_COUNT):
   var cat: String = Catalog.category(id)
@@ -238,7 +240,7 @@ func report_changes() -> void:
     if status == "Numeric Power": description += " +"+str(h.num_boost)+" for the next Numeric damage this turn"
     if status == "Debt Boost":description += " +%d on the next Attack/Defense this turn" % h.debt_buff
     if status == "Debt Penalty":description += " −%d on the next Attack/Defense" % h.debt_penalty
-    if status == "Channel" and id < 3: description += " ("+FACES[h.channel.face]+")"
+    if status == "Channel" and id < 3: description += " ("+Catalog.name_for(h.channel.face)+")"
     if status == "Rooted" and id < 3:description += " %d (no voluntary movement until next boss turn)" % h.rooted
     record_event("debuff" if harmful else "buff","%s: %s gains %s." % [action_label,unit_name(id),description],action_owner,id)
    elif not now[status] and old.statuses.get(status,false):
@@ -294,7 +296,7 @@ func shared_roll() -> void:
  for id in range(3):
   if heroes[id].hp <= 0 or heroes[id].dead: continue
   var values: Array[String] = []
-  for d in range(3): values.append(["I","II","III"][d]+": "+FACES[face(id,d)]+(" [held]" if heroes[id].used[d] else ""))
+  for d in range(3): values.append(["I","II","III"][d]+": "+Catalog.name_for(face(id,d))+(" [held]" if heroes[id].used[d] else ""))
   record_event("roll",unit_name(id)+" rolls "+" · ".join(values)+".",id)
  record_event("roll","%s rolls I: %s · II: %s · III: %s." % ([boss_name()]+boss_rolls),3)
  activate()
@@ -607,7 +609,8 @@ func heal(id: int, value: int = 1) -> void:
  record_event("heal","%s — %s heals %s for %d HP. HP %d/%d." % [action_label,unit_name(action_owner),unit_name(id),restored,h.hp,h.get("max_hp",v("hero.hp"))],action_owner,id,restored)
 
 func face(id: int, d: int) -> int:
- return heroes[id].results[d]
+ if d not in range(heroes[id].results.size()):return 0
+ return TrialRules.effective_face(self,id,heroes[id].results[d],d)
 
 func spend(d: int, store_smoke: bool = false) -> void:
  TrialRules.spent(self,d)
@@ -634,6 +637,8 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
  if h.dead or h.hp <= 0:return false
  if h.used[d] or (forced_die >= 0 and forced_die != d): return false
  var f := face(active,d)
+ if TrialRules.immobile_object(self,target) and f==8:return false
+ if f in [73,74]:return TrialRules.weapon_action(self,d,target)
  if TrialRules.blocked_cell(self,destination):return TrialRules.smash(self,d,destination)
  if f == 6 and focus_reason(d,target) != "":return false
  if not resuming_friendly_attack and prepare_friendly_evasive(d,target,destination):return true
@@ -668,10 +673,10 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
    h.results[target] = h.build[target][h.rolls[target]]
    on_roll(h,target)
    present_action_roll(active,[target],"Focus reroll")
-   note(h.name + " focuses Die " + str(target+1) + " → " + FACES[face(active,target)])
+   note(h.name + " focuses Die " + str(target+1) + " → " + Catalog.name_for(face(active,target)))
    if Catalog.is_reaction(face(active,target)): h.used[target] = true; h.reaction.append(target)
    else: forced_die = target
-   record_event("focus","%s uses Focus: Die %s, %s → %s.%s" % [unit_name(active),["I","II","III"][target],FACES[old_face],FACES[face(active,target)]," Held as a Reaction." if h.used[target] else " Resolve this die next, or decline it."],active,active)
+   record_event("focus","%s uses Focus: Die %s, %s → %s.%s" % [unit_name(active),["I","II","III"][target],Catalog.name_for(old_face),Catalog.name_for(face(active,target))," Held as a Reaction." if h.used[target] else " Resolve this die next, or decline it."],active,active)
    event_log[-1]["die"] = target;event_log[-1]["old_face"] = old_face;event_log[-1]["new_face"] = face(active,target);event_log[-1]["old_side"] = old_side;event_log[-1]["new_side"] = h.rolls[target]
    return true
   7:
@@ -848,7 +853,7 @@ func continue_attack() -> void:
     if key in pending.reacted: continue
     var f: int = face(actor,die)
     var trigger: bool = actor == victim and (f == 5 or (f == 28 and not area) or f == 68 or heroes[actor].smoke.has(die))
-    if f == 44: trigger = victim < 3 and actor != victim and distance(actor,victim) <= v("face44.range") and sight(actor,victim,v("face44.range"))
+    if f == 44: trigger = (victim < 3 or (TrialRules.objective_unit(self,victim) and unit_data(victim).trial_object=="spirit")) and actor != victim and distance(actor,victim) <= v("face44.range") and sight(actor,victim,v("face44.range"))
     if f == 45: trigger = actor != victim and distance(actor,source) <= mini(v("face45.range"),reach) and not area
     if f == 46: trigger = actor == victim and pending.amount-(boss_weakness() if boss.weak and source == 3 else 0)-heroes[actor].block-heroes[actor].dr >= heroes[actor].hp
     if f == 48: trigger = true
@@ -922,7 +927,7 @@ func react(use: bool, dir: Vector2i = Vector2i.ZERO) -> void:
  if use:
   h.reaction.erase(die)
   var block_before: int = h.block
-  begin_action(t,"Reaction: "+FACES[f],victim,die)
+  begin_action(t,"Reaction: "+Catalog.name_for(f),victim,die)
   match f:
    68:
     h.block += 1
@@ -944,17 +949,17 @@ func react(use: bool, dir: Vector2i = Vector2i.ZERO) -> void:
       if not legal(t,h.pos+dir):break
       h.pos += dir
     h.smoke.erase(die)
-  record_event("reaction","%s uses %s: Block %d → %d (+%d) before %s. The incoming hit consumes Block before HP; zero Block afterwards does not mean no Block was granted." % [unit_name(t),FACES[f],block_before,h.block,h.block-block_before,pending.action],t,t,h.block-block_before)
+  record_event("reaction","%s uses %s: Block %d → %d (+%d) before %s. The incoming hit consumes Block before HP; zero Block afterwards does not mean no Block was granted." % [unit_name(t),Catalog.name_for(f),block_before,h.block,h.block-block_before,pending.action],t,t,h.block-block_before)
   report_changes()
   action_owner = source; action_label = pending.action; action_before = {}
- if not use:record_event("reaction","%s holds %s; no Block or other reaction effect is gained for this hit." % [unit_name(t),FACES[f]],t,t)
+ if not use:record_event("reaction","%s holds %s; no Block or other reaction effect is gained for this hit." % [unit_name(t),Catalog.name_for(f)],t,t)
  pending.reacted.append(str(t)+":"+str(die)); pending.kind = "attack"; continue_attack()
 
 func fracture(d: int, side: int) -> void:
  if pending.get("kind","") != "fracture" or d not in range(3) or side not in range(6):return
  var t: int = pending.hero
  if heroes[t].build[d][side] in [0,56]: return
- note(heroes[t].name + " loses " + FACES[heroes[t].build[d][side]] + " for this encounter.")
+ note(heroes[t].name + " loses " + Catalog.name_for(heroes[t].build[d][side]) + " for this encounter.")
  mutate(t,d,side,0)
  if d in heroes[t].reaction and heroes[t].rolls[d] == side: heroes[t].reaction.erase(d)
  if int(pending.get("remaining",1)) > 1 and heroes[t].build.any(func(die):return die.any(func(f):return f not in [0,56])):pending.remaining -= 1
@@ -996,7 +1001,7 @@ func stun_die(d: int) -> void:
   return
  if heroes[t].used[d]: return
  heroes[t].used[d] = true
- record_event("stun","Stunned: %s loses its unused Die %s (%s) this activation." % [unit_name(t),["I","II","III"][d],FACES[face(t,d)]],t,t)
+ record_event("stun","Stunned: %s loses its unused Die %s (%s) this activation." % [unit_name(t),["I","II","III"][d],Catalog.name_for(face(t,d))],t,t)
  pending = {}
  offer_evasive_step()
 
@@ -1015,8 +1020,8 @@ func action_reroll(d: int) -> bool:
  roll_context = "Action Reroll · keep the new result"
  roll_serial += 1
  present_action_roll(active,[d],"Action reroll")
- record_event("roll",h.name.capitalize() + " spends %d Action Reroll: Die %s → %s. Charges left: %d." % [v("hero.reroll_cost"),["I","II","III"][d],FACES[face(active,d)],h.rerolls],active,active)
- record_event("roll","Die %s: side %d %s → side %d %s.%s" % [["I","II","III"][d],old_side+1,FACES[old_face],h.rolls[d]+1,FACES[face(active,d)]," Same ability rolled again; a reroll can land on another Blank or the same side." if old_face == face(active,d) else ""],active,active)
+ record_event("roll",h.name.capitalize() + " spends %d Action Reroll: Die %s → %s. Charges left: %d." % [v("hero.reroll_cost"),["I","II","III"][d],Catalog.name_for(face(active,d)),h.rerolls],active,active)
+ record_event("roll","Die %s: side %d %s → side %d %s.%s" % [["I","II","III"][d],old_side+1,Catalog.name_for(old_face),h.rolls[d]+1,Catalog.name_for(face(active,d))," Same ability rolled again; a reroll can land on another Blank or the same side." if old_face == face(active,d) else ""],active,active)
  return true
 
 func boss_help(action: String) -> String:
@@ -1046,9 +1051,9 @@ func on_roll(h: Dictionary, d: int, rolled: bool = true) -> void:
  if rolled:
   if int(h.get("history_round",-1)) != round_no:h.round_history = [];h.history_round = round_no
   if not h.has("round_history"):h.round_history = []
-  h.round_history.append({"die":d,"face":h.results[d]})
+  h.round_history.append({"die":d,"face":face(heroes.find(h),d)})
   if h.results[d] in [54,60,61,62]:h.bone_count = int(h.get("bone_count",0))+1
- var f: int = h.results[d]
+ var f: int = face(heroes.find(h),d)
  if f == 13:
   var before: int = h.rerolls
   h.rerolls = mini(v("hero.reroll_cap"),h.rerolls+v("face13.rerolls"))
@@ -1070,11 +1075,11 @@ func numeric(h: Dictionary, damage_value: bool = false) -> int:
  var multiplier_base := 0
  if h.stored_num >= 0: value = h.stored_num; numeric_side = 0 if value > 0 else 4; h.stored_num = -1
  else:
-  var side := rng.randi_range(0,5)
+  var side: int = preview_numeric_side if preview_numeric_side>=0 else rng.randi_range(0,5)
   numeric_side = side
   if h.gambler and side == 4: absolute_zero = true
   elif h.gambler and side == 5:
-   var base := rng.randi_range(0,5)
+   var base: int = 0 if preview_numeric_side>=0 else rng.randi_range(0,5)
    multiplier_side = base
    multiplier_base = ordinary_numeric(base,h.numeric_focus)
    value = v("face9.multiplier")*multiplier_base
@@ -1108,6 +1113,7 @@ func attack_bonus(_target: int) -> int:return 0
 
 func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: bool = false, weapon_attack: bool = false) -> int:
  var h: Dictionary = heroes[active]
+ if TrialRules.enabled(self) and burden_interrupt.is_empty():h.trial_attack_used = true
  var attack_face: int = -1 if weapon_attack else face(active,d)
  var reach: int = 1 if weapon_attack else face_range(attack_face)
  var trial_mod: Dictionary = TrialRules.attack_bonus(self,d,target,weapon_attack)
@@ -1201,7 +1207,7 @@ func mutate(hero: int, d: int, side: int, id: int) -> void:
  if h.build[d][side] == 56: return
  var old: int = h.build[d][side]
  h.build[d][side] = id
- record_event("mutation","%s: %s, Die %s side %d changes %s → %s for this encounter." % [action_label,unit_name(hero),["I","II","III"][d],side+1,FACES[old],FACES[id]],action_owner,hero)
+ record_event("mutation","%s: %s, Die %s side %d changes %s → %s for this encounter." % [action_label,unit_name(hero),["I","II","III"][d],side+1,Catalog.name_for(old),Catalog.name_for(id)],action_owner,hero)
  event_log[-1].merge({"face_before":old,"face_after":id,"die":d,"side":side})
  if d in h.reaction and h.rolls[d] == side: h.reaction.erase(d)
  if not h.channel.is_empty() and h.channel.die == d and h.channel.side == side: h.channel = {}
@@ -1278,7 +1284,7 @@ func catalog_action(d: int, target: int, destination: Vector2i) -> bool:
     return false
    if f == 31: h.block += v("face31.initial")
    h.channel = {"die":d,"side":side,"face":f,"boost":0,"confirmed":true,"pending_blank":0,"pending_boost":0}
-   note(h.name + " begins Channel · " + FACES[f])
+   note(h.name + " begins Channel · " + Catalog.name_for(f))
   27:
    boss.bargain = {"owner":active,"charges":v("face27.charges")} if v("face27.charges") > 0 else {}
    if boss.bargain.is_empty():note("Blood Bargain has 0 configured charges; no damage bonus or backlash is armed.")
@@ -1334,7 +1340,10 @@ func leap_cells(id: int) -> Array:
  var result: Array = []
  if heroes[id].get("rooted",0) > 0:return result
  var steps: int = v("face53.move")
- if TrialRules.enabled(self) and TrialRules.soul(self,id)=="bugh":steps = maxi(1,steps-1)
+ if TrialRules.enabled(self):
+  steps += 1 if TrialRules.body(self,id)=="fleet" else -1 if TrialRules.body(self,id)=="stone" else 0
+  if TrialRules.soul(self,id)=="bugh":steps -= 1
+  steps = maxi(1,steps)
  for x in range(-steps,steps+1):
   for y in range(-steps,steps+1):
    if absi(x)+absi(y) > 0 and absi(x)+absi(y) <= steps:
@@ -1355,7 +1364,7 @@ func channel_choice(keep: bool) -> void:
    note("Maintained Contained Power: +%d held Block; Numeric +%d this turn." % [ch.get("pending_blank",0),h.channel.boost])
   if ch.face == 31: h.block = mini(v("face31.cap"),h.block+v("face31.gain"))
   if ch.face == 49: heal(active,v("face49.heal"))
-  note(h.name + " maintains " + FACES[ch.face])
+  note(h.name + " maintains " + Catalog.name_for(ch.face))
  else:
   h.channel = {}; h.rolls[ch.die] = rng.randi_range(0,5)
   h.results[ch.die] = h.build[ch.die][h.rolls[ch.die]]; h.used[ch.die] = false
@@ -1401,12 +1410,12 @@ func catalog_pick(hero: int, d: int, side: int = -1) -> bool:
   var copy: int = face(hero,d)
   if not Catalog.can_copy(copy): return false
   h.results[source] = copy; pending = {}; forced_die = source
-  note("Conjure copies " + FACES[copy] + ". Resolve it now."); return true
+  note("Conjure copies " + Catalog.name_for(copy) + ". Resolve it now."); return true
  if f == 16:
   if not borrow_eligible(hero,d):return false
   var copy: int = face(hero,d)
   h.opening = false;h.results[source] = copy;pending = {};forced_die = source
-  record_event("action","%s uses Borrow Shape: copies %s’s face-up Die %s (%s), even if spent or held. Only the Borrow Shape die is consumed when its copied result resolves." % [unit_name(active),unit_name(hero),["I","II","III"][d],FACES[copy]],active,hero)
+  record_event("action","%s uses Borrow Shape: copies %s’s face-up Die %s (%s), even if spent or held. Only the Borrow Shape die is consumed when its copied result resolves." % [unit_name(active),unit_name(hero),["I","II","III"][d],Catalog.name_for(copy)],active,hero)
   if Catalog.is_reaction(copy):h.reaction.append(source);h.used[source] = true;forced_die = -1
   on_roll(h,source,false);return true
  if hero != active:return false
@@ -1428,7 +1437,7 @@ func catalog_pick(hero: int, d: int, side: int = -1) -> bool:
   h.results[d] = chosen; pending = {}; forced_die = d
   if Catalog.is_reaction(chosen): h.reaction.append(d); h.used[d] = true; forced_die = -1
   on_roll(h,d)
-  note("Corruption Conversion selects " + FACES[chosen] + " on Die " + str(d+1) + ".")
+  note("Corruption Conversion selects " + Catalog.name_for(chosen) + " on Die " + str(d+1) + ".")
   return true
  if f == 30:
   if d == source or h.used[d] or (not Catalog.is_attack(face(active,d)) and face(active,d) not in [4,42,43,50,51,52]): return false
@@ -1474,7 +1483,7 @@ func decline(d: int) -> void:
  if active not in [0,1,2] or d not in range(3) or outcome != "" or not pending.is_empty():return
  if heroes[active].dead or heroes[active].hp <= 0 or heroes[active].used[d]:return
  if forced_die >= 0 and forced_die != d:return
- action_before = {}; action_owner = active; action_label = FACES[face(active,d)]
+ action_before = {}; action_owner = active; action_label = Catalog.name_for(face(active,d))
  record_event("decline","%s declines %s (Die %s); no effect, result spent." % [unit_name(active),action_label,["I","II","III"][d]],active)
  spend(d)
 
@@ -1526,7 +1535,7 @@ func present_action_roll(id: int, dice: Array, kind: String) -> void:
  var h: Dictionary = heroes[id]
  var faces: Array = []; var sides: Array = []; var results: Array = []
  for d in dice:
-  faces.append(h.build[d].map(func(f):return FACES[f])); sides.append(h.rolls[d]); results.append(FACES[face(id,d)])
+  faces.append(range(6).map(func(side):return Catalog.name_for(TrialRules.effective_face(self,id,h.build[d][side],d,side)))); sides.append(h.rolls[d]); results.append(Catalog.name_for(face(id,d)))
  roll_presentations.append({"actor":unit_name(id),"kind":kind,"faces":faces,"sides":sides,"results":results,"dice":dice.duplicate()})
 
 func numeric_attack_base(d: int, target: int) -> int:
@@ -1583,8 +1592,14 @@ func soul_remaining(id: int) -> int:
 func move_steps(f: int) -> int:
  if f == 0:return soul_distance(active)
  var steps: int = 1 if f==60 else 2 if f==66 else v("face%d.move" % f)
- return maxi(1,steps-1) if TrialRules.enabled(self) and TrialRules.soul(self,active)=="bugh" else steps
+ if not TrialRules.enabled(self):return steps
+ if TrialRules.enabled(self):
+  if Catalog.category(f)=="Movement":steps += 1 if TrialRules.body(self,active)=="fleet" else -1 if TrialRules.body(self,active)=="stone" else 0
+  if TrialRules.soul(self,active)=="bugh":steps -= 1
+ return maxi(1,steps)
 func face_range(f: int) -> int:
+ if f==73:return 2
+ if f==74:return 1
  if f in [63,64,65]:return 2+(1 if f == 63 and balance.get("memory.loss."+str(active),false) else 0)
  if f == 70:return 2
  if f in [60,61,62,66,67,68,69,71,72]:return 1
@@ -1626,7 +1641,7 @@ func stonewake_loss(id: int, block_loss: int, hp_loss: int = 0) -> void:
   record_event("expire","%s stops channeling Stonewake: %d HP and %d cumulative Block lost since their last turn. Held die stays spent until the next shared roll." % [unit_name(id),hp_loss,lost],id,id)
 
 func remove_block(id: int, amount: int) -> int:
- var h: Dictionary = boss if id == 3 else heroes[id]
+ var h: Dictionary = unit_data(id)
  var removed := mini(h.block,maxi(0,amount));h.block -= removed
  if id < 3:stonewake_loss(id,removed)
  return removed
@@ -1643,7 +1658,7 @@ func check_phase() -> void:
 
 func reroll_face_reason(f: int) -> String:
  if f == 56:return "Red Tile is locked: it cannot be rerolled."
- if f in [9,11,15]:return FACES[f]+" is non-rerollable by its rules."
+ if f in [9,11,15]:return Catalog.name_for(f)+" is non-rerollable by its rules."
  return ""
 
 func reroll_window_reason() -> String:
@@ -1691,8 +1706,8 @@ func status_description(id: int) -> String:
   if h.stun:lines.append("Stunned: set aside one die at next shared roll.")
   if h.get("rooted",0) > 0:lines.append("Rooted %d: no voluntary movement until next boss turn; forced movement still works." % h.rooted)
   if not h.channel.is_empty():
-   lines.append("Channel: "+FACES[h.channel.face]+(" · Block loss %d/%d; any HP loss breaks it." % [h.channel.get("block_lost",0),v("face31.break_block")] if h.channel.face == 31 else ""))
-  if not h.reaction.is_empty():lines.append("Held reactions: "+", ".join(h.reaction.map(func(d):return FACES[face(id,d)])))
+   lines.append("Channel: "+Catalog.name_for(h.channel.face)+(" · Block loss %d/%d; any HP loss breaks it." % [h.channel.get("block_lost",0),v("face31.break_block")] if h.channel.face == 31 else ""))
+  if not h.reaction.is_empty():lines.append("Held reactions: "+", ".join(h.reaction.map(func(d):return Catalog.name_for(face(id,d)))))
   if h.num_boost > 0:lines.append("Numeric damage +%d on next roll this turn." % h.num_boost)
   if h.numeric_focus:lines.append("Numeric Focus: next Blank counts as %d." % v("face20.blank_value"))
   if h.stored_num >= 0:lines.append("Stored Numeric: %d." % h.stored_num)
@@ -1881,6 +1896,7 @@ func move_friendly_summon(id: int, steps: int, chosen_target: int = -1) -> void:
  unit_data(id).pos = chosen[moved-1]
  record_event("move","%s moves %s → %s (%d orthogonal step(s) along a legal route; detours around occupied cells)." % [unit_name(id),cell_name(origin),cell_name(unit_data(id).pos),moved],id,id)
 func apply_poison(source: int, target: int, amount: int) -> void:
+ if TrialRules.immobile_object(self,target):return
  var owner: int = int(unit_data(source).get("owner",-1)) if source >= 4 and friendly(source) else source
  if amount>0 and burden_interrupt.is_empty() and owner in [0,1,2] and active == owner and balance.get("memory.brood."+str(owner),false) and not heroes[owner].get("memory_brood_used",false):
   amount += 1;heroes[owner].memory_brood_used = true
@@ -1917,7 +1933,7 @@ func summon_description(id: int) -> String:
  if unit.get("poison",0) > 0:text += " Poison %d: HP loss at next activation, then reduce Poison by 1." % unit.poison
  return text
 func action_name(owner: int, f: int) -> String:
- return "Command Nu’gh" if f == 59 and owned_worm(owner) >= 0 else FACES[f]
+ return "Command Nu’gh" if f == 59 and owned_worm(owner) >= 0 else Catalog.name_for(f)
 
 func borrow_eligible(hero: int, d: int) -> bool:
  return hero in range(3) and d in range(3) and heroes[hero].results.size() == 3 and face(hero,d) not in ([16,56,65] if not burden_interrupt.is_empty() else [16,56])
@@ -1975,7 +1991,7 @@ func essence_action(d: int, target: int, destination: Vector2i) -> bool:
   72:h.block += modified_value(d,3 if h.block>0 else 2)
   60:
    if destination.x != -99:
-    if destination not in reachable(active,1,false):return false
+    if destination not in reachable(active,move_steps(60),false):return false
     h.pos = destination
    h.block += 1
   61:
@@ -2037,7 +2053,7 @@ func burden_ally(hero: int, die: int) -> bool:
  active = hero;forced_die = die;h.reaction.erase(die);h.smoke.erase(die);h.used[die] = false;h.results[die] = p.copy
  if Catalog.is_reaction(p.copy):h.reaction.append(die);h.used[die] = true;forced_die = -1
  on_roll(h,die,false)
- record_event("copy","Shared Burden: %s spends Die %s to resolve %s immediately. Return to %s afterwards; no full turn, activation, Poison tick or initiative change." % [unit_name(hero),["I","II","III"][die],FACES[p.copy],unit_name(owner)],owner,hero)
+ record_event("copy","Shared Burden: %s spends Die %s to resolve %s immediately. Return to %s afterwards; no full turn, activation, Poison tick or initiative change." % [unit_name(hero),["I","II","III"][die],Catalog.name_for(p.copy),unit_name(owner)],owner,hero)
  return true
 func return_from_burden() -> bool:
  if burden_interrupt.is_empty() or not pending.is_empty() or forced_die >= 0 or not heroes[active].used[burden_interrupt.die]:return false
@@ -2067,7 +2083,7 @@ func prepare_friendly_evasive(die: int, target: int, destination: Vector2i) -> b
  var choices: Array = heroes[target].reaction.filter(func(index):return face(target,index) == 68)
  if choices.is_empty():return false
  pending = {"kind":"essence_friendly_evasive","hero":target,"attacker":active,"die":die,"target":target,"destination":destination,"choices":choices,"index":0,"used":0,"hp_before":heroes[target].hp,"attack_face":f}
- record_event("action","%s targets %s with %s. Evasive Counter may be spent before this friendly Attack resolves." % [unit_name(active),unit_name(target),FACES[f]],active,target)
+ record_event("action","%s targets %s with %s. Evasive Counter may be spent before this friendly Attack resolves." % [unit_name(active),unit_name(target),Catalog.name_for(f)],active,target)
  return true
 func friendly_evasive_react(use: bool) -> bool:
  if pending.get("kind","") != "essence_friendly_evasive":return false
@@ -2087,6 +2103,7 @@ func friendly_evasive_react(use: bool) -> bool:
 
 
 func credit_enemy_damage(target: int, lost: int) -> void:
+ if TrialRules.immobile_object(self,target):return
  var owner: int = action_owner
  if owner >= 4 and friendly(owner):owner = int(unit_data(owner).get("owner",-1))
  if lost > 0 and owner in [0,1,2] and enemies(owner,target):

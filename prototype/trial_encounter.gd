@@ -12,6 +12,9 @@ const GROUPS = [
  {"title":"The Long Charge","roles":["ram","archer"],"elite":"healer","terrain":"crates","text":"Ram marks a fixed charge lane for the next enemy turn. Step aside; break brown barricades with an adjacent Attack to open movement and sight."},
  {"title":"Essence Thieves","roles":["thief","thief"],"elite":"shield","terrain":"spikes","text":"Cutpurses steal 1 Trial Essence within 2, then flee toward the edge. Kill one to recover its loot; an escape loses it. Red spikes hurt any unit landing on them, including Shove targets."}
 ]
+const Content = preload("res://prototype/trial_content.gd")
+var objective_mode := ""
+var protected_turns := 0
 var group_index := 0
 var elite := false
 var roles: Array = []
@@ -25,6 +28,10 @@ func prepare_encounter() -> void:
   var id := index+3;var unit: Dictionary = unit_data(id);var role: String = roles[index]
   unit.trial_role = role;unit.hp = int(ROLES[role].hp)+(1 if elite else 0);unit.max_hp = unit.hp
   unit.pos = [Vector2i(3,4),Vector2i(4,4),Vector2i(5,3)][index];unit.loot = 0
+ protected_turns = 0
+ if objective_mode=="ritual":
+  for index in range(3):minions.append(TrialRules.object_data("Ritual Stone "+str(index+1),Vector2i(2+index*2,5),2,"ritual"))
+ elif objective_mode=="spirit":minions.append(TrialRules.object_data("Lost Spirit",Vector2i(4,6),5,"spirit"))
 func boss_name() -> String:return ROLES[roles[0]].name if not roles.is_empty() else "Trial creatures"
 func unit_name(id: int) -> String:
  if id>=3 and id<3+roles.size():return ROLES[roles[id-3]].name+(" II" if id>3 and roles[id-3]==roles[0] else "")
@@ -110,6 +117,8 @@ func activate() -> void:
   if victims.is_empty():record_event("evade","Charge misses: nobody remains on its marked lane.",source);continue
   begin_action(source,"Ram Charge");pending = {"kind":"attack","action":"Ram Charge","victims":victims,"reacted":[],"amount":3,"source":source,"range":99,"needs_sight":false,"area":true,"tiles":mark.tiles};continue_attack()
 func harvest_death(id: int) -> void:
+ if TrialRules.objective_unit(self,id):
+  record_event("objective",unit_name(id)+(" breaks." if unit_data(id).trial_object=="ritual" else " falls. The protection objective failed."),action_owner,id);return
  if friendly(id) or harvest_claimed.has(id):return
  harvest_claimed[id] = true
  var amount: int = int(unit_data(id).get("loot",0))
@@ -117,13 +126,22 @@ func harvest_death(id: int) -> void:
  record_event("trial_death",unit_name(id)+" defeated. Clear the whole group for the Trial reward.",-1,id)
 func enemy_intent(source: int, action: String, slot: int) -> Dictionary:
  var result: Dictionary = super.enemy_intent(source,action,slot)
+ if objective_mode=="spirit" and action in ["Bite","Bash","Needle","Scuttle","Venom Bite"]:
+  var reach := 99 if action=="Scuttle" else 3 if action=="Needle" else 1
+  var candidates: Array = attack_targets(source,reach)
+  if action=="Needle":candidates = candidates.filter(func(id):return sight(source,id,reach))
+  var target: int = spirit_target(source,candidates,action,slot)
+  result.target = target;result.target_text = unit_name(target) if target>=0 else "No target in reach"
+  result.policy = "Spirit first if reachable; hero fallback"
+  if action=="Scuttle":result.detail = "Move toward the spirit; cannot pass through other units. No attack."
+
  match action:
   "Shield Line":result.target = source;result.policy = "Living allies within 1";result.target_text = "Self and adjacent allies";result.detail = "+2 Block to self and each adjacent enemy ally, capped at 3 Block from this ability. Separate the group to prevent shared shields."
   "Restitch":
    var options: Array = ([3]+living_minions()).filter(func(id):return not friendly(id) and unit_data(id).hp>0 and unit_data(id).hp<unit_data(id).max_hp and distance(source,id)<=3)
    var target: int = mend_target(source,options,slot);result.target = target;result.target_text = unit_name(target) if target>=0 else "No wounded ally";result.policy = "Most missing HP within 3";result.detail = "Restore up to 2 HP to one wounded ally, once per enemy turn."
-  "Mark Charge":result.target = enemy_target(source,attack_targets(source,99),action);result.target_text = unit_name(result.target) if result.target>=0 else "No target";result.policy = "Furthest hero; cardinal lane";result.detail = "Mark up to 5 gold tiles toward the focus. The fixed lane deals 3 damage at next enemy turn start; move off it or prepare Block. Reactions apply."
-  "Pilfer":result.target = enemy_target(source,attack_targets(source,2),action);result.target_text = unit_name(result.target) if result.target>=0 else "Nobody within 2";result.policy = "Closest hero within 2";result.detail = "Steal 1 carried Trial Essence. Defeating the thief returns its loot; escaping loses it. No HP damage."
+  "Mark Charge":result.target = Targeting.pick(self,source,attack_targets(source,99),action,slot);result.target_text = unit_name(result.target) if result.target>=0 else "No target";result.policy = "Furthest hero; cardinal lane";result.detail = "Mark up to 5 gold tiles toward the focus. The fixed lane deals 3 damage at next enemy turn start; move off it or prepare Block. Reactions apply."
+  "Pilfer":result.target = Targeting.pick(self,source,attack_targets(source,2),action,slot);result.target_text = unit_name(result.target) if result.target>=0 else "Nobody within 2";result.policy = "Closest hero within 2";result.detail = "Steal 1 carried Trial Essence. Defeating the thief returns its loot; escaping loses it. No HP damage."
   "Flee":result.target = source;result.target_text = "Arena edge";result.policy = "Escape with stolen Essence";result.detail = "Move 2 away toward an edge. Reaching an edge while carrying loot removes this thief and its stolen Essence. Without loot, pursue a hero instead."
  return result
 func default_boss_help(_action: String) -> String:return GROUPS[group_index].text
@@ -132,8 +150,59 @@ func phase_description() -> String:return GROUPS[group_index].text
 func check_end() -> void:
  if atomic_damage or outcome!="":return
  if boss.hp<=0:boss.dead = true
+ var spirits: Array = objective_ids("spirit",true)
  if heroes.all(func(h):return h.dead or h.hp<=0):outcome = "defeat"
+ elif objective_mode=="spirit" and (spirits.is_empty() or unit_data(spirits[0]).hp<=0):outcome = "defeat"
+ elif objective_mode=="ritual":
+  if objective_ids("ritual").is_empty():outcome = "victory"
+ elif objective_mode=="spirit":
+  if protected_turns>=3 or (boss.hp<=0 and living_minions().is_empty()):outcome = "victory"
  elif boss.hp<=0 and living_minions().is_empty():outcome = "victory"
  if outcome!="":
-  pending = {};record_event("trial_result","Trial group cleared. Choose a reward before the next route." if outcome=="victory" else "Trial party defeated; this run ends.")
+  pending = {};queued_actions.clear()
+  var description := "Trial party defeated; this run ends."
+  if outcome=="victory":description = "Ritual broken! The surviving creatures retreat." if objective_mode=="ritual" else "Spirit rescued! Surviving creatures retreat." if objective_mode=="spirit" else "Trial group cleared. Choose a reward before the next route."
+  elif objective_mode=="spirit" and not spirits.is_empty() and unit_data(spirits[0]).hp<=0:description = "The spirit was lost. This Trial ends without a victory reward."
+  record_event("trial_result",description)
+func objective_ids(kind: String, include_dead: bool = false) -> Array:
+ var result: Array = []
+ for id in range(4,unit_count()):
+  if unit_data(id).get("trial_object","")==kind and (include_dead or unit_data(id).hp>0):result.append(id)
+ return result
+func friendly(id: int) -> bool:
+ return true if id>=4 and unit_data(id).get("trial_object","")=="spirit" else super.friendly(id)
+func spirit_target(source: int, candidates: Array, action: String, slot: int = -1) -> int:
+ var spirits: Array = objective_ids("spirit")
+ if not spirits.is_empty() and spirits[0] in candidates:return spirits[0]
+ return Targeting.pick(self,source,candidates,action,enemy_slot if slot<0 else slot)
+func enemy_target(source: int, candidates: Array, action: String, slot: int = -1) -> int:
+ if objective_mode!="spirit":return super.enemy_target(source,candidates,action,slot)
+ var target := spirit_target(source,candidates,action,slot)
+ if target>=0:record_event("target",action+" → "+unit_name(target)+". Spirit first if reachable; hero fallback.",source,target)
+ return target
+func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,-99)) -> bool:
+ if target>=4 and unit_data(target).get("trial_object","")=="spirit" and active in range(3) and d in range(3) and face(active,d)==7:
+  var h: Dictionary = heroes[active];var spirit: Dictionary = unit_data(target)
+  if h.dead or h.hp<=0 or h.used[d] or outcome!="" or not pending.is_empty() or (forced_die>=0 and forced_die!=d) or distance(active,target)>face_range(7) or spirit.hp<=0:return false
+  begin_action(active,"First Aid",target,d)
+  var amount: int = mini(v("face7.heal"),spirit.max_hp-spirit.hp);spirit.hp += amount
+  record_event("heal",unit_name(active)+" heals the spirit for %d HP." % amount,active,target,amount)
+  spend(d);return true
+ return super.hero_action(d,target,destination)
+func finish_turn() -> void:
+ if active==3 and outcome=="" and pending.is_empty() and boss_index>=3 and objective_mode=="spirit":
+  protected_turns += 1
+  record_event("objective","Spirit survives enemy turn %d/3." % protected_turns,-1,objective_ids("spirit",true)[0])
+  check_end()
+ super.finish_turn()
+func summon_description(id: int) -> String:
+ if TrialRules.objective_unit(self,id):return Content.OBJECTIVES[objective_mode].text
+ return super.summon_description(id)
+func objective_summary() -> String:
+ if objective_mode=="ritual":return "Ritual · %d/3 stones broken" % (3-objective_ids("ritual").size())
+ if objective_mode=="spirit":
+  var ids: Array = objective_ids("spirit",true)
+  return "Spirit · %d HP · %d/3 turns" % [unit_data(ids[0]).hp if not ids.is_empty() else 0,protected_turns]
+ return ""
+
 func boss_display_action() -> String:return "Turn complete" if boss_index>=3 else "Resolve group actions"

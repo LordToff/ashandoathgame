@@ -1,3 +1,5 @@
+v0.36: Six experiments live in **Trials**: target forecasts with Confirm, ritual/spirit objectives, rolled Jab/Crack weapon faces, four-slot build ideas, an interruptible Hollow attack, and a persistent crafting wishlist. [Changes](../docs/Changes-v0.36.md).
+
 v0.35: Trials uses the four equipment slots; old dice upgrades are refunded. Full ability range/sight previews, one-cell creature visuals and rerolls without blocking prompts. [Changes](../docs/Changes-v0.35.md).
 
 v0.34: Main menu → **Trials**. Three build paths, five branching stops, role enemies, cover/barricades/spikes, face and edge rewards, four Trial boss Souls and safe checkpoints. Normal progression is separate. [Changes](../docs/Changes-v0.34.md).
