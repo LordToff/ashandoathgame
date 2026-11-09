@@ -156,7 +156,7 @@ func run_tests() -> void:
   check(app.ui.find_child("TrialWeapon",true,false)!=null,"weapon selector is reachable in phone and desktop lobby")
   app.trial_view = "craft";app.rebuild();await process_frame
   check(app.ui.find_child("TrialRecipe",true,false)!=null and app.ui.find_child("TrialPin",true,false)!=null,"wishlist/Forge render on every layout")
- app.trials.start(36);app.choose_trial_route(1);app.dice_tray.cancel();app.rolling_time = 0;ready(app.game);app.game.heroes[0].pos = Vector2i(2,6);app.selected = 0;app.inspect_actor = app.game.active;app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
+ app.trials = T.new(false);app.trials.start(36);app.choose_trial_route(1);app.dice_tray.cancel();app.rolling_time = 0;ready(app.game);app.game.heroes[0].pos = Vector2i(2,6);app.selected = 0;app.inspect_actor = app.game.active;app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
  stone = app.game.objective_ids("ritual")[0];hp = app.game.unit_data(stone).hp;app.stage_trial_choice(stone)
  check(not app.trial_choice.is_empty() and app.game.unit_data(stone).hp==hp and not app.game.heroes[0].used[0],"actual target tap stages forecast without spending or damaging")
  await process_frame

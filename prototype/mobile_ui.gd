@@ -38,7 +38,7 @@ static func screen(app, heading: String, key: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
  app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.36",Vector2(18,58),15,MUTED,size.x-36)
+ app.label_at("ASH & OATH · MOBILE · v0.37",Vector2(18,58),15,MUTED,size.x-36)
  var width: float = minf(720,size.x-24)
  var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
@@ -271,9 +271,10 @@ static func battle(app) -> void:
  var width: float = size.x-x-12
  var active: int = app.game.active
  var actor: String = "Enemies" if app.trial_fight and active==3 else app.game.unit_name(active)
- var heading: String = actor+" · R"+str(app.game.round_no)
+ var class_key: String = str(app.game.balance.get("trial.classes",["","",""])[active]) if app.trial_fight and active in range(3) else ""
+ var heading: String = actor+(" · "+app.Trials.Classes.name_for(class_key) if app.Trials.Classes.valid(class_key) else "")+" · R"+str(app.game.round_no)
  if app.trial_fight:heading += " · %d Essence" % int(app.game.trial_state.get("purse",0))
- app.label_at(heading,Vector2(12,8),19 if app.trial_fight else 23,GOLD,board.size.x if landscape else size.x-24,true)
+ app.label_at(heading,Vector2(12,8),17 if app.Trials.Classes.valid(class_key) else 19 if app.trial_fight else 23,GOLD,board.size.x if landscape else size.x-24,true)
  var party_width: float = board.size.x if landscape else size.x-24
  for hero in range(3):
   var h: Dictionary = app.game.heroes[hero];var w: float = (party_width-12)/3

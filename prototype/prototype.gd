@@ -12,6 +12,8 @@ var trial_fight := false
 var trial_view := "run"
 var trial_die := 0
 var trial_slot := "memory"
+var trial_class_preview := "skirmisher"
+var trial_class_die := 0
 var show_trial_guide := false
 const BattlePreview = preload("res://prototype/battle_preview.gd")
 const BattlePanels = preload("res://prototype/battle_panels.gd")
@@ -374,7 +376,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.36",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.37",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -478,7 +480,9 @@ func battle_ui() -> void:
   if weak_point_ready(i):status = "WEAK POINT"
   if h.dr > 0:status += " DR "+str(h.dr)
   if h.num_boost > 0:status += " NUM +"+str(h.num_boost)
-  var name_label := label_at(h.name+ (" · "+status.strip_edges() if status != "" else ""),Vector2(hx+48,63),14,COLORS[i],178)
+  var class_key: String = str(game.balance.get("trial.classes",["","",""])[i]) if trial_fight else ""
+  var hero_label: String = h.name+(" · "+Trials.Classes.name_for(class_key) if Trials.Classes.valid(class_key) else "")
+  var name_label := label_at(hero_label+ (" · "+status.strip_edges() if status != "" else ""),Vector2(hx+48,63),14,COLORS[i],178)
   name_label.clip_text = true;name_label.mouse_filter = Control.MOUSE_FILTER_PASS
   var dice_info: Array[String] = []
   for d in range(3):dice_info.append("Die %d: %s%s" % [d+1,Catalog.display_name(game.face(i,d))," · spent / held" if h.used[d] else ""])
@@ -578,15 +582,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.36 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.37 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.36 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.36 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.37 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.37 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.36 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.37 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.36 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.37 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -614,6 +618,8 @@ func open_audio_settings() -> void:
  options.show()
 
 func face_help(f: int) -> String:
+ var movement := trial_movement_help(f)
+ if movement!="":return movement+reward_live_notes(f)
  if f == 0:
   var actor: int = game.active if page == "battle" else build_hero
   if actor not in [0,1,2]:return "Blank: check the acting hero’s equipped Soul and remaining conversion allowance."
@@ -1384,13 +1390,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.36 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.37 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.36",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.37",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1873,6 +1879,8 @@ func restore_hero_build() -> void:
  rebuild()
 
 func short_face_help(f: int) -> String:
+ var movement := trial_movement_help(f)
+ if movement!="":return movement+reward_live_notes(f)
  if f in [73,74]:return Catalog.text(f)
  if f == 0:return face_help(0)
  var copy := AbilityCopy.new();copy.values = active_balance();copy.tuned = game.tuned if page == "battle" else balanced
@@ -2154,7 +2162,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.36",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.37",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2726,3 +2734,15 @@ func draw_trial_object(id: int) -> void:
  draw_hp_dots(p+Vector2(0,30),u.hp,u.max_hp,col)
  if u.block>0:draw_string(BODY,p+Vector2(14,18),"B%d" % u.block,HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color("a7d1ee"))
  draw_string(BODY,p+Vector2(-22,-28),"SPIRIT" if spirit else "CORE" if u.trial_object=="core" else "RITUAL",HORIZONTAL_ALIGNMENT_LEFT,-1,11,col)
+
+func trial_movement_help(f: int) -> String:
+ if page!="battle" or not trial_fight or game.active not in range(3) or f not in [2,3,53,57,60,66]:return ""
+ var spaces: int = game.move_steps(f)
+ match f:
+  2:return "Step: move up to %d orthogonal spaces, turning allowed. Occupied cells block the path." % spaces
+  3:return "Stride: move up to %d spaces in one straight orthogonal line. No turning or passing through units." % spaces
+  53:return "Leap up to %d spaces over units, never onto them. End within %d of the boss to gain +%d on your next rolled damage this turn." % [spaces,game.v("face53.range"),game.v("face53.boost")]
+  57:return "Move up to %d spaces, turning allowed, then gain %d Block. Occupied cells block the path." % [spaces,game.v("face57.block")]
+  60:return "Optionally move up to %d spaces, then gain 1 Block." % spaces
+  66:return "Move up to %d spaces. Gain 1 Block if you end strictly farther from every enemy." % spaces
+ return ""

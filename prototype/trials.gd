@@ -1,5 +1,6 @@
 extends RefCounted
 ## Separate experimental run/collection. Never writes Expedition or ordinary builds.
+const Classes = preload("res://prototype/trial_classes.gd")
 const C = preload("res://prototype/trial_content.gd")
 const B = preload("res://prototype/battle.gd")
 const R = preload("res://prototype/trial_rules.gd")
@@ -8,6 +9,8 @@ const SAVE = "user://ash-trials-v34.json"
 const BOSSES = ["hollow","nugh","cantor","bugh"]
 const BOSS_NAMES = ["The Hollow","Nu’gh","Veyl, Brass Cantor","Bu’gh, Iron Warden"]
 var phase := "lobby"
+# Empty keys identify pre-class checkpoints and isolated legacy regression fixtures.
+var classes: Array = ["","",""]
 var memories: Array = ["venom","guard","stride"]
 var souls: Array = ["","",""]
 var selected_boss := 0
@@ -35,7 +38,9 @@ var reward_face := 70
 var reward_weapon := "venom"
 var settled := false
 func _init(restore: bool = true):
- if restore:load_save()
+ if restore:
+  load_save()
+  if phase=="lobby":ensure_classes()
 func start(seed_number: int = 0) -> void:
  seed_value = seed_number if seed_number!=0 else int(Time.get_ticks_usec())
  weapons = loadout_weapons.duplicate()
@@ -66,7 +71,7 @@ func choose(index: int) -> bool:
  phase = "combat" if current.kind in ["fight","boss"] else current.kind
  history.append("Stop %d: %s" % [stage+1,current.kind]);save();return true
 func profile() -> Dictionary:
- var result := {"trial.enabled":true,"trial.memories":memories.duplicate(),"trial.souls":souls.duplicate(),"trial.hp":hp.duplicate(),"trial.weapons":weapons.duplicate(),"trial.bodies":bodies.duplicate(),"trial.purse":essence,"trial.terrain":"cover"}
+ var result := {"trial.enabled":true,"trial.classes":classes.duplicate(),"trial.memories":memories.duplicate(),"trial.souls":souls.duplicate(),"trial.hp":hp.duplicate(),"trial.weapons":weapons.duplicate(),"trial.bodies":bodies.duplicate(),"trial.purse":essence,"trial.terrain":"cover"}
  for id in range(3):
   result["soul.eligible."+str(id)] = true;result["soul.mode."+str(id)] = "heal" if souls[id]=="hearth" else "move";result["soul.distance."+str(id)] = 2 if souls[id]=="wind" else 1;result["soul.allowance."+str(id)] = 1;result["weapon.dagger."+str(id)] = weapons[id] not in ["spear","hammer"]
  for key in pool:result["earned."+key] = int(pool[key])
@@ -118,15 +123,17 @@ func equip_weapon(key: String) -> bool:
  if key in ["spear","hammer"] and R.weapon_slot(builds[hero])==Vector2i(-1,-1):message = "Keep a normal Strike side before equipping this weapon.";return false
  weapons[hero] = key;essence -= 2;message = R.WEAPONS[key].name+" equipped in "+["Vesper","Rook","Wren"][hero]+"’s Weapon slot.";advance();return true
 func maximum_hp(id: int) -> int:return int(R.BODIES[bodies[id]].hp)-(0 if memories[id]=="venom" else 1)-(1 if souls[id]=="nugh" else 0)
-func reward_faces(id: int) -> Array:return STARTER_FACES[id]
+func reward_faces(id: int) -> Array:return Classes.CLASSES[classes[id]].rewards.duplicate() if Classes.valid(classes[id]) else STARTER_FACES[id]
 func starting_builds() -> Array:
  var result: Array = []
- for key in ["venom","guard","stride"]:
+ for id in range(3):
+  if Classes.valid(classes[id]):result.append(Classes.CLASSES[classes[id]].dice.duplicate(true));continue
+  # Old safe checkpoints retain their original hero-specific loadouts.
   var build: Array = B.default_build()
-  match key:
-   "venom":build[1][0] = 70;build[2][2] = 59
-   "guard":build[0][2] = 72;build[2][0] = 41
-   "stride":build[0][0] = 67;build[1][1] = 66;build[2][0] = 8
+  match id:
+   0:build[1][0] = 70;build[2][2] = 59
+   1:build[0][2] = 72;build[2][0] = 41
+   2:build[0][0] = 67;build[1][1] = 66;build[2][0] = 8
   result.append(build)
  return result
 func camp(rest: bool) -> bool:
@@ -154,8 +161,8 @@ func advance() -> void:
 func fail(reason: String) -> void:
  phase = "failed";message = reason;reward_mode = "";save()
 func save() -> void:
- var data := {"equipment_version":36}
- for key in ["phase","memories","weapons","bodies","souls","selected_boss","stage","seed_value","essence","hp","builds","pool","completed_bosses","history","message","current","settled","loadout_weapons","ingredients","crafted","wishlist","last_progress"]:data[key] = get(key)
+ var data := {"equipment_version":37}
+ for key in ["phase","classes","memories","weapons","bodies","souls","selected_boss","stage","seed_value","essence","hp","builds","pool","completed_bosses","history","message","current","settled","loadout_weapons","ingredients","crafted","wishlist","last_progress"]:data[key] = get(key)
  var file := FileAccess.open(SAVE,FileAccess.WRITE)
  if file:file.store_string(JSON.stringify(data))
  if OS.has_feature("web"):JavaScriptBridge.eval("try{localStorage.setItem('ash-and-oath-trials',"+JSON.stringify(JSON.stringify(data))+")}catch(e){}",true)
@@ -169,6 +176,8 @@ func load_save() -> void:
  if parser.parse(text)!=OK:return
  var data = parser.data
  if not data is Dictionary:return
+ if data.get("classes") is Array and data.classes.size()==3:
+  for id in range(3):classes[id] = str(data.classes[id]) if Classes.valid(str(data.classes[id])) else ""
  if data.get("ingredients") is Dictionary:
   for key in C.ESSENCE:ingredients[key] = maxi(0,int(data.ingredients.get(key,0)))
  if data.get("crafted") is Array:crafted = data.crafted.filter(func(key):return C.RECIPES.has(key))
@@ -176,16 +185,16 @@ func load_save() -> void:
  last_progress = str(data.get("last_progress",""))
  if data.get("loadout_weapons") is Array and data.loadout_weapons.size()==3:
   for id in range(3):
-   if data.loadout_weapons[id] in available("weapon"):loadout_weapons[id] = data.loadout_weapons[id]
+   if data.loadout_weapons[id] in available("weapon",id):loadout_weapons[id] = data.loadout_weapons[id]
  if data.get("completed_bosses") is Array:completed_bosses = data.completed_bosses.filter(func(key):return key in BOSSES)
  if not data.has("memories") and data.get("paths") is Array:data.memories = data.paths
  for key in ["memories","souls","weapons","bodies"]:
   if data.get(key) is Array and data[key].size()==3:set(key,data[key])
  for id in range(3):
-  if memories[id] not in available("memory"):memories[id] = ["venom","guard","stride"][id]
+  if memories[id] not in available("memory",id):memories[id] = ["venom","guard","stride"][id]
   if not R.WEAPONS.has(weapons[id]):weapons[id] = "dagger"
-  if bodies[id] not in available("body"):bodies[id] = "broken"
-  if souls[id] not in available("soul"):souls[id] = ""
+  if bodies[id] not in available("body",id):bodies[id] = "broken"
+  if souls[id] not in available("soul",id):souls[id] = ""
  selected_boss = clampi(int(data.get("selected_boss",0)),0,3)
  var loaded_phase: String = str(data.get("phase","lobby"))
  if loaded_phase=="combat":phase = "failed";message = "A Trial fight was interrupted. No victory reward was granted; collected Trial Souls remain.";return
@@ -204,8 +213,12 @@ func load_save() -> void:
  builds = saved_builds.map(func(build):return build.map(func(die):return die.map(func(face):return int(face))));phase = loaded_phase;message = str(data.get("message",""));settled = bool(data.get("settled",false))
  if data.get("history") is Array:history = data.history
 
-func available(slot: String) -> Array:
+func available(slot: String, id: int = -1) -> Array:
+ if id<0:id = hero
  var items: Array = {"memory":["venom","guard","stride"],"body":["broken"],"weapon":["dagger","spear","hammer"],"soul":[""]+completed_bosses}.get(slot,[]).duplicate()
+ if slot=="body" and Classes.valid(classes[id]):
+  var starting: String = Classes.CLASSES[classes[id]].body
+  if starting not in items:items.append(starting)
  for key in crafted:
   if C.RECIPES[key].slot==slot and C.RECIPES[key].item not in items:items.append(C.RECIPES[key].item)
  return items
@@ -233,12 +246,12 @@ func apply_build(key: String, id: int) -> bool:
  if phase!="lobby" or id not in range(3) or not C.BUILDS.has(key):return false
  var build: Dictionary = C.BUILDS[key]
  memories[id] = build.memory
- bodies[id] = build.body if build.body in available("body") else "broken"
- loadout_weapons[id] = build.weapon if build.weapon in available("weapon") else "dagger"
- souls[id] = build.soul if build.soul in available("soul") else ""
+ bodies[id] = build.body if build.body in available("body",id) else "broken"
+ loadout_weapons[id] = build.weapon if build.weapon in available("weapon",id) else "dagger"
+ souls[id] = build.soul if build.soul in available("soul",id) else ""
  var missing: Array[String] = []
  for key_name in ["body","weapon","soul"]:
-  if build[key_name] not in available(key_name):
+  if build[key_name] not in available(key_name,id):
    for recipe_key in C.RECIPES:
     if C.RECIPES[recipe_key].slot==key_name and C.RECIPES[recipe_key].item==build[key_name]:missing.append(C.RECIPES[recipe_key].name)
    if key_name=="soul" and build.soul in BOSSES:missing.append(R.SOULS[build.soul].name+" (defeat its Trial boss)")
@@ -249,3 +262,26 @@ func display_face(id: int, face: int, die: int, side: int) -> int:
  var shown: Array = starting_builds()[id] if phase=="lobby" else builds[id]
  if R.weapon_slot(shown)!=Vector2i(die,side):return face
  return 73 if face==1 and key=="spear" else 74 if face==1 and key=="hammer" else face
+
+func ensure_classes() -> void:
+ if phase!="lobby":return
+ var changed := false
+ for id in range(3):
+  if Classes.valid(classes[id]):continue
+  set_class_kit(id,Classes.DEFAULTS[id]);changed = true
+ if changed:message = "Choose a class for each hero. Starting equipment is included; tap the class card to inspect its dice.";save()
+func set_class_kit(id: int, key: String) -> void:
+ var kit: Dictionary = Classes.CLASSES[key]
+ classes[id] = key;memories[id] = kit.memory;bodies[id] = kit.body;loadout_weapons[id] = kit.weapon;souls[id] = ""
+func choose_class(id: int, key: String) -> bool:
+ if phase!="lobby" or id not in range(3) or not Classes.valid(key):return false
+ set_class_kit(id,key)
+ message = ["Vesper","Rook","Wren"][id]+" is a "+Classes.name_for(key)+". Starting gear and dice reset for this hero; no Essence spent."
+ save();return true
+func customized(id: int) -> bool:
+ if not Classes.valid(classes[id]):return false
+ var kit: Dictionary = Classes.CLASSES[classes[id]]
+ var equipped: String = loadout_weapons[id] if phase=="lobby" else weapons[id]
+ return bodies[id]!=kit.body or memories[id]!=kit.memory or equipped!=kit.weapon or souls[id]!=""
+func class_label(id: int) -> String:
+ return Classes.name_for(classes[id])+(" · adjusted gear" if customized(id) else "")

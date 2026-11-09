@@ -28,5 +28,10 @@ func _initialize():
  var trial_rules = preload("res://prototype/trial_rules.gd")
  var trial_content = preload("res://prototype/trial_content.gd")
  result.trials = {"memories":trial_rules.MEMORIES,"souls":trial_rules.SOULS,"bodies":trial_rules.BODIES,"weapons":trial_rules.WEAPONS,"recipes":trial_content.RECIPES,"essence":trial_content.ESSENCE,"builds":trial_content.BUILDS,"objectives":trial_content.OBJECTIVES}
+ var classes = preload("res://prototype/trial_classes.gd")
+ result.trials.classes = classes.CLASSES
+ result.trials.class_dice = {}
+ for key in classes.CLASSES:
+  result.trials.class_dice[key] = range(3).map(func(die):return range(6).map(func(side):return C.name_for(classes.face_for(key,die,side))))
  result["original_dice"] = B.BOSS_DICE
  var f = FileAccess.open("/tmp/current-rules-data.json",FileAccess.WRITE);f.store_string(JSON.stringify(result,"  "));quit()

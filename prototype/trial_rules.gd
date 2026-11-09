@@ -1,5 +1,6 @@
 extends RefCounted
 ## Experimental rules are gated by trial.enabled. Normal encounters do not use them.
+const Classes = preload("res://prototype/trial_classes.gd")
 const MEMORIES = {
  "venom":{"name":"Memory of Venom","text":"Your first own-turn Attack that damages an enemy adds Poison 1. Healing you receive restores 1 less HP."},
  "guard":{"name":"Memory of Guard","text":"When Block prevents all HP damage from an enemy Attack, your next Attack against an enemy deals +1 damage. Maximum HP -1."},
@@ -135,7 +136,7 @@ static func guide(g) -> String:
  if not g.trial_state.get("spikes",[]).is_empty():text += "Red spikes: landing on a tile deals 1 unavoidable damage, including forced movement. Staying there causes no extra ticks.\n"
  text += "Gold striped tiles: a Ram’s charge is locked to those tiles until the next enemy turn. Step aside to avoid its 3 damage.\n"
  for id in range(3):
-  var key := memory(g,id);text += "\n"+g.unit_name(id)+"\nBody: "+BODIES[body(g,id)].name+"\n"+BODIES[body(g,id)].text+"\nMemory: "+MEMORIES[key].name+"\n"+MEMORIES[key].text+"\nWeapon: "+WEAPONS[weapon(g,id)].name+"\n"+WEAPONS[weapon(g,id)].text
+  var key := memory(g,id);text += "\n"+g.unit_name(id)+" · "+Classes.name_for(str(g.balance.get("trial.classes",["","",""])[id]))+"\nBody: "+BODIES[body(g,id)].name+"\n"+BODIES[body(g,id)].text+"\nMemory: "+MEMORIES[key].name+"\n"+MEMORIES[key].text+"\nWeapon: "+WEAPONS[weapon(g,id)].name+"\n"+WEAPONS[weapon(g,id)].text
   var h: Dictionary = g.heroes[id]
   if h.get("trial_counter",false):text += "\nCounterattack +1 READY"
   if key=="stride" and int(h.get("moved_turn",0))>=2 and not h.get("trial_stride_used",false):text += "\nMovement bonus +1 READY"

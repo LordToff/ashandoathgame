@@ -38,6 +38,10 @@ func proof(args):
   var controls: Array = [];mobile_controls(app.ui,controls);data.controls = controls;data.viewport = [app.get_viewport_rect().size.x,app.get_viewport_rect().size.y];data.mobile = app.mobile_mode;data.board = [app.MobileUI.board_rect(app).position.x,app.MobileUI.board_rect(app).position.y,app.MobileUI.board_rect(app).size.x,app.MobileUI.board_rect(app).size.y];data.debug = app.debug_mode;data.unlocked = app.expedition.camp.unlocked;data.collection = app.show_collection;data.enemy_block = app.game.boss.get("block",0) if app.game.heroes.size()==3 else 0;data.intents = app.game.enemy_intents() if app.game.heroes.size()==3 else [];data.sfx = app.status_sounds;data.effects = app.effects.map(func(f):return f.kind);data.notices = app.combat_notices;data.selected = app.selected;data.pending = app.game.pending;data.feedback_playing = app.feedback_audio.playing;data.feedback_kind = app.feedback_streams.find_key(app.feedback_audio.stream);data.live_builds = app.game.heroes.map(func(h):return h.build);data.results = app.game.heroes.map(func(h):return h.results)
   if app.game.heroes.size() == 3:data.hp = app.game.heroes.map(func(h):return h.hp);data.block = app.game.heroes.map(func(h):return h.block);data.positions = app.game.heroes.map(func(h):return [h.pos.x,h.pos.y]);data.dagger_used = app.game.heroes.map(func(h):return h.get("dagger_used",false));data.used = app.game.heroes.map(func(h):return h.used);data.boss_hp = app.game.boss.hp
   data.trial = {"phase":app.trials.phase,"stage":app.trials.stage,"essence":app.trials.essence,"memories":app.trials.memories,"souls":app.trials.souls,"completed":app.trials.completed_bosses,"builds":app.trials.builds,"hp":app.trials.hp,"weapons":app.trials.weapons,"view":app.trial_view,"fight":app.trial_fight}
+  data.trial.classes = app.trials.classes
+  data.trial.max_hp = range(3).map(func(id):return app.trials.maximum_hp(id))
+  data.trial.customized = range(3).map(func(id):return app.trials.customized(id))
+  data.info = app.mobile_info;data.class_preview = app.trial_class_preview;data.class_die = app.trial_class_die
   data.trial.merge({"ingredients":app.trials.ingredients,"crafted":app.trials.crafted,"wishlist":app.trials.wishlist,"loadout_weapons":app.trials.loadout_weapons,"bodies":app.trials.bodies,"last_progress":app.trials.last_progress})
   data.forecast = app.trial_choice
   data.objective = app.game.objective_summary() if app.game.has_method("objective_summary") else ""
@@ -59,7 +63,26 @@ func proof(args):
     data.popups.append({"control":str(control.name),"x":popup.position.x,"y":popup.position.y,"w":popup.size.x,"h":popup.size.y,"top":panel.get_margin(SIDE_TOP),"bottom":panel.get_margin(SIDE_BOTTOM),"items":range(popup.item_count).map(func(index):return popup.get_item_text(index))})
   JavaScriptBridge.get_interface("window").essenceState = JSON.stringify(data);return
  reset_ui()
- if mode.begins_with("trial36_"):
+ if mode.begins_with("class37_"):
+  app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trial_view = "run";app.trial_slot = "memory"
+  if mode=="class37_main":app.go_main()
+  elif mode=="class37_lobby":app.page = "trials"
+  else:
+   var class_key: String = "skirmisher" if mode=="class37_skirmisher" else "vanguard"
+   app.trials.choose_class(0,class_key);app.trials.start(37);app.trials.choose(0);app.start_trial_battle()
+   app.game.active = 0;app.game.cursor = app.game.order.find(0);app.game.pending = {};app.game.forced_die = -1
+   for id in range(3):
+    var h: Dictionary = app.game.heroes[id]
+    h.used = [false,false,false];h.reaction = [];h.rolls = [0,0,1]
+    if id==0 and class_key=="vanguard":h.rolls = [0,1,1]
+    h.results = range(3).map(func(d):return h.build[d][h.rolls[d]])
+   app.game.heroes[0].pos = Vector2i(3,7) if class_key=="skirmisher" else Vector2i(3,5)
+   app.game.heroes[1].pos = Vector2i(0,8);app.game.heroes[2].pos = Vector2i(8,8);app.game.boss.pos = Vector2i(3,4);app.game.unit_data(4).pos = Vector2i(7,1)
+   app.game.boss.hp = 10;app.game.boss.max_hp = 10;app.game.boss.block = 0 if class_key=="skirmisher" else 3
+   app.game.trial_state.cover = [];app.game.trial_state.crates = [];app.game.trial_state.spikes = [];app.game.trial_state.charges = [];app.game.trial_state.positions = {}
+   for id in range(app.game.unit_count()):app.game.trial_state.positions[id] = app.game.unit_data(id).pos
+   app.inspect_actor = 0;app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
+ elif mode.begins_with("trial36_"):
   app.trials = app.Trials.new(false);app.trials.memories[0] = "guard"
   if mode=="trial36_lobby":app.page = "trials"
   elif mode=="trial36_forge":

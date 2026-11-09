@@ -46,9 +46,9 @@ with sync_playwright() as pw:
   p.wait_for_function('()=>{window.essenceProof("state");return !JSON.parse(window.essenceState).rolling;}');assert not state()['notices'];snap('focus-no-prompt')
   fixture('trials_main');tap(text='Trials' if mobile else 'Trials · experimental expeditions')
   for slot in ['body','memory','soul','weapon']:
-   v=node(name='TrialSlot_'+slot);assert v['y']+v['h']<=state()['viewport'][1]-76,v
-  text=snap('four-equipment-slots');assert 'Memory' in text and 'Body' in text and 'Weapon' in text and 'Soul' in text,text
-  select('TrialMemory',1);assert state()['trial']['memories'][0]=='guard';tap(name='TrialSlot_weapon');text=snap('weapon-explanation');assert 'Poke' in text and 'Dagger' in text,text
+   v=node(name='TrialSlot_'+slot);assert slot.capitalize() in v['text'],v;assert v['y']+v['h']<=state()['viewport'][1]-76,v
+  snap('four-equipment-slots') # Slot text and viewport bounds are asserted above; the screenshot is inspected visually.
+  select('TrialMemory',1);assert state()['trial']['memories'][0]=='guard';tap(name='TrialSlot_weapon');select('TrialWeapon',0);text=snap('weapon-explanation');assert 'Poke' in text and 'Dagger' in text,text
   fixture('trials_reward');before=state()['trial']['builds'];tap(name='TrialRewardWeapon');select('TrialWeaponChoice',1);snap('weapon-reward');tap(name='TrialEquipWeapon')
   data=state();assert data['trial']['weapons']==['heavy','dagger','dagger'] and data['trial']['builds']==before and data['trial']['essence']==5 and data['trial']['phase']=='route'
   assert not errors,errors
