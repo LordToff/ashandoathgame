@@ -12,7 +12,7 @@ The dedicated repository retains source history and the previous Pages history. 
 
 A GitHub repository backs up committed source and published files. It cannot guarantee that a cloud runtime never fails. Commit and push completed work; ignored caches, running processes and uncommitted files are not repository backups.
 
-Current source for v0.36 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
+Current source for v0.37 is on `main`. The dedicated Pages site is enabled at https://lordtoff.github.io/ashandoathgame/. Read SOURCE_COMMIT.txt and VERSION.txt on `gh-pages` for exact current build provenance.
 
 ## Recover in a new environment
 
@@ -99,3 +99,11 @@ Spear and Hammer project one first Strike side to Jab / Crack in rolls, previews
 The existing Trial save/key is retained. Version 36 adds loadout weapons, matching ingredient balances, crafted designs and one wishlist; old safe checkpoints still load. An interrupted fight fails the run but retains the collection. Always check that `enemy_intents()` is read-only (including the event log), or target-confirmation stamps can become stale from a redraw.
 
 Run `prototype/tests/trials_v36_test.gd`, the updated Trials suite and all current normal regressions. Browser checks use `tools/verify_trials_v36_browser.py` and the separate nonshipping Essence fixture. Fresh fixture imports use `--recovery-mode --editor --import --quit` to avoid template editor-plugin startup during imports. Use `ASH_FIXTURE_URL` for its loopback URL. Keep test callbacks out of shipping exports. Update the current rules snapshot, generator, HTML/PDF, patch notes and release validation before publishing.
+
+## v0.37 Trial classes
+
+`prototype/trial_classes.gd` defines exactly two classes and their starter dice/reward faces. `trials.gd` assigns class kits before new runs and scopes each free class Body to its recipient; crafting still unlocks it for the other class. Empty class keys are retained only for pre-class checkpoints and isolated legacy regressions. The user-facing lobby initializes missing class choices. Changing a class is lobby-only, applies only to the chosen hero, resets its starting equipment including Beginning Soul, and costs no currency. Class equipment has no additional hidden combat stat bonus.
+
+Use the same first-Strike projection for starter previews and actual shared/rerolls. Spear/Jab and Hammer/Crack must appear on a real rolled side, with normal Strike sides retained. Class dice are independent of manual Memory changes. `trial_classes.gd` has no dependency on the battle model. Keep normal faces, ownership and Camp isolated.
+
+Run `prototype/tests/classes_v37_test.gd`, current Trials/clarity/Essence/mobile and normal regressions. `tools/verify_classes_browser.py` exercises class setup, readable face previews, per-hero application/reload and real Step → Jab / Attack → Crack using class starter sides in the nonshipping fixture. The class rules/PDF export includes definitions and exact starter die names from game data. Safe old checkpoints preserve actual dice/HP/gear; a new Trial chooses new classes. Do not retrofit an old active run to class dice.
