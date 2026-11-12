@@ -1,11 +1,11 @@
-# Ash & Oath v0.38
+# Ash & Oath v0.38.1
 
-[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.38)
+[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.38.1)
 
-Main menu → **Trials** → choose a hero → **Soul** → **Soulcaster**. This free starter Soul adapts each die to four Blanks, with 6 base HP before Memory penalties. Gather charges and create six temporary spells through a rolled Blank. Hoarded Omen keeps the original die aside. The spellbook, help topics and reward previews explain costs, gear and resources. Normal Camp and encounters keep their rules and inventory.
+Open **Options → Fullscreen** to fill the screen. The button switches to **Exit fullscreen**; desktop browsers also use Esc. Available in desktop, mobile and Trial Settings.
 
-[Changes](CHANGES_v0.38.md) · [Validation](Validation-v0.38.md) · [Rules](current-rules.html) · [PDF](AshAndOath-Current-Rules-v0.38.pdf)
+[Changes](CHANGES_v0.38.1.md) · [Validation](Validation-v0.38.1.md) · [Current gameplay rules](current-rules.html) · [PDF](AshAndOath-Current-Rules-v0.38.pdf)
 
-Checks cover portrait 390×844 / 360×640, landscape 844×390 and desktop 1440×900. Physical phone hardware and Windows downloads were not tested/rebuilt. Trial balance remains experimental. Existing creature/Soul art remains Kenney CC0 pixel sprites; Trial objects use flat geometry in game code.
+This presentation update retains v0.38 gameplay, including Soulcaster in Trials. Real fullscreen entry/exit was checked in Chromium at 1440×900, 390×844, 360×640 and 844×390. Physical phone hardware and Windows artifacts were not rebuilt/tested. Browsers which withhold fullscreen show an unavailable control.
 
-Source: 8c8b6e3c16a0f3cc6b6e406317a291d20899896d
+Source: 2c405f027bef27f4fd2455299e4ee98072582306

@@ -1,6 +1,6 @@
 {
-  "version": "0.38",
-  "source_commit": "8c8b6e3c16a0f3cc6b6e406317a291d20899896d",
+  "version": "0.38.1",
+  "source_commit": "2c405f027bef27f4fd2455299e4ee98072582306",
   "engine": "4.6.3.stable",
   "files": {
     "ART_NOTES_v0.38.md": {
@@ -12,12 +12,20 @@
       "bytes": 169022
     },
     "CHANGELOG.txt": {
-      "sha256": "204e4c1209bbb88ef6e46043a11ee6f5490bddd78fbab3ce3c7e5385e7651c3e",
-      "bytes": 65686
+      "sha256": "42fc6e521dfd654a0bab24f860c9ca9849c312e160c7854acf67d08034612d81",
+      "bytes": 66273
+    },
+    "CHANGES_v0.38.1.md": {
+      "sha256": "38d61242f02ffb63b8014e787df58012406c564d92015ce14875beea9497de9f",
+      "bytes": 585
     },
     "CHANGES_v0.38.md": {
       "sha256": "9de098e5f14e0097bd79a6d9afe51e7063436211348808dd899455db4c81cbd6",
       "bytes": 3119
+    },
+    "Changes-v0.38.1.md": {
+      "sha256": "38d61242f02ffb63b8014e787df58012406c564d92015ce14875beea9497de9f",
+      "bytes": 585
     },
     "Changes-v0.38.md": {
       "sha256": "9de098e5f14e0097bd79a6d9afe51e7063436211348808dd899455db4c81cbd6",
@@ -32,15 +40,15 @@
       "bytes": 570
     },
     "README.md": {
-      "sha256": "5dbfc5bdfc3a385e26ee23c72a29d7fcaed71b047ad422faf3a43b48e8acae73",
-      "bytes": 1013
+      "sha256": "99a47b03572db389e0451f77a04021dfe8876823502c3569142cb40c998817dd",
+      "bytes": 803
     },
     "RECOVERY.md": {
-      "sha256": "ee57a2e9e2f3019c1fe98a77fc2e7f02c24d085ddf88c69dbb2ff6dd723cf9da",
-      "bytes": 15910
+      "sha256": "257bd1fe8fe4d5a8ac202214527516dbc7c5f61ef1990ea29b5f140967fabea8",
+      "bytes": 16723
     },
     "SOURCE_COMMIT.txt": {
-      "sha256": "da592b75c54a5a3fdc14ba9647796588842f9da3ee444694b5a6dc5da1c28c8c",
+      "sha256": "62b50511f92a576a976a39e89e9025b06138cc06720816d8155d74cbdc42e50d",
       "bytes": 41
     },
     "Sprite-Sources-v0.38.md": {
@@ -48,8 +56,16 @@
       "bytes": 1128
     },
     "VERSION.txt": {
-      "sha256": "ab63c9602c18ac84a40f130d135ce15af9f0899d7604c7cf89f8819ece599789",
-      "bytes": 64
+      "sha256": "e53df284ae5cbf0f6fd78737612ad6460dc616e3ce44f261b327d429cd09ea65",
+      "bytes": 66
+    },
+    "Validation-v0.38.1.json": {
+      "sha256": "5d0b52af599df06a7d35d4a8ddda5cfa3f20fb4fbddd1a4b2eb3037b4d643979",
+      "bytes": 2606
+    },
+    "Validation-v0.38.1.md": {
+      "sha256": "e953b1f75eee776b8cc204ad040ead65c5307b9a105f4ff556ccc4a10b7a5668",
+      "bytes": 1672
     },
     "Validation-v0.38.json": {
       "sha256": "28e687174b4fced5538eb35e7f1090aa860a2c456c33a19de63dc8d5e8a0588a",
@@ -76,8 +92,8 @@
       "bytes": 7298
     },
     "index.html": {
-      "sha256": "d02aa01d63d69efa37d25880c905de4b364930a7cd64160f4790fdba531400a8",
-      "bytes": 5476
+      "sha256": "5234ee75490a5cef12be778b2e8a8c5bce92acbee3a3aa8750eda9f0f2e85b13",
+      "bytes": 5480
     },
     "index.icon.png": {
       "sha256": "25895353542fe8dcdfa3736eaf15f44dc02ba60e2dc73a9b863d69aa5bae89a3",
@@ -88,16 +104,16 @@
       "bytes": 315759
     },
     "index.pck": {
-      "sha256": "bd4c38743207af607b0685e7bdba8d51def9c69fe8336c43924da6d655b19807",
-      "bytes": 3801848
+      "sha256": "2b8deb3d1d4ef2e5de8f6aaf388e1df5eff7522fe6d07f2262e40225a23f9bea",
+      "bytes": 3804856
     },
     "index.png": {
       "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e",
       "bytes": 21443
     },
-    "index.v0.38.pck": {
-      "sha256": "bd4c38743207af607b0685e7bdba8d51def9c69fe8336c43924da6d655b19807",
-      "bytes": 3801848
+    "index.v0.38.1.pck": {
+      "sha256": "2b8deb3d1d4ef2e5de8f6aaf388e1df5eff7522fe6d07f2262e40225a23f9bea",
+      "bytes": 3804856
     },
     "index.wasm": {
       "sha256": "26b61ce95247012ab3dca3ff51e96d1cdbff44ee91a8c20a83e150afca83f1b6",

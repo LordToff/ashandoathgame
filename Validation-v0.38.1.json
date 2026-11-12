@@ -1,0 +1,111 @@
+{
+  "version": "0.38.1",
+  "date": "2026-11-13",
+  "engine": "4.6.3.stable",
+  "result": "passed",
+  "browser": {
+    "result": "passed",
+    "devices": [
+      {
+        "viewport": [
+          1440,
+          900
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "real mouse/touch entry",
+          "fullscreen element fills viewport",
+          "button exits fullscreen",
+          "browser-owned exit updates label",
+          "Trial Settings toggle",
+          "battle and RNG preserved"
+        ]
+      },
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "real mouse/touch entry",
+          "fullscreen element fills viewport",
+          "button exits fullscreen",
+          "browser-owned exit updates label",
+          "Trial Settings toggle",
+          "battle and RNG preserved"
+        ]
+      },
+      {
+        "viewport": [
+          360,
+          640
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "real mouse/touch entry",
+          "fullscreen element fills viewport",
+          "button exits fullscreen",
+          "browser-owned exit updates label",
+          "Trial Settings toggle",
+          "battle and RNG preserved"
+        ]
+      },
+      {
+        "viewport": [
+          844,
+          390
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "real mouse/touch entry",
+          "fullscreen element fills viewport",
+          "button exits fullscreen",
+          "browser-owned exit updates label",
+          "Trial Settings toggle",
+          "battle and RNG preserved"
+        ]
+      }
+    ]
+  },
+  "native_regressions": [
+    {
+      "test": "mobile_flow_v33",
+      "checks": 55,
+      "failures": 0
+    },
+    {
+      "test": "mobile_v31",
+      "checks": 17,
+      "failures": 0
+    }
+  ],
+  "limits": [
+    "Chromium touch emulation; physical phone hardware not tested.",
+    "Browsers can withhold fullscreen support; the control reflects API availability.",
+    "Windows artifacts not rebuilt."
+  ],
+  "shipping_browser": {
+    "result": "passed",
+    "url": "http://127.0.0.1:8951/?v=0.38.1",
+    "viewport": [
+      1440,
+      900
+    ],
+    "browser_errors": [],
+    "packs": [
+      "http://127.0.0.1:8951/index.pck"
+    ],
+    "tested": [
+      "shipping v0.38.1",
+      "no fixture callbacks",
+      "real fullscreen entry via Settings",
+      "whole viewport",
+      "exit via same button"
+    ]
+  }
+}
