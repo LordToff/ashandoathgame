@@ -1,13 +1,16 @@
 extends RefCounted
 ## Experimental rules are gated by trial.enabled. Normal encounters do not use them.
+const Soulcaster = preload("res://prototype/soulcaster.gd")
 const Classes = preload("res://prototype/trial_classes.gd")
 const MEMORIES = {
+ "":{"name":"No Memory","text":"No automatic bonus or maximum-HP penalty."},
  "venom":{"name":"Memory of Venom","text":"Your first own-turn Attack that damages an enemy adds Poison 1. Healing you receive restores 1 less HP."},
  "guard":{"name":"Memory of Guard","text":"When Block prevents all HP damage from an enemy Attack, your next Attack against an enemy deals +1 damage. Maximum HP -1."},
  "shelter":{"name":"Memory of Shelter","text":"Your first own-turn Defense ability grants 1 extra Block. Maximum HP -1."},
  "stride":{"name":"Memory of Momentum","text":"Move at least 2 spaces during your turn: your next Attack against an enemy deals +1 damage, once that turn. Maximum HP -1."}
 }
 const SOULS = {
+ "soulcaster":{"name":"Soulcaster","text":"Starter Soul. 6 base maximum HP before Memory penalties; at least 4 Blanks per die. Each rolled Blank can Gather 1 Soul Charge (cap 3), or Manifest a spell for charges + 1 HP. Start each encounter at 0 charges; up to 4 spells. New spells must be rolled on a later turn. Replaces Blank movement; starting dice adapt automatically."},
  "hearth":{"name":"Hearth Soul","text":"Spend one rolled Blank to heal yourself 1 HP, once per own turn. Replaces Blank movement."},
  "wind":{"name":"Wind Soul","text":"Spend one rolled Blank as Move 2, once per own turn. Replaces Beginning Soul’s Move 1."},
  "hollow":{"name":"Cinder Soul","text":"First HP-damaging Attack each own turn adds Poison 1. Start each encounter with 1 Poison."},
@@ -56,15 +59,17 @@ static func setup(g) -> void:
  for id in range(3):
   var h: Dictionary = g.heroes[id]
   h.trial_weapon_slot = weapon_slot(h.build)
-  h.max_hp = int(BODIES[body(g,id)].hp)-(0 if memory(g,id)=="venom" else 1)
+  h.max_hp = (6 if soul(g,id)=="soulcaster" else int(BODIES[body(g,id)].hp))-(0 if memory(g,id) in ["","venom"] else 1)
   if soul(g,id)=="nugh":h.max_hp -= 1
   h.hp = mini(h.max_hp,int(saved[id])) if saved.size()==3 else h.max_hp
   if h.hp<=0:h.dead = true;h.used = [true,true,true]
   if soul(g,id)=="hollow":h.poison = 1;h.poison_source = id
   if soul(g,id)=="cantor":h.rerolls = 0
+ Soulcaster.setup(g)
  for id in range(g.unit_count()):g.trial_state.positions[id] = g.unit_data(id).pos
 static func turn_start(g, hero: int) -> void:
  if not enabled(g) or hero not in range(3):return
+ Soulcaster.turn_start(g,hero)
  var h: Dictionary = g.heroes[hero]
  h.trial_weapon_used = false;h.trial_attack_used = false;h.trial_shelter_used = false;h.trial_venom_used = false;h.trial_stride_used = false;h.trial_cinder_used = false;h.trial_brood_used = false;h.trial_echo_used = false
 static func attack_bonus(g, d: int, target: int, weapon: bool) -> Dictionary:
@@ -130,7 +135,7 @@ static func moved(g) -> void:
   g.record_event("terrain",g.unit_name(id)+" lands on spikes: 1 unavoidable damage. Forced movement counts.",-1,id,1)
   g.damage(id,1,true,"Spikes",-1)
 static func guide(g) -> String:
- var text := "TRIAL ARENA · %d carried Trial Essence\n" % int(g.trial_state.get("purse",0))
+ var text := "TRIAL ARENA · %d carried Run Essence\n" % int(g.trial_state.get("purse",0))
  if not g.trial_state.get("cover",[]).is_empty():text += "Blue cover: ranged damage from beyond 1 is reduced by 1. Melee and Poison ignore cover.\n"
  if not g.trial_state.get("crates",[]).is_empty():text += "Brown barricades block movement and sight. Select an Attack, then tap an adjacent barricade to spend that result and break it.\n"
  if not g.trial_state.get("spikes",[]).is_empty():text += "Red spikes: landing on a tile deals 1 unavoidable damage, including forced movement. Staying there causes no extra ticks.\n"

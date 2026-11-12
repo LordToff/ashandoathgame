@@ -10,7 +10,7 @@ const ROLES = {
 const GROUPS = [
  {"title":"Ward & Whisper","roles":["shield","healer"],"elite":"archer","terrain":"cover","text":"Shieldbearer grants nearby allies Block, capped at 3; Mender repairs wounded allies. Blue cover softens ranged hits. Separate them or focus the Mender."},
  {"title":"The Long Charge","roles":["ram","archer"],"elite":"healer","terrain":"crates","text":"Ram marks a fixed charge lane for the next enemy turn. Step aside; break brown barricades with an adjacent Attack to open movement and sight."},
- {"title":"Essence Thieves","roles":["thief","thief"],"elite":"shield","terrain":"spikes","text":"Cutpurses steal 1 Trial Essence within 2, then flee toward the edge. Kill one to recover its loot; an escape loses it. Red spikes hurt any unit landing on them, including Shove targets."}
+ {"title":"Essence Thieves","roles":["thief","thief"],"elite":"shield","terrain":"spikes","text":"Cutpurses steal 1 Run Essence within 2, then flee toward the edge. Kill one to recover its loot; an escape loses it. Red spikes hurt any unit landing on them, including Shove targets."}
 ]
 const Content = preload("res://prototype/trial_content.gd")
 var objective_mode := ""
@@ -79,8 +79,8 @@ func special_monster_action(id: int, action: String) -> bool:
    var target: int = enemy_target(id,attack_targets(id,2),action)
    if target>=0 and int(trial_state.purse)>0:
     trial_state.purse -= 1;unit_data(id).loot += 1
-    record_event("theft",unit_name(id)+" steals 1 Trial Essence. Kill it before it escapes to recover the loot.",id,target,1)
-   else:note("Pilfer: no hero within 2, or no Trial Essence to steal.")
+    record_event("theft",unit_name(id)+" steals 1 Run Essence. Kill it before it escapes to recover the loot.",id,target,1)
+   else:note("Pilfer: no hero within 2, or no Run Essence to steal.")
    return true
   "Flee":
    if int(unit_data(id).loot)<=0:move_friendly_summon(id,2);return true
@@ -99,7 +99,7 @@ func special_monster_action(id: int, action: String) -> bool:
    var p: Vector2i = unit_data(id).pos
    if unit_data(id).hp>0 and (p.x in [0,8] or p.y in [0,8]):
     var stolen: int = unit_data(id).loot;unit_data(id).loot = 0;unit_data(id).hp = 0;unit_data(id).dead = true;trial_state.escaped += stolen
-    record_event("escape",unit_name(id)+" escapes with %d Trial Essence." % stolen,id,-1,stolen);check_end()
+    record_event("escape",unit_name(id)+" escapes with %d Run Essence." % stolen,id,-1,stolen);check_end()
    else:note(unit_name(id)+" retreats toward the edge with its loot.")
    return true
  return false
@@ -122,7 +122,7 @@ func harvest_death(id: int) -> void:
  if friendly(id) or harvest_claimed.has(id):return
  harvest_claimed[id] = true
  var amount: int = int(unit_data(id).get("loot",0))
- if amount>0:trial_state.purse += amount;unit_data(id).loot = 0;record_event("recover","Recovered %d stolen Trial Essence." % amount,-1,id,amount)
+ if amount>0:trial_state.purse += amount;unit_data(id).loot = 0;record_event("recover","Recovered %d stolen Run Essence." % amount,-1,id,amount)
  record_event("trial_death",unit_name(id)+" defeated. Clear the whole group for the Trial reward.",-1,id)
 func enemy_intent(source: int, action: String, slot: int) -> Dictionary:
  var result: Dictionary = super.enemy_intent(source,action,slot)
@@ -141,7 +141,7 @@ func enemy_intent(source: int, action: String, slot: int) -> Dictionary:
    var options: Array = ([3]+living_minions()).filter(func(id):return not friendly(id) and unit_data(id).hp>0 and unit_data(id).hp<unit_data(id).max_hp and distance(source,id)<=3)
    var target: int = mend_target(source,options,slot);result.target = target;result.target_text = unit_name(target) if target>=0 else "No wounded ally";result.policy = "Most missing HP within 3";result.detail = "Restore up to 2 HP to one wounded ally, once per enemy turn."
   "Mark Charge":result.target = Targeting.pick(self,source,attack_targets(source,99),action,slot);result.target_text = unit_name(result.target) if result.target>=0 else "No target";result.policy = "Furthest hero; cardinal lane";result.detail = "Mark up to 5 gold tiles toward the focus. The fixed lane deals 3 damage at next enemy turn start; move off it or prepare Block. Reactions apply."
-  "Pilfer":result.target = Targeting.pick(self,source,attack_targets(source,2),action,slot);result.target_text = unit_name(result.target) if result.target>=0 else "Nobody within 2";result.policy = "Closest hero within 2";result.detail = "Steal 1 carried Trial Essence. Defeating the thief returns its loot; escaping loses it. No HP damage."
+  "Pilfer":result.target = Targeting.pick(self,source,attack_targets(source,2),action,slot);result.target_text = unit_name(result.target) if result.target>=0 else "Nobody within 2";result.policy = "Closest hero within 2";result.detail = "Steal 1 carried Run Essence. Defeating the thief returns its loot; escaping loses it. No HP damage."
   "Flee":result.target = source;result.target_text = "Arena edge";result.policy = "Escape with stolen Essence";result.detail = "Move 2 away toward an edge. Reaching an edge while carrying loot removes this thief and its stolen Essence. Without loot, pursue a hero instead."
  return result
 func default_boss_help(_action: String) -> String:return GROUPS[group_index].text

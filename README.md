@@ -1,9 +1,11 @@
-# Ash & Oath v0.37 — playable prototype
+# Ash & Oath v0.38 — playable prototype
 
 **Canonical source:** [LordToff/ashandoathgame](https://github.com/LordToff/ashandoathgame), branch `main`.
 **Recovery and publishing:** [docs/RECOVERY.md](docs/RECOVERY.md). The browser package is on `gh-pages`.
 
-[**Play Ash & Oath v0.37 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.37)
+[**Play Ash & Oath v0.38 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.38)
+
+v0.38 makes Trials easier to learn with topic-based help, selected-hero equipment/dice explanations, separate Run Essence / Forge materials / Soul Charges and preview-before-buy rewards. **Soulcaster** is a free starting Soul for either class: four Blanks per die, 6 base HP before Memory penalties, Gather / Manifest and six temporary spells. Hoarded Omen keeps the original die aside. [Changes](docs/Changes-v0.38.md).
 
 v0.37 adds two **Trials-only classes**: Skirmisher (Spear, Fleet Body, Memory of Momentum) and Vanguard (Hammer, Stone Body, Memory of Guard). Each has free starting gear, class dice/reward offers, tappable face explanations and an example turn. Jab and Crack appear on their actual dice. [Changes](docs/Changes-v0.37.md).
 
@@ -27,9 +29,9 @@ v0.25 adds the six-slot Ash Road event system, two ordinary monster encounters, 
 
 v0.24 replaces Bu’gh’s cocoon encounter with the Iron Warden: guard or evade his marked sweep to break Bulwark, then counterattack. Includes original pixel sprites, soundtrack and polished UI. See [release notes and validation](docs/Changes-v0.24.md). Difficulty remains provisional. The Windows download is an older release.
 
-[**Play in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.37) — no installation required.
+[**Play in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.38) — no installation required.
 
-[**Current rules: timing, abilities and bosses**](docs/current-rules.html) · [Download PDF](docs/AshAndOath-Current-Rules-v0.37.pdf). The v0.37 reference includes the full Trials rules alongside all 73 normal faces and four bosses.
+[**Current rules: timing, abilities and bosses**](docs/current-rules.html) · [Download PDF](docs/AshAndOath-Current-Rules-v0.38.pdf). The v0.38 reference includes the full Trials rules alongside all 73 normal faces and four bosses.
 
 [**Historical v0.16 playtest report**](https://lordtoff.github.io/Godot-Game-Template/playtest-report.html) · [Download the polished Excel workbook](downloads/Ash-and-Oath-Playtest-v0.16.xlsx). Includes plain-language team descriptions, each hero’s abilities, dice layouts, win rates and the test method.
 

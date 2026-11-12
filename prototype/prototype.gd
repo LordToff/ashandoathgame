@@ -1,5 +1,10 @@
 extends Control
 
+const SoulcasterUI = preload("res://prototype/soulcaster_ui.gd")
+var soulcaster_spell := 76
+var show_soulcaster_help := false
+var trial_help_topic := "My heroes"
+var trial_replacement := Vector2i(-1,-1)
 const TrialForecast = preload("res://prototype/trial_forecast.gd")
 const TrialHollow = preload("res://prototype/trial_hollow.gd")
 var trial_choice: Dictionary = {}
@@ -346,6 +351,7 @@ func rebuild() -> void:
  sync_presentation()
  if not trial_choice.is_empty() and trial_choice.get("stamp",[])!=trial_choice_stamp():trial_choice.clear()
  for c in ui.get_children(): ui.remove_child(c); c.queue_free()
+ if show_soulcaster_help:SoulcasterUI.guide(self);queue_redraw();return
  if mobile_mode:
   MobileUI.render(self);queue_redraw();return
  if page == "trials":
@@ -376,7 +382,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.37",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.38",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -492,7 +498,7 @@ func battle_ui() -> void:
   var h: Dictionary = game.heroes[game.active]
   for d in range(3):
    var f: int = game.face(game.active,d)
-   var state: String = "CHANNEL HELD" if not h.channel.is_empty() and h.channel.die == d else ("REACTION HELD" if d in h.reaction else ("SPENT" if h.used[d] else ("RESOLVE NEXT" if game.forced_die == d else "READY")))
+   var state: String = "OMEN SAVED" if Model.Soulcaster.held(game,game.active,d) else "CHANNEL HELD" if not h.channel.is_empty() and h.channel.die == d else ("REACTION HELD" if d in h.reaction else ("SPENT" if h.used[d] else ("RESOLVE NEXT" if game.forced_die == d else "READY")))
    var available_soul: bool = f == 0 and game.reward and game.soul_remaining(game.active) > 0
    var name_text: String = game.soul_label(game.active) if available_soul else game.action_name(game.active,f)
    var kind: String = ("(Soul · once per own turn)" if game.soul_mode(game.active) in ["heal","block"] else "(Movement)") if available_soul else ("("+Catalog.classification(f)+")" if f != 0 else "")
@@ -508,7 +514,7 @@ func battle_ui() -> void:
     die_button.add_theme_color_override("font_color",Color("7d8791"))
     die_button.add_theme_stylebox_override("normal",style(Color("141a22"),Color("303944")))
     die_button.add_theme_stylebox_override("hover",style(Color("202832"),Color("56606d")))
-   if h.used[d] and d not in h.reaction and (h.channel.is_empty() or h.channel.die != d):mark_spent(die_button)
+   if h.used[d] and d not in h.reaction and not Model.Soulcaster.held(game,game.active,d) and (h.channel.is_empty() or h.channel.die != d):mark_spent(die_button)
    if state == "FOCUS TARGET":die_button.add_theme_stylebox_override("normal",style(Color("243b3c"),Color("82c8b9")))
    if selected == d and not h.used[d]:
     var chosen := style(Color("2b3d48"),GOLD if game.forced_die == d else color_for_face(f));chosen.set_border_width_all(2);die_button.add_theme_stylebox_override("normal",chosen)
@@ -534,7 +540,7 @@ func battle_ui() -> void:
    if trial_fight and not trial_choice.is_empty():
     button("Confirm action",Vector2(760,556),Vector2(211,44),confirm_trial_choice,GOLD).name = "TrialConfirm"
     button("Cancel",Vector2(981,556),Vector2(107,44),func():trial_choice.clear();rebuild(),MUTED).name = "TrialCancel"
-   elif (f == 59 and game.owned_worm(game.active) >= 0) or f in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65,71,72] or (f == 0 and (not game.reward or game.soul_remaining(game.active) <= 0 or game.soul_mode(game.active) in ["heal","block"])):
+   elif (f == 59 and game.owned_worm(game.active) >= 0) or f in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65,71,72] or (f == 0 and (Model.Soulcaster.equipped(game,game.active) or not game.reward or game.soul_remaining(game.active) <= 0 or game.soul_mode(game.active) in ["heal","block"])):
     button("Resolve selected face",Vector2(760,556),Vector2(211,44),func():
      if game.hero_action(selected):selected = -1;roll_feedback = {}
      rebuild(),GOLD,f == 0 and game.soul_mode(game.active) == "heal" and h.hp >= h.max_hp)
@@ -582,15 +588,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.37 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.38 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.37 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.37 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.38 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.38 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.37 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.38 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.37 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.38 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -620,6 +626,7 @@ func open_audio_settings() -> void:
 func face_help(f: int) -> String:
  var movement := trial_movement_help(f)
  if movement!="":return movement+reward_live_notes(f)
+ if f == 0 and page=="battle" and Model.Soulcaster.equipped(game,game.active):return "Soulcaster Blank: Gather +1 Soul Charge, or create a spell for its charge cost and 1 HP. Tap Use to choose. The new spell must be rolled on a later turn.\n\n"+SoulcasterUI.resource(game,game.active)
  if f == 0:
   var actor: int = game.active if page == "battle" else build_hero
   if actor not in [0,1,2]:return "Blank: check the acting hero’s equipped Soul and remaining conversion allowance."
@@ -652,6 +659,7 @@ func default_face_help(f: int) -> String:
  return ["Blank: no starting effect. Beginning Soul spends one rolled Blank as Move 1 per own turn; earned Souls use Move 2. This does not permanently change the installed face.","Strike: %d damage to one adjacent unit. Weakness subtracts 1. Allies are legal targets." % balance_number("face1.damage"),"Step: move up to 1 orthogonal space.","Stride: move up to 3 spaces in one straight orthogonal direction; no turning.","Guard: gain 1 Block. Block expires at your next turn start.","Reaction: stored when rolled. On being targeted, gain 2 Block before the hit. No movement.","Focus: select another unresolved die to reroll it. Keep and resolve its new face.","First Aid: heal yourself or an adjacent hero for 1. Revives Downed heroes with Broken.","Shove: choose an adjacent unit, then a directly-away direction. Moves the full boss footprint. No collision penalty."][f]
 
 func pending_ui() -> void:
+ if SoulcasterUI.pending(self):return
  if rolled_choice_pending():BattlePanels.picker(self);return
  overlay()
  var p: Dictionary = game.pending
@@ -691,7 +699,7 @@ func pending_ui() -> void:
   label_at("Stunned · " + game.heroes[p.hero].name,Vector2(399,301),26,Color("ece6d9"),620,true)
   label_at("Choose one die to set aside before the shared roll." if p.kind == "preroll_stun" else "Choose one unresolved Action Die to set aside.",Vector2(399,356),16,MUTED)
   for d in range(3):
-   button("Die %d" % [d+1] if p.kind == "preroll_stun" else "Die %d · %s" % [d+1,Catalog.name_for(game.face(p.hero,d))],Vector2(399,416+d*56),Vector2(520,45),func(): game.stun_die(d); rebuild(),GOLD,(p.kind != "preroll_stun" and game.heroes[p.hero].used[d]) or (p.kind == "preroll_stun" and not game.heroes[p.hero].channel.is_empty() and game.heroes[p.hero].channel.die == d))
+   button("Die %d" % [d+1] if p.kind == "preroll_stun" else "Die %d · %s" % [d+1,Catalog.name_for(game.face(p.hero,d))],Vector2(399,416+d*56),Vector2(520,45),func(): game.stun_die(d); rebuild(),GOLD,(p.kind != "preroll_stun" and game.heroes[p.hero].used[d]) or (p.kind == "preroll_stun" and ((not game.heroes[p.hero].channel.is_empty() and game.heroes[p.hero].channel.die == d) or Model.Soulcaster.held(game,p.hero,d))))
 
 func overlay() -> void:
  var shade := ColorRect.new(); shade.color = Color(0.02,0.03,0.05,0.78); shade.size = Vector2(1440,900); ui.add_child(shade)
@@ -1390,13 +1398,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.37 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.38 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.37",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.38",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1504,6 +1512,8 @@ func explain_invalid(f: int, target: int, cell: Vector2i) -> String:
  if game.heroes[actor].get("rooted",0) > 0 and Catalog.category(f) == "Movement":return "Rooted prevents voluntary movement until the boss’s next turn. Attacks, Block and forced movement still work."
  if game.heroes[actor].used[selected]:return "This die is spent. Select another ready die; all available dice roll again next round."
  if f == 59:return "Summon Nu’gh needs an adjacent empty tile. While your worm lives, use Resolve to Command it."
+ if f == 0 and Model.Soulcaster.equipped(game,actor):return "Soulcaster: tap Use to Gather or create a spell; Blanks do not move this hero."
+ if Model.Soulcaster.is_spell(f):return Model.Soulcaster.text(f)
  if f == 0 and not game.reward:return "Soul is OFF. Enable Blank movement above your dice or in Game options."
  if f == 0 and game.soul_mode(game.active) not in ["heal","block"] and game.soul_distance(game.active) <= 0:return "Blank movement is set to 0 in the balance workshop."
  if f == 0 and game.reward and game.soul_remaining(actor) <= 0:return "Blank movement used for this turn. It refreshes at this hero’s next own turn."
@@ -1574,7 +1584,10 @@ func lab_setup_ui() -> void:
 
 func soul_toggle(at: Vector2, in_lab: bool, width: float = 0) -> void:
  if trial_fight:
-  button("Equipment & arena help",at,Vector2(width if width>0 else 328,30),func():show_trial_guide = true;rebuild(),GOLD).name = "TrialCombatGuide"
+  button(SoulcasterUI.resource(game,game.active) if Model.Soulcaster.equipped(game,game.active) else "Equipment & arena help",at,Vector2(width if width>0 else 328,30),func():
+   if Model.Soulcaster.equipped(game,game.active):show_soulcaster_help = true
+   else:show_trial_guide = true
+   rebuild(),GOLD).name = "TrialCombatGuide"
   return
  var toggle := CheckButton.new();toggle.name = "TestSoulToggle"
  var override_on: bool = game.reward if in_lab and (lab or training) else reward_soul
@@ -1829,6 +1842,7 @@ func selected_die_help(die: int) -> String:
  var face: int = game.face(game.active,die)
  if face == 59:return "Command Nu’gh: Resolve for an immediate extra activation; it still acts after your turn." if game.owned_worm(game.active) >= 0 else "Summon Nu’gh: click a highlighted adjacent empty tile. One friendly worm per hero."
  if face == 0:
+  if Model.Soulcaster.equipped(game,game.active):return face_help(0)
   if h.get("rooted",0) > 0:return "ROOTED: no voluntary movement until the boss’s next turn. Your Blank allowance is not consumed."
   if not game.reward or not game.balance.get("soul.eligible."+str(game.active),true):return "Blank movement is OFF for this hero. Turn Soul ON above the dice to enable it."
   if game.soul_remaining(game.active) <= 0:return "No eligible equipped Soul / Blank movement used this turn. It refreshes at this hero’s next own turn."
@@ -1902,7 +1916,7 @@ func select_combat_die(d: int) -> void:
   if reason != "":
    hint = reason;roll_feedback = {"actor":game.active,"text":reason};combat_inspected = game.face(game.active,d)
   elif game.hero_action(selected,d):
-   selected = game.forced_die;combat_inspected = game.face(game.active,d)
+   selected = game.forced_die;combat_inspected = game.face(game.active,d);hint = selected_die_help(d);roll_feedback = {}
   rebuild();return
  combat_inspected = game.face(game.active,d)
  if choosing_reroll:
@@ -1933,7 +1947,7 @@ func combat_reroll_ui() -> void:
 func perform_reroll(d: int) -> void:
  trial_choice.clear()
  if not game.action_reroll(d):hint = game.reroll_reason(d);rebuild();return
- choosing_reroll = false;selected = d;combat_inspected = game.face(game.active,d);roll_feedback = {}
+ choosing_reroll = false;selected = -1 if game.heroes[game.active].used[d] else d;combat_inspected = game.face(game.active,d);roll_feedback = {};hint = selected_die_help(d)
  rebuild()
 
 func weak_point_ready(id: int) -> bool:
@@ -2162,7 +2176,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.37",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.38",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2481,6 +2495,7 @@ func abandon_encounter() -> void:
  rolling_time = 0;combat_notices.clear();effects.clear()
 
 func go_main() -> void:
+ show_soulcaster_help = false
  friendly_confirm = -1;info_return_collection = false;show_collection = false;mobile_more = false;debug_hold.clear()
  show_intents = false;choice_preview = Vector2i(-1,-1);status_sounds.clear()
  mobile_info = ""
@@ -2713,7 +2728,7 @@ func trial_objective_button() -> void:
  var at := Vector2(42,846);var dimensions := Vector2(684,36)
  if mobile_mode:
   var board: Rect2 = MobileUI.board_rect(self);at = board.position+Vector2(3,3);dimensions = Vector2(board.size.x-6,32)
- var pick := button(game.objective_summary()+" · ?",at,dimensions,func():show_trial_guide = true;rebuild(),Color("b7d2ef"))
+ var pick := button(game.objective_summary()+" · ?",at,dimensions,func():trial_help_topic = "Arena";show_trial_guide = true;rebuild(),Color("b7d2ef"))
  pick.name = "TrialObjective";pick.add_theme_font_size_override("font_size",13 if mobile_mode else 16)
 func draw_trial_object(id: int) -> void:
  var u: Dictionary = game.unit_data(id);var p: Vector2 = ORIGIN+Vector2(u.pos)*CELL+Vector2.ONE*CELL/2

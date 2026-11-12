@@ -38,7 +38,7 @@ static func screen(app, heading: String, key: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
  app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.37",Vector2(18,58),15,MUTED,size.x-36)
+ app.label_at("ASH & OATH · MOBILE · v0.38",Vector2(18,58),15,MUTED,size.x-36)
  var width: float = minf(720,size.x-24)
  var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
@@ -92,7 +92,8 @@ static func render(app) -> void:
    else:modal(app,app.outcome_ui)
    return
   if not app.game.pending.is_empty():
-   if app.rolled_choice_pending():app.BattlePanels.picker(app)
+   if app.SoulcasterUI.pending(app):pass
+   elif app.rolled_choice_pending():app.BattlePanels.picker(app)
    else:modal(app,app.pending_ui)
    return
  if app.mobile_info != "":info(app)
@@ -273,7 +274,8 @@ static func battle(app) -> void:
  var actor: String = "Enemies" if app.trial_fight and active==3 else app.game.unit_name(active)
  var class_key: String = str(app.game.balance.get("trial.classes",["","",""])[active]) if app.trial_fight and active in range(3) else ""
  var heading: String = actor+(" · "+app.Trials.Classes.name_for(class_key) if app.Trials.Classes.valid(class_key) else "")+" · R"+str(app.game.round_no)
- if app.trial_fight:heading += " · %d Essence" % int(app.game.trial_state.get("purse",0))
+ if app.Model.Soulcaster.equipped(app.game,active):heading = actor+" · %d/3 charges · %d/4 spells · R%d" % [app.Model.Soulcaster.charges(app.game,active),app.Model.Soulcaster.count_spells(app.game,active),app.game.round_no]
+ elif app.trial_fight:heading += " · %d Run Essence" % int(app.game.trial_state.get("purse",0))
  app.label_at(heading,Vector2(12,8),17 if app.Trials.Classes.valid(class_key) else 19 if app.trial_fight else 23,GOLD,board.size.x if landscape else size.x-24,true)
  var party_width: float = board.size.x if landscape else size.x-24
  for hero in range(3):
@@ -309,7 +311,8 @@ static func battle(app) -> void:
    for die in range(3):
     var face: int = app.game.face(active,die);var w: float = (width-16)/3
     var b := touch(app,app.Catalog.name_for(face),Vector2(x+die*(w+8),die_y),Vector2(w,82),func():app.mobile_die = die;app.select_combat_die(die),app.color_for_face(face),not app.game.pending.is_empty() or app.game.outcome != "" or h.dead or h.hp<=0,"MobileDie"+str(die))
-    if h.used[die] and die not in h.reaction and (h.channel.is_empty() or h.channel.die != die):app.mark_spent(b)
+    if app.Model.Soulcaster.held(app.game,active,die):b.text = "Saved · "+app.Catalog.name_for(face)
+    elif h.used[die] and die not in h.reaction and (h.channel.is_empty() or h.channel.die != die):app.mark_spent(b)
     elif app.selected == die:b.add_theme_stylebox_override("normal",app.style(Color("293747"),app.color_for_face(face)))
   var action_y: float = size.y-138;var w: float = (width-16)/3
   touch(app,"Cancel" if app.trial_fight and not app.trial_choice.is_empty() else "Details",Vector2(x,action_y),Vector2(w,60),func():
@@ -320,7 +323,7 @@ static func battle(app) -> void:
    if app.selected >= 0 and app.game.reroll_reason(app.selected) == "":app.perform_reroll(app.selected)
    else:app.choosing_reroll = true;app.selected = -1;app.rebuild(),GOLD,app.game.reroll_window_reason() != "","MobileReroll")
   var immediate: bool = app.selected >= 0 and not h.used[app.selected] and app.game.face(active,app.selected) in [0,4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65,71,72]
-  if app.selected >= 0 and app.game.face(active,app.selected) == 0:immediate = not app.game.reward or app.game.soul_remaining(active)<=0 or app.game.soul_mode(active) in ["heal","block"]
+  if app.selected >= 0 and app.game.face(active,app.selected) == 0:immediate = app.Model.Soulcaster.equipped(app.game,active) or not app.game.reward or app.game.soul_remaining(active)<=0 or app.game.soul_mode(active) in ["heal","block"]
   if app.selected >= 0 and app.game.face(active,app.selected) == 59 and app.game.owned_worm(active)>=0:immediate = true
   var trial_ready: bool = app.trial_fight and not app.trial_choice.is_empty()
   touch(app,"Confirm" if trial_ready else "Confirm hit" if app.friendly_confirm>=0 else "Use" if immediate else "Target",Vector2(x+2*(w+8),action_y),Vector2(w,60),func():
@@ -345,6 +348,8 @@ static func battle(app) -> void:
 static func more(app) -> void:
  var column: VBoxContainer = app.BattlePanels.panel(app,"Actions","")
  var grid := GridContainer.new();grid.columns = 2;grid.add_theme_constant_override("h_separation",10);grid.add_theme_constant_override("v_separation",10);column.add_child(grid)
+ if app.trial_fight and app.Model.Soulcaster.equipped(app.game,app.game.active):btn(app,grid,"Soulcaster spellbook",func():app.mobile_more = false;app.show_soulcaster_help = true;app.rebuild(),GOLD)
+ if app.trial_fight and app.game.active in range(3) and app.game.heroes[app.game.active].get("omen_ready",false):btn(app,grid,"Save with Omen",func():app.mobile_more = false;app.Model.Soulcaster.open_omen(app.game);app.rebuild(),GOLD)
  if app.trial_fight:btn(app,grid,"Equipment & arena help",func():app.mobile_more = false;app.show_trial_guide = true;app.rebuild(),GOLD)
  if app.trial_fight and not app.trial_choice.is_empty():btn(app,grid,"Forecast details",func():app.mobile_info = app.trial_choice.forecast.text;app.mobile_more = false;app.rebuild(),GOLD)
  btn(app,grid,"Poke",func():app.mobile_more = false;app.choosing_poke = true;app.rebuild(),GOLD,app.game.poke_targets().is_empty())

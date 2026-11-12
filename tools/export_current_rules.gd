@@ -29,6 +29,8 @@ func _initialize():
  var trial_content = preload("res://prototype/trial_content.gd")
  result.trials = {"memories":trial_rules.MEMORIES,"souls":trial_rules.SOULS,"bodies":trial_rules.BODIES,"weapons":trial_rules.WEAPONS,"recipes":trial_content.RECIPES,"essence":trial_content.ESSENCE,"builds":trial_content.BUILDS,"objectives":trial_content.OBJECTIVES}
  var classes = preload("res://prototype/trial_classes.gd")
+ result.trials.soulcaster = trial_rules.Soulcaster.SPELLS
+ result.trials.soulcaster_dice = trial_rules.Soulcaster.STARTER_DICE.map(func(die):return die.map(func(face):return C.name_for(face)))
  result.trials.classes = classes.CLASSES
  result.trials.class_dice = {}
  for key in classes.CLASSES:

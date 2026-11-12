@@ -21,8 +21,8 @@ const BUILDS = {
  "protection":{"name":"Protection","memory":"guard","body":"stone","weapon":"hammer","soul":"bugh","text":"Block an enemy Attack completely → Memory of Guard primes +1 damage for your next Attack. Attack first, then Crack strips an adjacent enemy’s Block for a following ally. Stone Body has 7 base HP (6 after Memory), but movement abilities travel 1 less. Warden Soul, when unlocked, keeps up to 2 Block; its movement penalty stacks."}
 }
 const OBJECTIVES = {
- "ritual":{"name":"Break the Ritual","text":"Break all three violet ritual stones (2 HP each). Any Attack can damage them; they cannot move or receive Poison. Enemies retreat when all three break. Clearing only the creatures does not complete this objective. Victory: +3 Trial Essence and 2 Cinder Essence."},
- "spirit":{"name":"Protect the Spirit","text":"Keep the blue spirit (5 HP) alive through three enemy turns, or defeat all its attackers sooner. Enemies prefer the spirit when their ability can reach it; otherwise they target a hero. First Aid can heal it. Shield Wall and Taunt can protect it. Its death ends this Trial. Victory: +3 Trial Essence and 2 Ward Essence."}
+ "ritual":{"name":"Break the Ritual","text":"Break all three violet ritual stones (2 HP each). Any Attack can damage them; they cannot move or receive Poison. Enemies retreat when all three break. Clearing only the creatures does not complete this objective. Victory: +3 Run Essence and 2 Cinder Essence."},
+ "spirit":{"name":"Protect the Spirit","text":"Keep the blue spirit (5 HP) alive through three enemy turns, or defeat all its attackers sooner. Enemies prefer the spirit when their ability can reach it; otherwise they target a hero. First Aid can heal it. Shield Wall and Taunt can protect it. Its death ends this Trial. Victory: +3 Run Essence and 2 Ward Essence."}
 }
 static func reward_source(current: Dictionary) -> String:
  if current.get("kind","")=="boss":return "hollow" if current.get("boss","")=="hollow" else ""

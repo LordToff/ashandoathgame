@@ -1,7 +1,7 @@
 extends RefCounted
 ## Read-only board reach. Never rolls dice or changes the battle.
 const MOVEMENT = [2,3,53,54,57,60,66]
-const RANGED_SKILLS = [7,8,11,12,15,19,44,45,52,55,58,63,64,65]
+const RANGED_SKILLS = [7,8,11,12,15,19,44,45,52,55,58,63,64,65,75,77,78,79]
 const SIGHT = [11,15,19,35,58,70]
 static func empty() -> Dictionary:return {"tiles":[],"blocked":[],"targets":[],"destinations":[],"reach":0,"mode":"none"}
 static func for_face(g, face: int) -> Dictionary:
@@ -9,6 +9,7 @@ static func for_face(g, face: int) -> Dictionary:
  if face<0 or g.active not in range(3) or g.heroes.size()!=3:return result
  var actor: int = g.active;var h: Dictionary = g.heroes[actor]
  if h.dead or h.hp<=0:return result
+ if face==0 and g.Soulcaster.equipped(g,actor):return result
  if face in MOVEMENT or (face==0 and g.reward and g.soul_mode(actor) not in ["heal","block"]):
   result.mode = "move"
   result.destinations = g.leap_cells(actor) if face==53 else g.soul_cells(actor) if face==0 else g.reachable(actor,g.move_steps(face),face==3)
@@ -33,6 +34,7 @@ static func for_face(g, face: int) -> Dictionary:
  return result
 static func eligible(g, face: int, target: int) -> bool:
  var actor: int = g.active;var unit: Dictionary = g.unit_data(target)
+ if g.Soulcaster.is_spell(face):return g.Soulcaster.mirror_trigger(g,actor,target) if face==77 else g.Soulcaster.legal_target(g,face,actor,target)
  if face==52:return target!=actor and unit.hp>0
  if g.TrialRules.immobile_object(g,target) and face==8:return false
  if g.Catalog.is_attack(face):

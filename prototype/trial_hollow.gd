@@ -64,3 +64,7 @@ func check_phase() -> void:
  super.check_phase()
  if reserved and boss_rolls[0]=="Furnace Roar":
   boss_rolls[0] = "Rupture cancelled" if rupture_cancelled else "Soul Rupture";roar_queued = true
+
+func finalize_trial_roll() -> void:
+ # Deferred Bind cancellation still consumes the one-off round-two interrupt.
+ if round_no>=2 and not rupture_resolved and boss_rolls.size()==3 and boss_rolls[0]=="Bound":rupture_resolved = true

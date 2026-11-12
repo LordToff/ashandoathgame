@@ -1,5 +1,6 @@
 class_name AshCatalog
 extends RefCounted
+const Soulcaster = preload("res://prototype/soulcaster.gd")
 const Essence = preload("res://prototype/essence.gd")
 const FACE_COUNT = 73
 # Playable catalog variants. Draft ambiguities are resolved here for this prototype,
@@ -56,6 +57,7 @@ const MOVEMENT = [["Ashstep","Movement","Slip through ash: move up to 2 orthogon
 static func extended_ids() -> Array:
  return range(9,54) + [57,58,59]
 static func name_for(id: int) -> String:
+ if Soulcaster.is_spell(id):return Soulcaster.SPELLS[id].name
  if id in [73,74]:return "Jab" if id==73 else "Crack"
  if id >= 60 and id < FACE_COUNT:return Essence.FACES[id-60][0]
  if id == 59:return "Summon Nu’gh"
@@ -63,6 +65,7 @@ static func name_for(id: int) -> String:
  if id >= 57: return MOVEMENT[id-57][0]
  return EXTRA[id-9][0] if id < 54 else GENERATED[id-54][0]
 static func category(id: int) -> String:
+ if Soulcaster.is_spell(id):return Soulcaster.SPELLS[id].category
  if id in [73,74]:return "Attack"
  if id >= 60 and id < FACE_COUNT:return Essence.FACES[id-60][1]
  if id == 59:return "Skill"
@@ -70,6 +73,7 @@ static func category(id: int) -> String:
  if id >= 57: return "Movement"
  return EXTRA[id-9][1] if id < 54 else GENERATED[id-54][1]
 static func text(id: int) -> String:
+ if Soulcaster.is_spell(id):return Soulcaster.text(id)
  if id==73:return "Trial Spear face, replacing normal Strike. After moving at least 2 spaces this own turn, deal 1 damage to an enemy within 2. Once per own turn; consumes this die. Invalid attempts spend nothing."
  if id==74:return "Trial Hammer face, replacing normal Strike. After using another Attack this own turn, remove up to 2 Block from an adjacent enemy. No HP damage. Once per own turn; consumes this die. Invalid attempts spend nothing."
  if id >= 60 and id < FACE_COUNT:return Essence.FACES[id-60][2]
@@ -80,7 +84,7 @@ static func text(id: int) -> String:
 static func draft_ids() -> Array:
  return range(1,54) + [57,58,59]
 static func is_reaction(id: int) -> bool:
- return id in [5,28,44,45,46,48,68]
+ return id in [5,28,44,45,46,48,68,77]
 static func is_attack(id: int) -> bool:
  return category(id) == "Attack"
 static func can_copy(id: int) -> bool:
@@ -93,6 +97,7 @@ static func readiness(id: int) -> String:
 
 
 static func timing(id: int) -> String:
+ if id==80:return "When rolled"
  if is_reaction(id): return "Reaction"
  if id in [25,31,49]: return "Channel"
  return "Action"

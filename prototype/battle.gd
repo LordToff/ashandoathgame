@@ -1,5 +1,6 @@
 class_name AshBattle
 extends RefCounted
+const Soulcaster = preload("res://prototype/soulcaster.gd")
 
 const TrialRules = preload("res://prototype/trial_rules.gd")
 var trial_state: Dictionary = {}
@@ -172,6 +173,7 @@ func note(text: String) -> void:
  record_event("info",text,action_owner)
 
 func begin_action(owner: int, label: String, target: int = -1, die: int = -1) -> void:
+ Soulcaster.mark_enemy_result(self,owner,die if die>=0 else maxi(0,boss_index-1))
  action_owner = owner; action_label = label
  if owner >= 3:enemy_slot = die if die >= 0 else maxi(0,boss_index-1)
  action_before = state_snapshot()
@@ -250,6 +252,7 @@ static func cell_name(p: Vector2i) -> String:
  return char(65+p.y)+str(p.x+1)
 
 func new_round() -> void:
+ Soulcaster.round_prepare(self)
  action_owner = -1; action_label = "Round preparation"; action_before = {}
  round_no += 1; cursor = 0; replaced.clear()
  if not initiative_base.is_empty(): order = initiative_base.duplicate()
@@ -273,13 +276,15 @@ func shared_roll() -> void:
  for h in heroes:
   h.reaction.clear()
   if h.hp > 0 and not h.dead: roll_hero(h)
+ var defer_binds: bool = Soulcaster.enabled(self) and not trial_state.get("fate_queue",[]).is_empty()
+ if defer_binds:trial_state.fate_defer_binds = true
  boss_rolls.clear(); boss_sides.clear()
  for index in range(3):
   var side := rng.randi_range(0,5)
   boss_sides.append(side)
   var action: String = boss_dice()[index][side]
   for bind in boss.binds:
-   if bind.die == index and bind.action == action:
+   if not defer_binds and bind.die == index and bind.action == action:
     action = "Bound"; damage(bind.owner,v("face18.backlash")); break
   boss_rolls.append(action)
  if roar_queued:
@@ -289,7 +294,7 @@ func shared_roll() -> void:
   if h.hp <= 0 or h.dead: continue
   var dice: Array = []
   for d in range(3):
-   if d != h.setaside and (h.channel.is_empty() or h.channel.die != d): dice.append(d)
+   if d != h.setaside and not Soulcaster.held(self,id,d) and (h.channel.is_empty() or h.channel.die != d): dice.append(d)
   present_action_roll(id,dice,"Shared roll")
  roll_presentations.append({"actor":boss_name(),"kind":"Shared roll","faces":boss_dice().duplicate(true),"sides":boss_sides.duplicate(),"results":boss_rolls.duplicate(),"dice":[0,1,2]})
  record_event("round","Round %d begins. All available Action Dice roll together." % round_no)
@@ -299,6 +304,7 @@ func shared_roll() -> void:
   for d in range(3): values.append(["I","II","III"][d]+": "+Catalog.name_for(face(id,d))+(" [held]" if heroes[id].used[d] else ""))
   record_event("roll",unit_name(id)+" rolls "+" · ".join(values)+".",id)
  record_event("roll","%s rolls I: %s · II: %s · III: %s." % ([boss_name()]+boss_rolls),3)
+ if Soulcaster.open_fate(self,"activate"):return
  activate()
 
 func roll_hero(h: Dictionary) -> void:
@@ -309,9 +315,11 @@ func roll_hero(h: Dictionary) -> void:
  if not h.channel.is_empty() and h.channel.face == 25:
   h.channel.boost = 0; h.channel.confirmed = false; h.channel.pending_blank = 0; h.channel.pending_boost = 0
  for d in range(3):
-  var kept: bool = not h.channel.is_empty() and h.channel.die == d
+  var omen: bool = Soulcaster.held(self,heroes.find(h),d)
+  var kept: bool = (not h.channel.is_empty() and h.channel.die == d) or omen
   var side: int = previous[d] if kept and previous.size() == 3 else rng.randi_range(0,5)
   h.rolls.append(side); h.results.append(h.build[d][side]); h.used.append(d == h.setaside or kept)
+  if omen:h.results[d] = int(h.omen_held.face)
   if d != h.setaside and not kept and Catalog.is_reaction(h.build[d][side]):
    h.reaction.append(d); h.used[d] = true
   if not kept and d != h.setaside: on_roll(h,d)
@@ -371,6 +379,7 @@ func activate() -> void:
   if not h.channel.is_empty():
    h.channel.block_lost = 0
    pending = {"kind":"channel","hero":active}
+  Soulcaster.offer_omen(self)
 
 func tick_poison(id: int) -> void:
  var h: Dictionary = unit_data(id)
@@ -409,6 +418,7 @@ func finish_turn() -> void:
     damage(active,v("face50.penalty"),true,"Black Oath cost")
     if outcome != "": return
  if active < 3:
+  Soulcaster.turn_end(self,active)
   var worm := owned_worm(active)
   if worm >= 0:activate_friendly(worm)
   if outcome != "":return
@@ -433,9 +443,13 @@ func finish_turn() -> void:
   heroes[active].setaside = -1
   roll_hero(heroes[active])
   present_action_roll(active,[0,1,2],"Recovery roll")
-  tick_poison(active)
-  note(heroes[active].name + " · Immediate recovery turn. Broken: next zero HP is death.")
+  if not Soulcaster.open_fate(self,"recovery"):complete_recovery_start()
  else: activate()
+
+func complete_recovery_start() -> void:
+ tick_poison(active)
+ note(heroes[active].name + " · Immediate recovery turn. Broken: next zero HP is death.")
+ Soulcaster.offer_omen(self)
 
 func cells(id: int, at: Vector2i = Vector2i(-99,-99)) -> Array:
  var p: Vector2i = at if at.x != -99 else unit_data(id).pos
@@ -574,6 +588,7 @@ func damage(id: int, amount: int, unavoidable: bool = false, reason: String = ""
    h.block = 0;h.weak = false;h.bulwark_weak = false;h.stun = false
    h.reaction.clear();h.channel = {};h.dr = 0;h.rerolls = 0;h.used = [true,true,true]
    h.ward = false;h.num_boost = 0;h.numeric_focus = false;h.stored_num = -1;h.rooted = 0;h.poison = 0
+   Soulcaster.downed(self,id)
    h.backstab = 0;h.debt_buff = 0;h.debt_next = 0;h.debt_penalty = 0
    h.defy = false;h.black_oath = false;h.echo_due = false;h.mods = {};h.smoke = {}
 
@@ -643,6 +658,8 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
  if f == 6 and focus_reason(d,target) != "":return false
  if not resuming_friendly_attack and prepare_friendly_evasive(d,target,destination):return true
  begin_action(active,action_name(active,f),target if f != 6 else -1,d)
+ if Soulcaster.is_spell(f):return Soulcaster.action(self,d,target)
+ if f==0 and Soulcaster.equipped(self,active):return Soulcaster.blank(self,d)
  if f >= 60:return essence_action(d,target,destination)
  if f >= 9: return catalog_action(d,target,destination)
  match f:
@@ -674,8 +691,11 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
    on_roll(h,target)
    present_action_roll(active,[target],"Focus reroll")
    note(h.name + " focuses Die " + str(target+1) + " → " + Catalog.name_for(face(active,target)))
-   if Catalog.is_reaction(face(active,target)): h.used[target] = true; h.reaction.append(target)
+   if Soulcaster.created_this_turn(self,active,target):forced_die = -1
+   elif Catalog.is_reaction(face(active,target)): h.used[target] = true; h.reaction.append(target)
+   elif face(active,target)==80 and Soulcaster.enabled(self):forced_die = -1
    else: forced_die = target
+   Soulcaster.open_fate(self)
    record_event("focus","%s uses Focus: Die %s, %s → %s.%s" % [unit_name(active),["I","II","III"][target],Catalog.name_for(old_face),Catalog.name_for(face(active,target))," Held as a Reaction." if h.used[target] else " Resolve this die next, or decline it."],active,active)
    event_log[-1]["die"] = target;event_log[-1]["old_face"] = old_face;event_log[-1]["new_face"] = face(active,target);event_log[-1]["old_side"] = old_side;event_log[-1]["new_side"] = h.rolls[target]
    return true
@@ -853,6 +873,7 @@ func continue_attack() -> void:
     if key in pending.reacted: continue
     var f: int = face(actor,die)
     var trigger: bool = actor == victim and (f == 5 or (f == 28 and not area) or f == 68 or heroes[actor].smoke.has(die))
+    if f == 77:trigger = Soulcaster.mirror_trigger(self,actor,victim)
     if f == 44: trigger = (victim < 3 or (TrialRules.objective_unit(self,victim) and unit_data(victim).trial_object=="spirit")) and actor != victim and distance(actor,victim) <= v("face44.range") and sight(actor,victim,v("face44.range"))
     if f == 45: trigger = actor != victim and distance(actor,source) <= mini(v("face45.range"),reach) and not area
     if f == 46: trigger = actor == victim and pending.amount-(boss_weakness() if boss.weak and source == 3 else 0)-heroes[actor].block-heroes[actor].dr >= heroes[actor].hp
@@ -868,6 +889,7 @@ func continue_attack() -> void:
    note(action + " has no legal adjacent target after Reactions; " + ("worm holds; bite ends." if source >= 4 else ("completed movement is kept, attack ends." if action == "Skirmish" else "attack is replaced by fallback.")))
    pending = {}
    if source == 3 and action != "Skirmish": fallback()
+   Soulcaster.complete_mirrors(self)
    return
   var t := enemy_target(source,ts,action) if not friendly(source) else nearest_attacked(source,ts)
   record_event("retarget","%s retargets %s to %s after a Reaction." % [unit_name(source),action,unit_name(t)],source,t)
@@ -926,9 +948,10 @@ func react(use: bool, dir: Vector2i = Vector2i.ZERO) -> void:
  var f: int = face(t,die)
  if use:
   h.reaction.erase(die)
-  var block_before: int = h.block
+  var block_before: int = unit_data(victim).block if f==77 else h.block
   begin_action(t,"Reaction: "+Catalog.name_for(f),victim,die)
   match f:
+   77:Soulcaster.mirror(self,t,victim,source)
    68:
     h.block += 1
     if not evasive_targets.has(t):evasive_targets[t] = []
@@ -949,7 +972,8 @@ func react(use: bool, dir: Vector2i = Vector2i.ZERO) -> void:
       if not legal(t,h.pos+dir):break
       h.pos += dir
     h.smoke.erase(die)
-  record_event("reaction","%s uses %s: Block %d → %d (+%d) before %s. The incoming hit consumes Block before HP; zero Block afterwards does not mean no Block was granted." % [unit_name(t),Catalog.name_for(f),block_before,h.block,h.block-block_before,pending.action],t,t,h.block-block_before)
+  var block_after: int = unit_data(victim).block if f==77 else h.block
+  record_event("reaction","%s uses %s: %sBlock %d → %d (+%d) before %s. The incoming hit consumes Block before HP; zero Block afterwards does not mean no Block was granted." % [unit_name(t),Catalog.name_for(f),unit_name(victim)+"’s " if f==77 else "",block_before,block_after,block_after-block_before,pending.action],t,victim if f==77 else t,block_after-block_before)
   report_changes()
   action_owner = source; action_label = pending.action; action_before = {}
  if not use:record_event("reaction","%s holds %s; no Block or other reaction effect is gained for this hit." % [unit_name(t),Catalog.name_for(f)],t,t)
@@ -992,7 +1016,7 @@ func stun_die(d: int) -> void:
  if pending.get("kind","") not in ["stun","preroll_stun"] or d not in range(3):return
  var t: int = pending.hero
  if pending.kind == "preroll_stun":
-  if not heroes[t].channel.is_empty() and heroes[t].channel.die == d: return
+  if (not heroes[t].channel.is_empty() and heroes[t].channel.die == d) or Soulcaster.held(self,t,d): return
   heroes[t].setaside = d
   record_event("stun","Stunned: %s sets aside Die %s before the shared roll." % [unit_name(t),["I","II","III"][d]],t,t)
   pending = {}
@@ -1022,6 +1046,7 @@ func action_reroll(d: int) -> bool:
  present_action_roll(active,[d],"Action reroll")
  record_event("roll",h.name.capitalize() + " spends %d Action Reroll: Die %s → %s. Charges left: %d." % [v("hero.reroll_cost"),["I","II","III"][d],Catalog.name_for(face(active,d)),h.rerolls],active,active)
  record_event("roll","Die %s: side %d %s → side %d %s.%s" % [["I","II","III"][d],old_side+1,Catalog.name_for(old_face),h.rolls[d]+1,Catalog.name_for(face(active,d))," Same ability rolled again; a reroll can land on another Blank or the same side." if old_face == face(active,d) else ""],active,active)
+ Soulcaster.open_fate(self)
  return true
 
 func boss_help(action: String) -> String:
@@ -1054,6 +1079,7 @@ func on_roll(h: Dictionary, d: int, rolled: bool = true) -> void:
   h.round_history.append({"die":d,"face":face(heroes.find(h),d)})
   if h.results[d] in [54,60,61,62]:h.bone_count = int(h.get("bone_count",0))+1
  var f: int = face(heroes.find(h),d)
+ Soulcaster.on_roll(self,heroes.find(h),d)
  if f == 13:
   var before: int = h.rerolls
   h.rerolls = mini(v("hero.reroll_cap"),h.rerolls+v("face13.rerolls"))
@@ -1203,6 +1229,7 @@ func sight(a: int, b: int, limit: int) -> bool:
  return false
 
 func mutate(hero: int, d: int, side: int, id: int) -> void:
+ Soulcaster.mutated(self,hero,d,side)
  var h: Dictionary = heroes[hero]
  if h.build[d][side] == 56: return
  var old: int = h.build[d][side]
@@ -1372,6 +1399,8 @@ func channel_choice(keep: bool) -> void:
   on_roll(h,ch.die); roll_serial += 1
   present_action_roll(active,[ch.die],"Released Channel die")
   note(h.name + " ends Channel and rolls the released die.")
+ Soulcaster.open_fate(self)
+ Soulcaster.offer_omen(self)
  report_changes()
 
 func choose_bind(d: int, action: String) -> void:
@@ -1417,7 +1446,7 @@ func catalog_pick(hero: int, d: int, side: int = -1) -> bool:
   h.opening = false;h.results[source] = copy;pending = {};forced_die = source
   record_event("action","%s uses Borrow Shape: copies %s’s face-up Die %s (%s), even if spent or held. Only the Borrow Shape die is consumed when its copied result resolves." % [unit_name(active),unit_name(hero),["I","II","III"][d],Catalog.name_for(copy)],active,hero)
   if Catalog.is_reaction(copy):h.reaction.append(source);h.used[source] = true;forced_die = -1
-  on_roll(h,source,false);return true
+  on_roll(h,source,false);Soulcaster.open_fate(self);return true
  if hero != active:return false
  if f == 23:
   if p.stage == 0:
@@ -1437,6 +1466,7 @@ func catalog_pick(hero: int, d: int, side: int = -1) -> bool:
   h.results[d] = chosen; pending = {}; forced_die = d
   if Catalog.is_reaction(chosen): h.reaction.append(d); h.used[d] = true; forced_die = -1
   on_roll(h,d)
+  Soulcaster.open_fate(self)
   note("Corruption Conversion selects " + Catalog.name_for(chosen) + " on Die " + str(d+1) + ".")
   return true
  if f == 30:
@@ -1598,6 +1628,7 @@ func move_steps(f: int) -> int:
   if TrialRules.soul(self,active)=="bugh":steps -= 1
  return maxi(1,steps)
 func face_range(f: int) -> int:
+ if Soulcaster.is_spell(f):return int(Soulcaster.SPELLS[f].range)
  if f==73:return 2
  if f==74:return 1
  if f in [63,64,65]:return 2+(1 if f == 63 and balance.get("memory.loss."+str(active),false) else 0)
@@ -1693,6 +1724,9 @@ func status_description(id: int) -> String:
  var lines: Array[String] = []
  if id == 3 and h.get("poison",0) > 0:lines.append("Poison %d: unavoidable HP damage at next boss activation, then decreases by 1." % h.poison)
  if id < 3:
+  if Soulcaster.equipped(self,id):lines.append("Soulcaster: %d/3 Soul Charges · %d/4 spells. Gather / create through a rolled Blank. Charges reset each encounter." % [Soulcaster.charges(self,id),Soulcaster.count_spells(self,id)])
+  if not h.get("omen_held",{}).is_empty():lines.append("Hoarded Omen: original die keeps "+Catalog.name_for(int(h.omen_held.face))+" until own turn in round %d." % h.omen_held.round)
+  if h.get("omen_ready",false):lines.append("Hoarded Omen: may save a ready ability this turn through More / Trial menu.")
   if balance.get("memory.loss."+str(id),false):lines.append("Memory of Loss equipped; first actual self-heal bonus "+("spent" if h.get("memory_self_used",false) else "available")+".")
   if int(h.get("offering_boost",0)) > 0:lines.append("Sorrow’s Offering: next Attack +%d." % h.offering_boost)
   if id == active:lines.append("This turn: %d Bone result(s) rolled; %d spaces moved." % [h.get("bone_count",0),h.get("moved_turn",0)])
@@ -2053,6 +2087,7 @@ func burden_ally(hero: int, die: int) -> bool:
  active = hero;forced_die = die;h.reaction.erase(die);h.smoke.erase(die);h.used[die] = false;h.results[die] = p.copy
  if Catalog.is_reaction(p.copy):h.reaction.append(die);h.used[die] = true;forced_die = -1
  on_roll(h,die,false)
+ Soulcaster.open_fate(self)
  record_event("copy","Shared Burden: %s spends Die %s to resolve %s immediately. Return to %s afterwards; no full turn, activation, Poison tick or initiative change." % [unit_name(hero),["I","II","III"][die],Catalog.name_for(p.copy),unit_name(owner)],owner,hero)
  return true
 func return_from_burden() -> bool:
@@ -2064,6 +2099,7 @@ func essence_decline() -> void:
  if pending.get("kind","") in ["essence_remedy","essence_offering","essence_burden_source","essence_burden_ally"]:
   var die: int = pending.die;pending = {};spend(die);note("Reward face declined; no further cost or effect.")
 func offer_evasive_step() -> void:
+ Soulcaster.complete_mirrors(self)
  while pending.is_empty() and not evasive_due.is_empty() and outcome == "":
   var entry: Dictionary = evasive_due.pop_front();var hero: int = entry.hero
   if heroes[hero].hp == entry.hp and heroes[hero].hp > 0 and not heroes[hero].dead:pending = {"kind":"essence_evasive","hero":hero}
@@ -2076,6 +2112,7 @@ func evasive_step(direction: Vector2i) -> bool:
  pending = {};offer_evasive_step();return true
 
 func prepare_friendly_evasive(die: int, target: int, destination: Vector2i) -> bool:
+ if Soulcaster.prepare_friendly_mirror(self,die,target,destination):return true
  var f := face(active,die)
  if f not in [1,34,35,36,37,38,39,40,41] or target not in range(3) or target == active:return false
  if heroes[target].hp <= 0 or heroes[target].dead or distance(active,target) > face_range(f):return false

@@ -1,6 +1,6 @@
 extends RefCounted
 ## Resolve isolated copies, across all Numeric sides, never the live model/RNG.
-const TARGETED = [0,1,2,3,7,8,15,19,34,35,36,37,38,39,40,41,53,54,55,57,58,59,60,61,66,67,69,70,73,74]
+const TARGETED = [0,1,2,3,7,8,15,19,34,35,36,37,38,39,40,41,53,54,55,57,58,59,60,61,66,67,69,70,73,74,75,76,78,79]
 const IMMEDIATE = [4,14,20,21,22,27,29,42,43,47,50,51,54,56,60,62,71,72]
 static func copy_battle(g):
  var model = g.get_script().new()
@@ -39,8 +39,10 @@ static func calculate(g, die: int, target: int = -1, destination: Vector2i = Vec
   samples.append(snapshot(model))
   if model.roll_presentations.slice(g.roll_presentations.size()).any(func(display):return str(display.kind).begins_with("Numeric") and not "Stored value" in str(display.kind)):result.numeric = true
   if not model.pending.is_empty():choices = true
+ if face==79:
+  result.valid = true;result.text = g.unit_name(target)+" may save a ready result next turn. Its original die stays aside until their following turn.";return result
  if choices:
-  result.valid = true;result.text = "Confirm to open the required choice. Effects depend on that choice.";return result
+  result.valid = true;result.text = "Swap places, then each hero may Move 1." if face==75 else "Confirm to open the required choice. Effects depend on that choice.";return result
  var lines: Array[String] = []
  for id in range(before.size()):
   var damage: Array = [];var healing: Array = [];var block_lost: Array = [];var block_gained: Array = [];var poison: Array = [];var rooted: Array = [];var positions: Array = []
@@ -60,6 +62,8 @@ static func calculate(g, die: int, target: int = -1, destination: Vector2i = Vec
   if not effects.is_empty():lines.append(g.unit_name(id)+": "+" · ".join(effects))
  if g.TrialRules.blocked_cell(g,destination):lines.append("Barricade breaks; the selected die is spent.")
  if face==59 and target<0 and g.owned_worm(g.active)<0:lines.append("Summon Nu’gh → "+g.cell_name(destination))
+ if face==78:lines.append("This physical spell side returns to Blank.")
+ if face==76:lines.append("Spend 1 Soul Charge; a creature / boss kill grants 2 (cap 3).")
  if lines.is_empty():lines.append("No immediate HP, Block or status change.")
  if result.numeric:lines.append("Numeric range shown; the result is rolled after confirmation.")
  if target>=0 and g.friendly(target) and target!=g.active and g.Catalog.is_attack(face):lines.push_front("FRIENDLY FIRE")

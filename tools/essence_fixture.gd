@@ -19,6 +19,7 @@ func mobile_controls(node: Node, list: Array):
   list.append({"clip":[clip.position.x,clip.position.y,clip.size.x,clip.size.y],"name":str(node.name),"text":node.text if node is Button else "", "x":rect.position.x,"y":rect.position.y,"w":rect.size.x,"h":rect.size.y,"disabled":node.disabled if node is BaseButton else false})
  for child in node.get_children():mobile_controls(child,list)
 func reset_ui():
+ app.show_soulcaster_help = false;app.trial_replacement = Vector2i(-1,-1)
  app.trial_choice.clear()
  app.trial_fight = false;app.show_trial_guide = false;app.trial_view = "run"
  app.show_collection = false;app.mobile_more = false;app.debug_hold.clear();app.show_intents = false;app.choice_preview = Vector2i(-1,-1);app.status_sounds.clear();app.status_cooldown = 0;app.choosing_reroll = false;app.mobile_info = "";app.mobile_scrolls.clear()
@@ -41,6 +42,7 @@ func proof(args):
   data.trial.classes = app.trials.classes
   data.trial.max_hp = range(3).map(func(id):return app.trials.maximum_hp(id))
   data.trial.customized = range(3).map(func(id):return app.trials.customized(id))
+  data.soul_charges = app.game.heroes.map(func(h):return h.get("soul_charges",0));data.hint = app.hint;data.soul_help = app.show_soulcaster_help
   data.info = app.mobile_info;data.class_preview = app.trial_class_preview;data.class_die = app.trial_class_die
   data.trial.merge({"ingredients":app.trials.ingredients,"crafted":app.trials.crafted,"wishlist":app.trials.wishlist,"loadout_weapons":app.trials.loadout_weapons,"bodies":app.trials.bodies,"last_progress":app.trials.last_progress})
   data.forecast = app.trial_choice
@@ -63,7 +65,25 @@ func proof(args):
     data.popups.append({"control":str(control.name),"x":popup.position.x,"y":popup.position.y,"w":popup.size.x,"h":popup.size.y,"top":panel.get_margin(SIDE_TOP),"bottom":panel.get_margin(SIDE_BOTTOM),"items":range(popup.item_count).map(func(index):return popup.get_item_text(index))})
   JavaScriptBridge.get_interface("window").essenceState = JSON.stringify(data);return
  reset_ui()
- if mode.begins_with("class37_"):
+ if mode.begins_with("soul38_"):
+  app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trials.choose_soul(0,"soulcaster");app.trials.memories[0] = "";app.trial_slot = "soul";app.page = "trials"
+  if mode=="soul38_reward":
+   app.trials.start(38);app.trials.phase = "reward";app.trials.reward_mode = "face";app.trials.reward_face = app.trials.reward_faces(0)[0]
+  elif mode!="soul38_lobby":
+   app.trials.start(38);app.trials.choose(0);app.start_trial_battle();app.game.active = 0;app.game.cursor = app.game.order.find(0);app.game.pending = {};app.game.forced_die = -1
+   for h in app.game.heroes:h.used = [false,false,false];h.reaction = [];h.rolls = [2,2,2];h.results = [0,0,0]
+   app.game.heroes[0].pos = Vector2i(2,5);app.game.heroes[1].pos = Vector2i(3,5);app.game.heroes[2].pos = Vector2i(8,8);app.game.unit_data(4).pos = Vector2i(7,1)
+   app.game.trial_state.cover = [];app.game.trial_state.crates = [];app.game.trial_state.spikes = [];app.game.trial_state.charges = [];app.game.trial_state.positions = {}
+   for id in range(app.game.unit_count()):app.game.trial_state.positions[id] = app.game.unit_data(id).pos
+   app.game.heroes[0].soul_charges = 2
+   if mode=="soul38_harvest":app.game.heroes[0].results[0] = 76;app.game.heroes[0].build[0][2] = 76
+   elif mode=="soul38_wraith":app.game.heroes[0].results[0] = 75;app.game.heroes[0].build[0][2] = 75
+   elif mode=="soul38_fate":
+    app.game.heroes[0].results[0] = 80;app.game.on_roll(app.game.heroes[0],0);app.Model.Soulcaster.open_fate(app.game)
+   elif mode=="soul38_omen":
+    app.game.heroes[0].results = [4,5,31];app.game.heroes[0].omen_ready = true;app.Model.Soulcaster.offer_omen(app.game)
+   app.inspect_actor = 0;app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
+ elif mode.begins_with("class37_"):
   app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trial_view = "run";app.trial_slot = "memory"
   if mode=="class37_main":app.go_main()
   elif mode=="class37_lobby":app.page = "trials"

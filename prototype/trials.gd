@@ -76,16 +76,26 @@ func profile() -> Dictionary:
   result["soul.eligible."+str(id)] = true;result["soul.mode."+str(id)] = "heal" if souls[id]=="hearth" else "move";result["soul.distance."+str(id)] = 2 if souls[id]=="wind" else 1;result["soul.allowance."+str(id)] = 1;result["weapon.dagger."+str(id)] = weapons[id] not in ["spear","hammer"]
  for key in pool:result["earned."+key] = int(pool[key])
  return result
-func validate(candidate: Array) -> String:
+func validate(candidate: Array, extra_face: int = -1) -> String:
+ var checked_profile := profile()
+ if extra_face>=60:checked_profile["earned."+str(extra_face)] = int(pool.get(str(extra_face),0))+1
  for id in range(3):
+  if souls[id]=="soulcaster" and candidate[id].any(func(die):return die.count(0)<4):return "Soulcaster needs at least 4 Blanks on each die. Replace an ability side, not a required Blank."
   if weapons[id] in ["spear","hammer"] and R.weapon_slot(candidate[id])==Vector2i(-1,-1):return "Keep a Strike side for "+R.WEAPONS[weapons[id]].name+"’s weapon ability."
-  var error: String = B.validate(candidate[id],range(9,60),profile())
+  var error: String = B.validate(candidate[id],range(9,60),checked_profile)
+  if error.begins_with("Body caps:"):
+   var counts := {"Movement":0,"Defense":0,"Skill":0}
+   for die in candidate[id]:
+    for face in die:
+     var category: String = B.Catalog.category(int(face))
+     if counts.has(category):counts[category] += 1
+   return "This hero would have "+" · ".join(counts.keys().map(func(key):return "%s %d/%d" % [key,counts[key],B.Balance.value(checked_profile,"body."+key)]))+". Replace a side in the full category."
   if error!="":return error
  for face in range(60,73):
   var count := 0
   for build in candidate:
    for die in build:count += die.count(face)
-  if count>int(pool.get(str(face),0)):return "No free physical copy of "+B.FACES[face]+"."
+  if count>int(pool.get(str(face),0))+(1 if face==extra_face else 0):return "No free physical copy of "+B.FACES[face]+"."
  return ""
 func finish(g) -> bool:
  if phase!="combat" or settled or g.outcome=="":return false
@@ -102,31 +112,33 @@ func finish(g) -> bool:
   phase = "complete";message = "Trial complete! "+R.SOULS[boss].name+" is available for future Trials."
   essence += 6;history.append("Boss victory: "+BOSS_NAMES[selected_boss]);save();return true
  var earned := 3 if current.get("objective","")!="" else 4 if current.get("elite",false) else 2
- essence += earned;message = "Victory · +%d Trial Essence. Choose a reward." % earned;phase = "reward";reward_mode = "";save();return true
+ essence += earned;message = "Victory · +%d Run Essence. Choose a reward." % earned;phase = "reward";reward_mode = "";save();return true
 func bank_reward() -> bool:
  if phase!="reward":return false
- essence += 2;message = "Saved the reward as +2 Trial Essence.";advance();return true
-func add_face(face: int, die: int, side: int) -> bool:
- if phase!="reward" or essence<2 or die not in range(3) or side not in range(6) or face not in reward_faces(hero):return false
- var old: int = builds[hero][die][side]
- if old==face:return false
+ essence += 2;message = "Saved the reward as +2 Run Essence.";advance();return true
+func replacement_error(face: int, die: int, side: int) -> String:
+ if phase!="reward" or face not in reward_faces(hero):return "Choose a reward face first."
+ if essence<2:return "Need 2 Run Essence."
+ if die not in range(3) or side not in range(6):return "Select a side to replace."
+ if int(builds[hero][die][side])==face:return "This side already has that ability."
  var candidate := builds.duplicate(true);candidate[hero][die][side] = face
- var old_count: int = int(pool.get(str(face),0))
- if face>=60:pool[str(face)] = old_count+1
- var error := validate(candidate)
- if error!="":
-  if face>=60:pool[str(face)] = old_count
-  message = error;return false
- builds = candidate;essence -= 2;message = "Installed "+B.FACES[face]+" for this Trial.";advance();return true
+ return validate(candidate,face)
+func add_face(face: int, die: int, side: int) -> bool:
+ var error := replacement_error(face,die,side)
+ if error!="":message = error;return false
+ builds[hero][die][side] = face
+ if face>=60:pool[str(face)] = int(pool.get(str(face),0))+1
+ essence -= 2;message = "Installed "+B.FACES[face]+" for this Trial.";advance();return true
 func equip_weapon(key: String) -> bool:
  if phase!="reward" or essence<2 or not R.WEAPONS.has(key) or weapons[hero]==key:return false
  if key in ["spear","hammer"] and R.weapon_slot(builds[hero])==Vector2i(-1,-1):message = "Keep a normal Strike side before equipping this weapon.";return false
  weapons[hero] = key;essence -= 2;message = R.WEAPONS[key].name+" equipped in "+["Vesper","Rook","Wren"][hero]+"’s Weapon slot.";advance();return true
-func maximum_hp(id: int) -> int:return int(R.BODIES[bodies[id]].hp)-(0 if memories[id]=="venom" else 1)-(1 if souls[id]=="nugh" else 0)
+func maximum_hp(id: int) -> int:return (6 if souls[id]=="soulcaster" else int(R.BODIES[bodies[id]].hp))-(0 if memories[id] in ["","venom"] else 1)-(1 if souls[id]=="nugh" else 0)
 func reward_faces(id: int) -> Array:return Classes.CLASSES[classes[id]].rewards.duplicate() if Classes.valid(classes[id]) else STARTER_FACES[id]
 func starting_builds() -> Array:
  var result: Array = []
  for id in range(3):
+  if souls[id]=="soulcaster":result.append(R.Soulcaster.STARTER_DICE.duplicate(true));continue
   if Classes.valid(classes[id]):result.append(Classes.CLASSES[classes[id]].dice.duplicate(true));continue
   # Old safe checkpoints retain their original hero-specific loadouts.
   var build: Array = B.default_build()
@@ -141,15 +153,15 @@ func camp(rest: bool) -> bool:
  if rest:
   for id in range(3):hp[id] = mini(maximum_hp(id),int(hp[id])+2)
   message = "Camp restores 2 HP to every hero, including fallen heroes."
- else:essence += 2;message = "Gathered 2 Trial Essence instead of resting."
+ else:essence += 2;message = "Gathered 2 Run Essence instead of resting."
  advance();return true
 func event(risk: bool) -> bool:
  if phase!="event":return false
- if not risk:essence += 1;message = "Took the safe cache: +1 Trial Essence."
+ if not risk:essence += 1;message = "Took the safe cache: +1 Run Essence."
  else:
   var rng := RandomNumberGenerator.new();rng.seed = hash([seed_value,stage,"buried-cache"])
   var roll := rng.randi_range(1,6)
-  if roll>=4:essence += 5;message = "Cache d6 → %d: +5 Trial Essence." % roll
+  if roll>=4:essence += 5;message = "Cache d6 → %d: +5 Run Essence." % roll
   else:
    for id in range(3):hp[id] = maxi(0,int(hp[id])-1)
    message = "Cache d6 → %d: each hero loses 1 HP." % roll
@@ -161,7 +173,7 @@ func advance() -> void:
 func fail(reason: String) -> void:
  phase = "failed";message = reason;reward_mode = "";save()
 func save() -> void:
- var data := {"equipment_version":37}
+ var data := {"equipment_version":38}
  for key in ["phase","classes","memories","weapons","bodies","souls","selected_boss","stage","seed_value","essence","hp","builds","pool","completed_bosses","history","message","current","settled","loadout_weapons","ingredients","crafted","wishlist","last_progress"]:data[key] = get(key)
  var file := FileAccess.open(SAVE,FileAccess.WRITE)
  if file:file.store_string(JSON.stringify(data))
@@ -215,7 +227,7 @@ func load_save() -> void:
 
 func available(slot: String, id: int = -1) -> Array:
  if id<0:id = hero
- var items: Array = {"memory":["venom","guard","stride"],"body":["broken"],"weapon":["dagger","spear","hammer"],"soul":[""]+completed_bosses}.get(slot,[]).duplicate()
+ var items: Array = {"memory":["venom","guard","stride",""],"body":["broken"],"weapon":["dagger","spear","hammer"],"soul":["","soulcaster"]+completed_bosses}.get(slot,[]).duplicate()
  if slot=="body" and Classes.valid(classes[id]):
   var starting: String = Classes.CLASSES[classes[id]].body
   if starting not in items:items.append(starting)
@@ -285,3 +297,9 @@ func customized(id: int) -> bool:
  return bodies[id]!=kit.body or memories[id]!=kit.memory or equipped!=kit.weapon or souls[id]!=""
 func class_label(id: int) -> String:
  return Classes.name_for(classes[id])+(" · adjusted gear" if customized(id) else "")
+
+func choose_soul(id: int, key: String) -> bool:
+ if phase!="lobby" or id not in range(3) or key not in available("soul",id):return false
+ souls[id] = key
+ message = ("Soulcaster equipped: starter dice adapt to four Blanks each. 6 base HP before Memory penalties. Tap Spellbook for the six spells." if key=="soulcaster" else "Soul equipped; starter dice and maximum HP update automatically.")
+ save();return true
