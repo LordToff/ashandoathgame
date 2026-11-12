@@ -3,3 +3,6 @@
 
 # Exclude github directory
 /.github        export-ignore
+
+# Generated rulebooks and supplied design documents are binary artifacts.
+*.pdf binary
