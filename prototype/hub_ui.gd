@@ -24,7 +24,7 @@ static func main_menu(app) -> void:
  C.detail(app,"Three heroes, four bosses, and creature groups you can choose directly. Earn Essence, discover reward designs, then refit your party at Camp.",Rect2(884,525,438,113),18)
  app.button("Trials · experimental expeditions",Vector2(884,656),Vector2(438,58),app.open_trials,app.GOLD).name = "MainTrials"
  app.button("Mobile mode · play on a phone",Vector2(80,793),Vector2(480,40),func():app.set_mobile_mode(true),Color("9acfc0")).name = "MainMobileMode"
- app.label_at("PLAYABLE PROTOTYPE  /  v0.38",Vector2(80,838),12,app.MUTED,650)
+ app.label_at("PLAYABLE PROTOTYPE  /  v0.38.1",Vector2(80,838),12,app.MUTED,650)
 
 static func forge(app) -> void:
  app.chamber_background()

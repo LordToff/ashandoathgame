@@ -144,6 +144,7 @@ var ui: Control
 var hint := "Choose a hero and customize their three dice. A balanced build is already equipped."
 var show_help := false
 var show_options := false
+var fullscreen_poll := 0.0
 var show_menu := false
 var show_lab_tools := false
 var reward_soul := false
@@ -245,6 +246,11 @@ func make_audio() -> void:
   sound_controller.button_pressed_player = audio
 
 func _process(delta: float) -> void:
+ fullscreen_poll -= delta
+ if show_options and fullscreen_poll<=0:
+  fullscreen_poll = 0.2
+  var control: Button = ui.find_child("OptionsFullscreen",true,false)
+  if control:control.text = fullscreen_caption()
  t += delta
  if not debug_hold.is_empty():
   if not debug_mode or not is_instance_valid(debug_hold.button) or not debug_hold.button.is_inside_tree():debug_hold.clear()
@@ -382,7 +388,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.38",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.38.1",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -588,15 +594,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.38 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.38.1 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.38 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.38 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.38.1 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.38.1 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.38 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.38.1 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.38 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.38.1 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -1398,13 +1404,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.38 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.38.1 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.38",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.38.1",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1617,6 +1623,30 @@ func set_soul_enabled(enabled: bool, live: bool = true) -> void:
  hint = "Blank → Move %d is " % balance_number("soul.move") + ("ON. Select a rolled Blank, then a highlighted cell. %d conversions per hero turn." % balance_number("soul.uses") if enabled else "OFF. Rolled Blanks cannot be spent for movement.")
  rebuild()
 
+func fullscreen_available() -> bool:
+ if OS.has_feature("web"):
+  return bool(JavaScriptBridge.eval("!!(document.fullscreenEnabled || document.webkitFullscreenEnabled)",true))
+ return DisplayServer.get_name()!="headless"
+
+func fullscreen_active() -> bool:
+ if OS.has_feature("web"):
+  return bool(JavaScriptBridge.eval("!!(document.fullscreenElement || document.webkitFullscreenElement)",true))
+ return get_window().mode in [Window.MODE_FULLSCREEN,Window.MODE_EXCLUSIVE_FULLSCREEN]
+
+func fullscreen_caption() -> String:
+ if not fullscreen_available():return "Fullscreen unavailable in this browser" if OS.has_feature("web") else "Fullscreen unavailable"
+ return "Exit fullscreen" if fullscreen_active() else "Fullscreen · use whole screen"
+
+func toggle_fullscreen() -> void:
+ if not fullscreen_available():return
+ DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if fullscreen_active() else DisplayServer.WINDOW_MODE_FULLSCREEN)
+
+func fullscreen_button(at: Vector2, dimensions: Vector2) -> Button:
+ var control := button(fullscreen_caption(),at,dimensions,toggle_fullscreen,GOLD,not fullscreen_available())
+ control.name = "OptionsFullscreen"
+ control.tooltip_text = "Fill the screen. Press again to exit; desktop browsers also use Esc."
+ return control
+
 func options_ui() -> void:
  if trial_fight:TrialUI.options(self);return
  var shade := ColorRect.new();shade.color = Color(0.02,0.03,0.05,0.9);shade.size = Vector2(1440,900);ui.add_child(shade)
@@ -1636,9 +1666,10 @@ func options_ui() -> void:
   rebuild(),GOLD).name = "OptionsRerollTiming"
  button("Advanced balance workshop",Vector2(214,574),Vector2(472,52),open_balance_editor,MUTED)
  label_at("PRESENTATION",Vector2(758,264),14,GOLD,468)
- button("All sound: "+("OFF" if muted else "ON"),Vector2(758,310),Vector2(468,52),func():muted = not muted;score.set_muted(muted);rebuild(),MUTED)
- button("Soundtrack & volume",Vector2(758,382),Vector2(468,52),func():show_soundtrack = true;rebuild(),GOLD)
- button("Combat impacts: "+("ON" if combat_effects else "OFF"),Vector2(758,454),Vector2(468,52),func():combat_effects = not combat_effects;rebuild(),MUTED)
+ fullscreen_button(Vector2(758,294),Vector2(468,48))
+ button("All sound: "+("OFF" if muted else "ON"),Vector2(758,352),Vector2(468,48),func():muted = not muted;score.set_muted(muted);rebuild(),MUTED)
+ button("Soundtrack & volume",Vector2(758,410),Vector2(468,48),func():show_soundtrack = true;rebuild(),GOLD)
+ button("Combat impacts: "+("ON" if combat_effects else "OFF"),Vector2(758,468),Vector2(468,48),func():combat_effects = not combat_effects;rebuild(),MUTED)
  button("Restart party · Main menu",Vector2(758,546),Vector2(468,52),restart_to_menu,MUTED).name = "OptionsRestart"
  label_at("Resets party choices; banked rewards stay yours.",Vector2(760,617),14,MUTED,464)
  button("Back to game",Vector2(902,720),Vector2(324,50),func():show_options = false;rebuild(),GOLD).name = "OptionsBack"
@@ -2176,7 +2207,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.38",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.38.1",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)

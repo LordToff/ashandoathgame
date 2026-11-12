@@ -212,6 +212,7 @@ static func ending(app) -> void:
 
 static func options(app) -> void:
  var column := P.panel(app,"Trial options","")
+ var display: Button = app.fullscreen_button(Vector2.ZERO,Vector2(420,68));display.reparent(column);display.custom_minimum_size = Vector2(0,68);display.size_flags_horizontal = Control.SIZE_EXPAND_FILL
  act(app,column,"Sound & volume",func():app.show_soundtrack = true;app.rebuild(),"TrialSound")
  act(app,column,"Action Rerolls: "+("Any time" if app.game.v("hero.reroll_anytime") else "Opening only"),func():app.game.balance["hero.reroll_anytime"] = 0 if app.game.v("hero.reroll_anytime") else 1;app.rebuild(),"TrialRerollOption")
  act(app,column,"Main menu · leave Trial fight",app.go_main,"TrialLeave",app.MUTED)

@@ -38,7 +38,7 @@ static func screen(app, heading: String, key: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
  app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.38",Vector2(18,58),15,MUTED,size.x-36)
+ app.label_at("ASH & OATH · MOBILE · v0.38.1",Vector2(18,58),15,MUTED,size.x-36)
  var width: float = minf(720,size.x-24)
  var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
@@ -423,6 +423,7 @@ static func options(app) -> void:
  if app.trial_fight:app.TrialUI.options(app);return
  modal(app,func():
   app.label_at("Options",Vector2.ZERO,28,GOLD)
+  app.fullscreen_button(Vector2.ZERO,Vector2(420,68))
   app.button("Debug unlocks: "+("On" if app.debug_mode else "Off"),Vector2.ZERO,Vector2(420,68),func():app.set_debug_mode(not app.debug_mode))
   app.button("Action Rerolls: "+("Any time" if app.balance_number("hero.reroll_anytime") else "Opening only"),Vector2.ZERO,Vector2(420,68),func():
    var value: int = 0 if app.balance_number("hero.reroll_anytime") else 1
