@@ -1,0 +1,362 @@
+{
+  "bone_creature": {
+    "source": "skelet",
+    "original_frames": [
+      "skelet_idle_anim_f0.png",
+      "skelet_idle_anim_f1.png",
+      "skelet_idle_anim_f2.png",
+      "skelet_idle_anim_f3.png",
+      "skelet_run_anim_f0.png",
+      "skelet_run_anim_f1.png",
+      "skelet_run_anim_f2.png",
+      "skelet_run_anim_f3.png"
+    ],
+    "region": [
+      11,
+      16,
+      10,
+      15
+    ],
+    "sha256": "93e4b98973c73022f8e5542bd26b7ad927a0861c04f8b9b0e1f3afc58369fe23"
+  },
+  "support_creature": {
+    "source": "necromancer",
+    "original_frames": [
+      "necromancer_anim_f0.png",
+      "necromancer_anim_f1.png",
+      "necromancer_anim_f2.png",
+      "necromancer_anim_f3.png",
+      "necromancer_anim_f0.png",
+      "necromancer_anim_f1.png",
+      "necromancer_anim_f2.png",
+      "necromancer_anim_f3.png"
+    ],
+    "region": [
+      9,
+      14,
+      14,
+      17
+    ],
+    "sha256": "3a3c74fe532dd7d79dbb3e56963cdc862bcba46e098816cfc4ea13f4912980c3"
+  },
+  "movement_creature": {
+    "source": "imp",
+    "original_frames": [
+      "imp_idle_anim_f0.png",
+      "imp_idle_anim_f1.png",
+      "imp_idle_anim_f2.png",
+      "imp_idle_anim_f3.png",
+      "imp_run_anim_f0.png",
+      "imp_run_anim_f1.png",
+      "imp_run_anim_f2.png",
+      "imp_run_anim_f3.png"
+    ],
+    "region": [
+      10,
+      18,
+      11,
+      13
+    ],
+    "sha256": "af61660243be4acf637239b2feb97c6e435d31e57423ffcc102463265aba7f58"
+  },
+  "mire_leech": {
+    "source": "slug",
+    "original_frames": [
+      "slug_anim_f0.png",
+      "slug_anim_f1.png",
+      "slug_anim_f2.png",
+      "slug_anim_f3.png",
+      "slug_anim_f0.png",
+      "slug_anim_f1.png",
+      "slug_anim_f2.png",
+      "slug_anim_f3.png"
+    ],
+    "region": [
+      9,
+      14,
+      14,
+      17
+    ],
+    "sha256": "604449672a7a7c5cab7917569400088aa915a299deeaef345d7cf6069c2256db"
+  },
+  "glasswing_moth": {
+    "source": "angel",
+    "original_frames": [
+      "angel_idle_anim_f0.png",
+      "angel_idle_anim_f1.png",
+      "angel_idle_anim_f2.png",
+      "angel_idle_anim_f3.png",
+      "angel_run_anim_f0.png",
+      "angel_run_anim_f1.png",
+      "angel_run_anim_f2.png",
+      "angel_run_anim_f3.png"
+    ],
+    "region": [
+      9,
+      17,
+      13,
+      14
+    ],
+    "sha256": "bacdc974b1033ff0b9f2839658eed2abc7b048d80c9fdf5f519a6418c0a609a0"
+  },
+  "iron_husk": {
+    "source": "orc_warrior",
+    "original_frames": [
+      "orc_warrior_idle_anim_f0.png",
+      "orc_warrior_idle_anim_f1.png",
+      "orc_warrior_idle_anim_f2.png",
+      "orc_warrior_idle_anim_f3.png",
+      "orc_warrior_run_anim_f0.png",
+      "orc_warrior_run_anim_f1.png",
+      "orc_warrior_run_anim_f2.png",
+      "orc_warrior_run_anim_f3.png"
+    ],
+    "region": [
+      9,
+      14,
+      13,
+      17
+    ],
+    "sha256": "16d7799c1689b489d110ee443f4fed3383dc09289054bfffd75144ebac2f0e26"
+  },
+  "shield": {
+    "source": "masked_orc",
+    "original_frames": [
+      "masked_orc_idle_anim_f0.png",
+      "masked_orc_idle_anim_f1.png",
+      "masked_orc_idle_anim_f2.png",
+      "masked_orc_idle_anim_f3.png",
+      "masked_orc_run_anim_f0.png",
+      "masked_orc_run_anim_f1.png",
+      "masked_orc_run_anim_f2.png",
+      "masked_orc_run_anim_f3.png"
+    ],
+    "region": [
+      9,
+      14,
+      13,
+      17
+    ],
+    "sha256": "57a39537e794ef1b12cb30e0aeee5a075b2a116f3fd5b7ebb21a0a9ff699efdc"
+  },
+  "healer": {
+    "source": "orc_shaman",
+    "original_frames": [
+      "orc_shaman_idle_anim_f0.png",
+      "orc_shaman_idle_anim_f1.png",
+      "orc_shaman_idle_anim_f2.png",
+      "orc_shaman_idle_anim_f3.png",
+      "orc_shaman_run_anim_f0.png",
+      "orc_shaman_run_anim_f1.png",
+      "orc_shaman_run_anim_f2.png",
+      "orc_shaman_run_anim_f3.png"
+    ],
+    "region": [
+      9,
+      15,
+      13,
+      16
+    ],
+    "sha256": "ea9446a8af4be5272e0b104fe9430d243c28fbc5112577217963b1726ceb9342"
+  },
+  "ram": {
+    "source": "chort",
+    "original_frames": [
+      "chort_idle_anim_f0.png",
+      "chort_idle_anim_f1.png",
+      "chort_idle_anim_f2.png",
+      "chort_idle_anim_f3.png",
+      "chort_run_anim_f0.png",
+      "chort_run_anim_f1.png",
+      "chort_run_anim_f2.png",
+      "chort_run_anim_f3.png"
+    ],
+    "region": [
+      9,
+      10,
+      14,
+      21
+    ],
+    "sha256": "3fcd56c12aab70f9e3562f70b16667a163786721e8834a19d1d21a0eb7af4d2d"
+  },
+  "thief": {
+    "source": "goblin",
+    "original_frames": [
+      "goblin_idle_anim_f0.png",
+      "goblin_idle_anim_f1.png",
+      "goblin_idle_anim_f2.png",
+      "goblin_idle_anim_f3.png",
+      "goblin_run_anim_f0.png",
+      "goblin_run_anim_f1.png",
+      "goblin_run_anim_f2.png",
+      "goblin_run_anim_f3.png"
+    ],
+    "region": [
+      10,
+      20,
+      11,
+      11
+    ],
+    "sha256": "04ef656e04a5a29d09dbf9a3ea80be0650d985f9a8bcbb9dd7549304a7dfccd4"
+  },
+  "archer": {
+    "source": "skelet",
+    "original_frames": [
+      "skelet_idle_anim_f0.png",
+      "skelet_idle_anim_f1.png",
+      "skelet_idle_anim_f2.png",
+      "skelet_idle_anim_f3.png",
+      "skelet_run_anim_f0.png",
+      "skelet_run_anim_f1.png",
+      "skelet_run_anim_f2.png",
+      "skelet_run_anim_f3.png"
+    ],
+    "region": [
+      11,
+      15,
+      21,
+      17
+    ],
+    "sha256": "52e25641745059b8f2ff1e9789fa741e5c21e3c0ef69bf0e161b7fa3acc7a3b1"
+  },
+  "hollow": {
+    "source": "big_demon",
+    "original_frames": [
+      "big_demon_idle_anim_f0.png",
+      "big_demon_idle_anim_f1.png",
+      "big_demon_idle_anim_f2.png",
+      "big_demon_idle_anim_f3.png",
+      "big_demon_run_anim_f0.png",
+      "big_demon_run_anim_f1.png",
+      "big_demon_run_anim_f2.png",
+      "big_demon_run_anim_f3.png"
+    ],
+    "region": [
+      3,
+      0,
+      26,
+      31
+    ],
+    "sha256": "cf776515c81591f981fe3f6ba87730dd19b2dcfdee5b33a4281b1afd2a3f813f"
+  },
+  "nugh": {
+    "source": "ogre",
+    "original_frames": [
+      "ogre_idle_anim_f0.png",
+      "ogre_idle_anim_f1.png",
+      "ogre_idle_anim_f2.png",
+      "ogre_idle_anim_f3.png",
+      "ogre_run_anim_f0.png",
+      "ogre_run_anim_f1.png",
+      "ogre_run_anim_f2.png",
+      "ogre_run_anim_f3.png"
+    ],
+    "region": [
+      5,
+      3,
+      22,
+      28
+    ],
+    "sha256": "9af391fb845b4c0d73ca7e1c4a17d3b00aa96bde24cf3169beaa52f28c3179bc"
+  },
+  "cantor": {
+    "source": "necromancer",
+    "original_frames": [
+      "necromancer_anim_f0.png",
+      "necromancer_anim_f1.png",
+      "necromancer_anim_f2.png",
+      "necromancer_anim_f3.png",
+      "necromancer_anim_f0.png",
+      "necromancer_anim_f1.png",
+      "necromancer_anim_f2.png",
+      "necromancer_anim_f3.png"
+    ],
+    "region": [
+      9,
+      14,
+      14,
+      17
+    ],
+    "sha256": "3a3c74fe532dd7d79dbb3e56963cdc862bcba46e098816cfc4ea13f4912980c3"
+  },
+  "bugh": {
+    "source": "knight_f",
+    "original_frames": [
+      "knight_f_idle_anim_f0.png",
+      "knight_f_idle_anim_f1.png",
+      "knight_f_idle_anim_f2.png",
+      "knight_f_idle_anim_f3.png",
+      "knight_f_run_anim_f0.png",
+      "knight_f_run_anim_f1.png",
+      "knight_f_run_anim_f2.png",
+      "knight_f_run_anim_f3.png"
+    ],
+    "region": [
+      8,
+      9,
+      15,
+      22
+    ],
+    "sha256": "ab3d363d7146f95e0485dc66ca41f6349232eb01bd1eb63510e778eef11639a1"
+  },
+  "worm": {
+    "source": "slug",
+    "original_frames": [
+      "slug_anim_f0.png",
+      "slug_anim_f1.png",
+      "slug_anim_f2.png",
+      "slug_anim_f3.png",
+      "slug_anim_f0.png",
+      "slug_anim_f1.png",
+      "slug_anim_f2.png",
+      "slug_anim_f3.png"
+    ],
+    "region": [
+      9,
+      14,
+      14,
+      17
+    ],
+    "sha256": "604449672a7a7c5cab7917569400088aa915a299deeaef345d7cf6069c2256db"
+  },
+  "mite": {
+    "source": "imp",
+    "original_frames": [
+      "imp_idle_anim_f0.png",
+      "imp_idle_anim_f1.png",
+      "imp_idle_anim_f2.png",
+      "imp_idle_anim_f3.png",
+      "imp_run_anim_f0.png",
+      "imp_run_anim_f1.png",
+      "imp_run_anim_f2.png",
+      "imp_run_anim_f3.png"
+    ],
+    "region": [
+      10,
+      18,
+      11,
+      13
+    ],
+    "sha256": "af61660243be4acf637239b2feb97c6e435d31e57423ffcc102463265aba7f58"
+  },
+  "cocoon": {
+    "source": "muddy",
+    "original_frames": [
+      "muddy_anim_f0.png",
+      "muddy_anim_f1.png",
+      "muddy_anim_f2.png",
+      "muddy_anim_f3.png",
+      "muddy_anim_f0.png",
+      "muddy_anim_f1.png",
+      "muddy_anim_f2.png",
+      "muddy_anim_f3.png"
+    ],
+    "region": [
+      8,
+      15,
+      16,
+      16
+    ],
+    "sha256": "27d0bf5283468ca057e75f01ce290d96b799e11382c29c211a772b7bf3c9d1cb"
+  }
+}

@@ -1,0 +1,6 @@
+DungeonTileset II by 0x72
+Creative Commons Zero v1.0 Universal (CC0 1.0)
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+Original artist and permission: https://0x72.itch.io/dungeontileset-ii
+The original page lists CC0, permits use in any project, and says credit is not necessary. See SOURCE.md for provenance and the unmodified source archive.
