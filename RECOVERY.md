@@ -129,3 +129,12 @@ The user's latest correction removes generic Trial confirmation: tap Attack/targ
 Soulcaster Blank selection opens `soulcaster_ui.gd`'s compact board-visible panel. Gather or a spell is the second and final tap. Charge/HP/slot costs and a Downing warning remain visible, with optional Help and no-cost Close. Phone board space adjusts while this panel is open. The v0.38 model rules/caps/creation-turn lock are unchanged. `direct_v39_test.gd` adds actual controller/map-input and animated-frame checks; `soulcaster_v38_test.gd` now checks direct spell buttons instead of a removed creation footer.
 
 `enemy_art.gd` / `tools/make_enemy_sprites.py` use 0x72 DungeonTileset II v1.7 originals. The unmodified archive, artist's explicit No-generative-AI/CC0 source evidence, licence link and exact frame/atlas hashes are in `prototype/assets/vendor/dungeon_tileset_ii/`. No asset-image generation is used. Extract native pixels only, use idle/run frames and integer nearest-neighbour rendering, retain stats/footprints and boss phase/core/guard indicators. Ordinary floors cover the misleading boss pad. Camp portraits use matching stills. Run the current model/UI suites, `verify_direct_browser.py` and `verify_direct_art_browser.py` in the nonshipping fixture; inspect the shipping export and update current rules/PDF and exact release metadata before publishing.
+
+
+## v0.40 shared equipment rules
+
+`equipment.gd` is the shared source for Body category ranges, Soul HP/Blanks, Weapon Attack limits, 1–3 Strike replacements and Attack-wide passives. Both shipping profiles set `equipment.enabled` and the per-hero equipment arrays. Scope every construction validation with `Equipment.scoped(profile, hero)`; do not validate all heroes using hero zero’s gear. Generated Weapon faces are projections, not normal owned catalog faces.
+
+First-encounter Memories are empty; normal crafted Memories and Trial post-victory Memory rewards provide later passives. Pure Blank-conversion rewards are Memories. Version-40 saves retain converted Memory copies and original repaired Trial dice; check idempotence when changing migration. Normal and Trial collections remain separate.
+
+Run equipment_v40_test.gd, current native regressions, verify_equipment_browser.py and verify_direct_browser.py before publishing. Native tests must use temporary XDG_DATA_HOME directories to isolate saves. Current rules exporter includes the shared equipment definitions; regenerate HTML/Markdown/PDF with tools/export_current_rules.gd and tools/make_current_rules.py.
