@@ -5,6 +5,7 @@ var soulcaster_spell := 76
 var show_soulcaster_help := false
 var trial_help_topic := "My heroes"
 var trial_replacement := Vector2i(-1,-1)
+const EnemyArt = preload("res://prototype/enemy_art.gd")
 const TrialForecast = preload("res://prototype/trial_forecast.gd")
 const TrialHollow = preload("res://prototype/trial_hollow.gd")
 var trial_choice: Dictionary = {}
@@ -79,7 +80,7 @@ var essence_page := 0
 var soul_gallery_page := 0
 const CampUI = preload("res://prototype/camp_ui.gd")
 const Essence = preload("res://prototype/essence.gd")
-const CREATURE_SPRITES = {"mire_leech":preload("res://prototype/assets/mire_leech.tres"),"glasswing_moth":preload("res://prototype/assets/glasswing_moth.tres"),"iron_husk":preload("res://prototype/assets/iron_husk.tres"),"bone_creature":preload("res://prototype/assets/bone_creature.png"),"support_creature":preload("res://prototype/assets/support_creature.png"),"movement_creature":preload("res://prototype/assets/movement_creature.png")}
+const CREATURE_SPRITES = {"mire_leech":EnemyArt.STILLS.mire_leech,"glasswing_moth":EnemyArt.STILLS.glasswing_moth,"iron_husk":EnemyArt.STILLS.iron_husk,"bone_creature":EnemyArt.STILLS.bone_creature,"support_creature":EnemyArt.STILLS.support_creature,"movement_creature":EnemyArt.STILLS.movement_creature}
 var camp_type := "bone_creature"
 var camp_recipe := "bone_growth"
 var camp_hero := 0
@@ -132,7 +133,7 @@ var compact_log := true
 var choosing_reroll := false
 var combat_notices: Array = []
 const LESSON_FACES = [2,1,4,7,5,31,0,57]
-const LESSONS = ["Move: select Die I (Step), then a highlighted empty cell.","Attack: select Die I (Strike), then click the boss. Allies need a second click to confirm friendly fire.","Block: select Die I (Guard), then Resolve. Watch Block and the blue shield.","Heal: select Die I (First Aid), then an injured adjacent hero.","Reaction: press Boss hits, then choose Block + stay. This held die reacts before damage.","Channel: select Die I (Stonewake), then Resolve. Watch the persistent blue ring; Next turn opens maintain / release.","Reward Soul: select Die I (Blank), then move up to two cells. Only one Blank per hero turn may convert.","Escape danger: select Die I (Ashstep), then move outside the marked square before the next boss turn."]
+const LESSONS = ["Move: select Die I (Step), then a highlighted empty cell.","Attack: select Die I (Strike), then click the boss. Allies need a second click to confirm friendly fire.","Block: tap Guard to gain Block immediately. Watch Block and the blue shield.","Heal: select Die I (First Aid), then an injured adjacent hero.","Reaction: press Boss hits, then choose Block + stay. This held die reacts before damage.","Channel: tap Stonewake to begin Channel. Watch the persistent blue ring; Next turn opens maintain / release.","Reward Soul: select Die I (Blank), then move up to two cells. Only one Blank per hero turn may convert.","Escape danger: select Die I (Ashstep), then move outside the marked square before the next boss turn."]
 const Tray = preload("res://prototype/dice_tray.gd")
 var builds: Array = [Model.default_build(),Model.default_build(),Model.default_build()]
 var page := "main"
@@ -388,7 +389,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.38.1",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.39",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -588,21 +589,20 @@ func battle_ui() -> void:
   for i in range(4):
    var dir: Vector2i = Model.DIRS[i]
    button(["North","East","South","West"][i],Vector2(760+(i%2)*170,780+(i/2)*43),Vector2(158,38),func():
-    if trial_fight:stage_trial_choice(shove_target,dir);shove_target = -1;rebuild();return
     if game.hero_action(selected,shove_target,dir):selected = -1;shove_target = -1
     rebuild(),GOLD,dir not in game.away_dirs(game.active,shove_target))
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.38.1 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.39 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.38.1 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.38.1 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.39 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.39 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.38.1 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.39 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.38.1 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.39 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -632,7 +632,7 @@ func open_audio_settings() -> void:
 func face_help(f: int) -> String:
  var movement := trial_movement_help(f)
  if movement!="":return movement+reward_live_notes(f)
- if f == 0 and page=="battle" and Model.Soulcaster.equipped(game,game.active):return "Soulcaster Blank: Gather +1 Soul Charge, or create a spell for its charge cost and 1 HP. Tap Use to choose. The new spell must be rolled on a later turn.\n\n"+SoulcasterUI.resource(game,game.active)
+ if f == 0 and page=="battle" and Model.Soulcaster.equipped(game,game.active):return "Soulcaster Blank: Gather +1 Soul Charge, or create a spell for its charge cost and 1 HP. Tap a Blank to choose. The new spell must be rolled on a later turn.\n\n"+SoulcasterUI.resource(game,game.active)
  if f == 0:
   var actor: int = game.active if page == "battle" else build_hero
   if actor not in [0,1,2]:return "Blank: check the acting hero’s equipped Soul and remaining conversion allowance."
@@ -800,11 +800,9 @@ func _gui_input(event: InputEvent) -> void:
   for u in range(game.unit_count()):
    if game.unit_data(u).get("dead",false): continue
    if c in game.cells(u): target = u
-  if not trial_fight and Catalog.is_attack(f) and f not in [61,67,69,70] and target >= 0 and game.friendly(target) and target != game.active and friendly_confirm != target:
+  if Catalog.is_attack(f) and f not in [61,67,69,70,73,74,76] and target >= 0 and game.friendly(target) and target != game.active and friendly_confirm != target:
    friendly_confirm = target; hint = "FRIENDLY FIRE: click this ally again to confirm the attack."; rebuild(); return
   friendly_confirm = -1
-  if trial_fight and f in TrialForecast.TARGETED and f!=8:
-   stage_trial_choice(target if f not in [0,2,3,53,54,57,59,60,66] else -1,c if f in [0,2,3,53,54,57,59,60,66] or Model.TrialRules.blocked_cell(game,c) else Vector2i(-99,-99));return
   var done := false
   if Model.TrialRules.blocked_cell(game,c):done = game.hero_action(selected,-1,c)
   elif f in [0,2,3,53,54,57,59,60,66]: done = game.hero_action(selected,-1,c)
@@ -815,10 +813,9 @@ func _gui_input(event: InputEvent) -> void:
     var tp: Vector2i = game.unit_data(shove_target).pos
     var delta := c-tp
     var dir := Vector2i(signi(delta.x),0) if absi(delta.x) >= absi(delta.y) else Vector2i(0,signi(delta.y))
-    if trial_fight:stage_trial_choice(shove_target,dir);shove_target = -1;return
     done = game.hero_action(selected,shove_target,dir)
   elif f in [61,67,69,70]:done = game.hero_action(selected,target)
-  elif f in [1,7,12,15,19,34,35,36,37,38,39,40,41,55,58]: done = game.hero_action(selected,target)
+  elif f in [1,7,12,15,19,34,35,36,37,38,39,40,41,55,58,73,74,75,76,78,79]: done = game.hero_action(selected,target)
   if done: selected = -1; shove_target = -1; roll_feedback = {}; hint = "Choose another die, or end this hero’s turn."
   else:
    hint = explain_invalid(f,target,c)
@@ -874,12 +871,14 @@ func draw_board() -> void:
   for x in range(9):
    var c := Vector2i(x,y); var p := ORIGIN+Vector2(c)*CELL
    var col := Color("222b34") if (x+y)%2 == 0 else Color("1d2630")
+   if game.encounter_id=="event":draw_rect(Rect2(p,Vector2.ONE*CELL),col)
    if c in game.cells(3): col = Color("382d37")
    if c in highlights:col = tint
    if c in game.brand_cells: col = Color("663e31")
    if c in game.fire_tiles:col = Color("8c4b2c")
    if game.encounter_id == "bugh" and c in game.sweep_tiles:col = Color("a57636")
    var opacity := 0.48 if c in highlights or c in game.brand_cells or c in game.fire_tiles else (0.22 if c in game.cells(3) else 0.06)
+   if game.encounter_id=="event" and c not in highlights and c not in game.brand_cells and c not in game.fire_tiles:opacity = 1.0
    draw_rect(Rect2(p,Vector2.ONE*CELL),Color(col,opacity))
    draw_rect(Rect2(p,Vector2.ONE*CELL),Color(0.75,0.79,0.80,0.24),false,1)
    if game.encounter_id == "bugh" and c in game.sweep_tiles:
@@ -1404,13 +1403,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.38.1 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.39 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.38.1",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.39",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1518,7 +1517,7 @@ func explain_invalid(f: int, target: int, cell: Vector2i) -> String:
  if game.heroes[actor].get("rooted",0) > 0 and Catalog.category(f) == "Movement":return "Rooted prevents voluntary movement until the boss’s next turn. Attacks, Block and forced movement still work."
  if game.heroes[actor].used[selected]:return "This die is spent. Select another ready die; all available dice roll again next round."
  if f == 59:return "Summon Nu’gh needs an adjacent empty tile. While your worm lives, use Resolve to Command it."
- if f == 0 and Model.Soulcaster.equipped(game,actor):return "Soulcaster: tap Use to Gather or create a spell; Blanks do not move this hero."
+ if f == 0 and Model.Soulcaster.equipped(game,actor):return "Soulcaster: tap a Blank, then Gather or a spell; Blanks do not move this hero."
  if Model.Soulcaster.is_spell(f):return Model.Soulcaster.text(f)
  if f == 0 and not game.reward:return "Soul is OFF. Enable Blank movement above your dice or in Game options."
  if f == 0 and game.soul_mode(game.active) not in ["heal","block"] and game.soul_distance(game.active) <= 0:return "Blank movement is set to 0 in the balance workshop."
@@ -1679,35 +1678,30 @@ func portrait_region(id: int) -> Rect2:
  return Rect2(Vector2(id%2,id/2)*half,half)
 
 func draw_portrait(id: int, rect: Rect2) -> void:
+ if id==3:
+  draw_texture_rect(EnemyArt.texture(EnemyArt.key_for(game,3) if page=="battle" else encounter),rect,false);return
  draw_texture_rect_region(PORTRAITS,rect,portrait_region(id))
 
 func portrait_at(id: int, at: Vector2, dimensions: Vector2) -> void:
  var atlas := AtlasTexture.new();atlas.atlas = PORTRAITS;atlas.region = portrait_region(id)
- var picture := TextureRect.new();picture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;picture.texture = atlas;picture.position = at;picture.size = dimensions;picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED;picture.mouse_filter = Control.MOUSE_FILTER_IGNORE;ui.add_child(picture)
+ var chosen: Texture2D = EnemyArt.texture(EnemyArt.key_for(game,3) if page=="battle" else encounter) if id==3 else atlas
+ var picture := TextureRect.new();picture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;picture.texture = chosen;picture.position = at;picture.size = dimensions;picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED;picture.mouse_filter = Control.MOUSE_FILTER_IGNORE;ui.add_child(picture)
 
+
+func unit_moving(id: int) -> bool:
+ return movement_tracks.has(id) and float(movement_tracks[id].elapsed)<float(movement_tracks[id].duration)
 
 func draw_unit_sprite(id: int, rect: Rect2) -> void:
- if id == 3 and game.encounter_id == "event":
-  var creature: Texture2D = CREATURE_SPRITES.get(game.essence_type(id),MITE_SPRITE)
-  if creature is AtlasTexture:draw_texture_rect(creature,Rect2((rect.get_center()-Vector2(32,32)).round(),Vector2(64,64)),false)
-  else:draw_texture_rect_region(creature,Rect2((rect.get_center()-Vector2(24,24)).round(),Vector2(48,48)),Rect2(0,0,16,16))
+ if id==3 and page=="battle":
+  var ordinary: bool = game.encounter_id=="event";var center: Vector2 = rect.get_center()
+  EnemyArt.draw(self,EnemyArt.key_for(game,id),center+Vector2(0,24 if ordinary else 48),t*(1.2 if game.phase_two else 1),unit_moving(id),not ordinary)
+  if ordinary:return
+  if game.phase_two:draw_arc(center+Vector2(0,30),48,0,TAU,32,Color(.95,.4,.25,.35),2)
+  if game.encounter_id=="cantor":
+   if game.resonance>0:draw_arc(center,48+sin(t*3)*3,0,TAU,48,Color(.4,.85,.95,.2+game.resonance*.08),2)
+   if game.core_open:draw_arc(center+Vector2(0,8),18+sin(t*5)*3,0,TAU,24,Color("fff0b5"),3)
+  if game.encounter_id=="bugh" and game.guard_broken:draw_arc(center,54,0,TAU,32,Color(.4,.9,.78,.65),2)
   return
- if id == 3 and page == "battle" and game.encounter_id == "cantor":
-  draw_texture_rect(CANTOR_PHASE if game.phase_two else CANTOR_SPRITE,rect,false)
-  var center := rect.get_center()
-  if game.resonance > 0:draw_arc(center,48+sin(t*3)*3,0,TAU,48,Color(0.4,0.85,0.95,0.2+game.resonance*0.08),2)
-  if game.core_open:
-   draw_arc(center+Vector2(0,8),18+sin(t*5)*3,0,TAU,24,Color("fff0b5"),3)
-   draw_rect(rect.grow(-8),Color(0.95,0.82,0.4,0.55),false,2)
-  return
- if id == 3 and page == "battle" and game.encounter_id == "bugh":
-  draw_texture_rect(BUGH_PHASE if game.phase_two else BUGH_SPRITE,rect,false)
-  if game.guard_broken:draw_arc(rect.get_center(),54,0,TAU,32,Color(.4,.9,.78,.65),2)
-  return
- if id == 3 and page == "battle" and game.encounter_id == "nugh":
-  draw_texture_rect(NUGH_PHASE if game.phase_two else NUGH_SPRITE,rect,false);return
- if id == 3 and page == "battle" and game.phase_two:
-  draw_texture_rect(BOSS_PHASE_TWO,rect,false);return
  var half := Vector2(SPRITES.get_size())/2.0
  draw_texture_rect_region(SPRITES,rect,Rect2(Vector2(id%2,id/2)*half,half))
 
@@ -1936,6 +1930,21 @@ func short_face_help(f: int) -> String:
   if multiplier != 1 or bonus != 0:text += "\n\nCustom value: roll ×%d, then +%d." % [multiplier,bonus]
  return text+reward_live_notes(f)
 
+func direct_face(face: int) -> bool:
+ if face==0:return Model.Soulcaster.equipped(game,game.active) or (game.reward and game.soul_mode(game.active) in ["heal","block"])
+ if face==59:return game.owned_worm(game.active)>=0
+ # Ready self effects and choice abilities resolve/open on the first tap.
+ # Movement, attacks, heals and swaps wait for their map target.
+ return face in [4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,56,62,63,64,65,71,72]
+
+func resolve_direct_face() -> void:
+ if selected<0 or game.active not in range(3) or not game.pending.is_empty():return
+ var die: int = selected;var h: Dictionary = game.heroes[game.active]
+ if h.used[die] or not direct_face(game.face(game.active,die)):return
+ if game.hero_action(die):
+  if game.pending.get("kind","")!="soul_blank":selected = game.forced_die
+  roll_feedback = {};hint = "Choose another ability, or end this turn."
+
 func select_combat_die(d: int) -> void:
  trial_choice.clear()
  choosing_poke = false
@@ -1957,9 +1966,7 @@ func select_combat_die(d: int) -> void:
   roll_feedback = {"actor":game.active,"text":"Die %s is spent / held. Inspect it here, or choose a READY die." % ["I","II","III"][d]}
  elif game.forced_die < 0 or game.forced_die == d:
   selected = d;shove_target = -1;roll_feedback = {};hint = selected_die_help(d)
-  if trial_fight and game.face(game.active,d) in TrialForecast.IMMEDIATE:
-   var forecast: Dictionary = TrialForecast.calculate(game,d)
-   if forecast.valid:stage_trial_choice();return
+  resolve_direct_face()
  rebuild()
 
 func combat_reroll_ui() -> void:
@@ -2081,12 +2088,8 @@ func draw_worm(id: int) -> void:
  if Model.TrialRules.objective_unit(game,id):draw_trial_object(id);return
  var worm: Dictionary = game.unit_data(id)
  var center := effect_center(id)
- var frame := int(t*4+id)%2
- if game.encounter_id!="event" or game.friendly(id):draw_circle(center+Vector2(0,18),12,Color(0.02,0.02,0.04,0.18))
- var sprite = FRIENDLY_SPRITE if game.friendly(id) else (CREATURE_SPRITES.get(game.essence_type(id),MITE_SPRITE) if game.encounter_id == "event" else COCOON_SPRITE if worm.get("kind","") == "cocoon" else (MITE_SPRITE if worm.get("kind","") == "mite" else WORM_SPRITE))
- if sprite is AtlasTexture:draw_texture_rect(sprite,Rect2((center-Vector2(32,32)+Vector2(0,roundf(sin(t*2+id)*2))).round(),Vector2(64,64)),false)
- else:draw_texture_rect_region(sprite,Rect2(center-Vector2(24,24),Vector2(48,48)),Rect2(frame*16,0,16,16))
- draw_hp_dots(center+Vector2(-8 if worm.block > 0 else 0,36 if sprite is AtlasTexture else 29),worm.hp,worm.max_hp,Color("bed4ab"))
+ EnemyArt.draw(self,EnemyArt.key_for(game,id),center+Vector2(0,24),t+id*.13,unit_moving(id))
+ draw_hp_dots(center+Vector2(-8 if worm.block>0 else 0,36),worm.hp,worm.max_hp,Color("bed4ab"))
  if worm.block > 0:
   draw_rect(Rect2(center+Vector2(4,20),Vector2(26,16)),Color("243e50"))
   draw_string(BODY,center+Vector2(6,32),"B%d" % worm.block,HORIZONTAL_ALIGNMENT_LEFT,-1,11,Color("a7d1ee"))
@@ -2207,7 +2210,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.38.1",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.39",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2753,7 +2756,7 @@ func trial_forecast_text() -> String:
  if f in TrialForecast.IMMEDIATE:
   var result: Dictionary = TrialForecast.calculate(game,selected)
   if result.valid:return result.text
- return hint if hint!="" else "Tap a target to preview, then confirm."
+ return hint if hint!="" else "Tap an ability, then its map target. Defense and other self effects resolve on tap."
 func trial_objective_button() -> void:
  if not game.has_method("objective_summary") or game.objective_summary()=="":return
  var at := Vector2(42,846);var dimensions := Vector2(684,36)

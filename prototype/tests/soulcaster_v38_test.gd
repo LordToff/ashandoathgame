@@ -152,8 +152,8 @@ func run_tests() -> void:
  for size in [Vector2i(360,640),Vector2i(390,844),Vector2i(844,390),Vector2i(1440,900)]:
   root.size = size;app.set_mobile_mode(size.x<1440,false);app.game = fresh();app.game.heroes[0].soul_charges = 2;app.roll_seen = app.game.roll_presentations.size();app.seen_event = app.game.event_id;app.rolling_time = 0;app.dice_tray.cancel();S.blank(app.game,0);app.rebuild();await process_frame
   for f in range(75,81):check(app.ui.find_child("SoulSpell"+str(f),true,false)!=null,"all spell choices render in each layout")
-  var button: Button = app.ui.find_child("SoulcasterManifest",true,false)
-  check(button!=null and not button.disabled and button.get_global_rect().end.y<=app.get_viewport_rect().size.y,"creation footer stays reachable in each viewport")
+  var button: Button = app.ui.find_child("SoulSpell76",true,false)
+  check(button!=null and not button.disabled and button.get_global_rect().end.y<=app.get_viewport_rect().size.y,"direct spell creation button stays reachable in each viewport")
   app.game.pending = {};app.game.heroes[0].build[0] = [3,3,3,3,3,3];app.game.heroes[0].results[0] = 0;app.game.heroes[0].rerolls = 1;app.game.heroes[0].opening = true;app.selected = 0;app.hint = "OLD HINT";app.perform_reroll(0)
   check(app.hint!="OLD HINT" and not "Gather" in app.hint and app.combat_notices.is_empty(),"reroll replaces stale hint without an acknowledgement prompt")
  app.queue_free();await process_frame

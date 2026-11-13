@@ -38,7 +38,7 @@ static func screen(app, heading: String, key: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
  app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.38.1",Vector2(18,58),15,MUTED,size.x-36)
+ app.label_at("ASH & OATH · MOBILE · v0.39",Vector2(18,58),15,MUTED,size.x-36)
  var width: float = minf(720,size.x-24)
  var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
@@ -257,8 +257,9 @@ static func board_rect(app) -> Rect2:
  if size.x > size.y:
   var edge: float = minf(size.y-102,size.x*0.45)
   return Rect2(8,94,edge,edge)
- var edge: float = minf(size.x-16,size.y-442)
- return Rect2((size.x-edge)/2,208+maxf(0,(size.y-442-edge)/2),edge,edge)
+ var reserved: float = 494 if app.game.pending.get("kind","")=="soul_blank" else 442
+ var edge: float = minf(size.x-16,size.y-reserved)
+ return Rect2((size.x-edge)/2,208+maxf(0,(size.y-reserved-edge)/2),edge,edge)
 static func board_point(app, at: Vector2) -> Vector2:
  var rect := board_rect(app);return SOURCE_RECT.position+(at-rect.position)*(SOURCE_RECT.size.x/rect.size.x)
 static func touch(app, caption: String, at: Vector2, size: Vector2, action: Callable, tint: Color = GOLD, disabled: bool = false, name: String = "") -> Button:
@@ -363,8 +364,6 @@ static func shove(app) -> void:
  for i in range(4):
   var direction: Vector2i = app.Model.DIRS[i]
   btn(app,grid,["North","East","South","West"][i],func():
-   if app.trial_fight:
-    var target: int = app.shove_target;app.shove_target = -1;app.stage_trial_choice(target,direction);return
    if app.game.hero_action(app.selected,app.shove_target,direction):app.selected = -1
    app.shove_target = -1;app.rebuild(),GOLD,direction not in app.game.away_dirs(app.game.active,app.shove_target))
  footer(app,["Back"],[func():app.shove_target = -1;app.rebuild()])

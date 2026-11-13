@@ -1,3 +1,5 @@
+v0.39: **Direct combat controls** — tap Attack then map target; movement then destination; self Defense/effects resolve on tap. Soulcaster Blank opens compact Gather / create controls without covering the board. Enemies use original non-AI CC0 idle/run pixel animation by 0x72. [Changes](../docs/Changes-v0.39.md).
+
 v0.37: **Trials → class card** offers Skirmisher and Vanguard for each hero. Starting Body, Memory, Weapon and Beginning Soul are free; preview all three dice and tap a face or example to learn the kit. Class rewards differ; ordinary Camp stays separate. [Changes](../docs/Changes-v0.37.md).
 
 v0.36: Six experiments live in **Trials**: target forecasts with Confirm, ritual/spirit objectives, rolled Jab/Crack weapon faces, four-slot build ideas, an interruptible Hollow attack, and a persistent crafting wishlist. [Changes](../docs/Changes-v0.36.md).

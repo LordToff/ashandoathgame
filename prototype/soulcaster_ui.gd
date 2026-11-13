@@ -26,19 +26,32 @@ static func spells(app, column) -> void:
  var selected: Dictionary = S.SPELLS[app.soulcaster_spell]
  M.text(column,selected.name,25,app.color_for_face(app.soulcaster_spell));M.text(column,selected.text,21)
 static func blank(app) -> void:
- var g = app.game;var hero: int = g.pending.hero
- var column := P.panel(app,"Soulcaster · rolled Blank",resource(g,hero))
- M.text(column,"Gather spends this result for +1 Soul Charge. Create spends this result, charges and 1 HP to replace its physical Blank side. Roll the spell on a later turn to use it.",20)
- spells(app,column)
- var reason: String = S.manifest_reason(g,hero,app.soulcaster_spell)
- M.text(column,reason if reason!="" else "Create for %d charges + 1 HP · %d HP remains%s" % [S.SPELLS[app.soulcaster_spell].cost,g.heroes[hero].hp-1," · this will Down the caster" if g.heroes[hero].hp==1 else ""],19,app.GOLD)
- P.footer(app,["Gather +1","Create spell","Back"],[func():change(app,func():S.gather(g)),func():change(app,func():S.manifest(g,app.soulcaster_spell)),func():g.pending = {};app.rebuild()],[S.charges(g,hero)>=3,reason!="",false])
- for child in app.ui.get_children():
-  if child is Button and child.text in ["Gather +1","Create spell","Back"]:child.name = {"Gather +1":"SoulcasterGather","Create spell":"SoulcasterManifest","Back":"SoulcasterCancel"}[child.text]
+ var g = app.game;var hero: int = g.pending.hero;var size: Vector2 = app.get_viewport_rect().size
+ var at := Vector2(752,144);var width := 352.0;var height := 694.0;var card_height := 104.0
+ if app.mobile_mode:
+  var board: Rect2 = M.board_rect(app);var x: float = board.end.x+12 if size.x>size.y else 12
+  at = Vector2(x,size.y-280);width = size.x-x-12;height = 280;card_height = 56
+ app.setup_panel(Rect2(at,Vector2(width,height)),app.GOLD)
+ app.label_at("Soulcaster · "+resource(g,hero),at+Vector2(10,7),16,app.GOLD,width-20,false,true)
+ var hp: int = g.heroes[hero].hp
+ app.label_at("Create costs 1 HP · %d HP now%s" % [hp," · will Down you" if hp==1 else ""],at+Vector2(10,29),15,Color("efba99") if hp==1 else app.MUTED,width-20)
+ var usable: float = width-20;var gather_width: float = usable*.48;var other_width: float = (usable-gather_width-12)/2
+ var gather: Button = app.button("Gather +1" if S.charges(g,hero)<3 else "Charges full",at+Vector2(10,52),Vector2(gather_width,40),func():change(app,func():S.gather(g)),app.GOLD,S.charges(g,hero)>=3);gather.name = "SoulcasterGather";gather.add_theme_font_size_override("font_size",18);gather.size = Vector2(gather_width,40)
+ var help: Button = app.button("Help",at+Vector2(16+gather_width,52),Vector2(other_width,40),func():app.show_soulcaster_help = true;app.rebuild(),app.MUTED);help.name = "SoulcasterHelp";help.add_theme_font_size_override("font_size",18);help.size = Vector2(other_width,40)
+ var close: Button = app.button("Close",at+Vector2(22+gather_width+other_width,52),Vector2(other_width,40),func():g.pending = {};app.rebuild(),app.MUTED);close.name = "SoulcasterCancel";close.add_theme_font_size_override("font_size",18);close.size = Vector2(other_width,40)
+ for index in range(6):
+  var face: int = 75+index;var info: Dictionary = S.SPELLS[face];var reason: String = S.manifest_reason(g,hero,face)
+  var w: float = (usable-6)/2;var top: float = (98 if app.mobile_mode else 104)+(index/2)*(card_height+4)
+  var caption: String = ("Mirror (Reaction)" if face==77 else str(info.name))+"\n%d charge%s · 1 HP" % [int(info.cost),"s" if int(info.cost)!=1 else ""]
+  var button: Button = app.button(caption,at+Vector2(10+(index%2)*(w+6),top),Vector2(w,card_height),func():change(app,func():S.manifest(g,face)),app.color_for_face(face),reason!="")
+  button.name = "SoulSpell"+str(face);button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART;button.add_theme_font_size_override("font_size",18 if app.mobile_mode else 17);button.size = Vector2(w,card_height)
+  button.tooltip_text = info.text+"\n\n"+(reason if reason!="" else "Create on the selected Blank. It must roll on a later turn.")
+ if not app.mobile_mode:
+  app.label_at("Tap Gather, or tap a spell to create it.\nSpells must roll on a later turn.\nHelp explains each spell before you spend.",at+Vector2(12,446),18,app.MUTED,width-24,false,true)
 static func guide(app) -> void:
  var column := P.panel(app,"Soulcaster spellbook","Free starter Soul · either class · Trials only")
  M.text(column,"The loop",27,app.GOLD)
- M.text(column,"1. Roll a Blank and tap Use. Gather spends it for +1 Soul Charge (maximum 3).\n2. With enough charges, use another Blank to create a spell. Pay its charges and 1 HP.\n3. That result is spent. The spell becomes available only when its new physical side is rolled on a later turn.",21)
+ M.text(column,"1. Tap a rolled Blank. Gather spends it for +1 Soul Charge (maximum 3).\n2. With enough charges, tap another Blank, then tap the spell to create it. Pay its charges and 1 HP.\n3. That result is spent. The spell becomes available only when its new physical side is rolled on a later turn.",21)
  M.text(column,"Your build",27,app.GOLD)
  M.text(column,"Soulcaster starts at 6 base HP, then applies the equipped Memory’s HP penalty. Guard / Momentum Memory makes 5 HP; No Memory keeps 6. Every starting die has four Blanks. Your Weapon still replaces its Strike side with Jab / Crack where applicable. Body movement modifiers still apply to normal movement.",21)
  M.text(column,"Up to four spells may exist on each caster’s dice. Soul Charges begin at 0 each encounter; all manifested sides return to your starting build after it. Soulcasting replaces Blank movement. Soul Charges pay for spells; Action Rerolls reroll dice; Run Essence buys rewards.",21)

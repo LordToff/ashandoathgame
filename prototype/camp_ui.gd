@@ -199,7 +199,4 @@ static func creatures(app) -> void:
  app.button("Wilds creatures →" if app.creature_page == 0 else "Creatures 2 / 2",Vector2(650,831),Vector2(265,44),func():app.creature_page = 1;app.rebuild(),app.GOLD).name = "CreatureNextPage"
 
 static func source_texture(app, type: String) -> Texture2D:
- if app.CREATURE_SPRITES.has(type):return app.CREATURE_SPRITES[type]
- if type == "hollow":
-  var atlas := AtlasTexture.new();atlas.atlas = app.SPRITES;atlas.region = Rect2(32,32,32,32);return atlas
- return {"nugh":app.NUGH_SPRITE,"cantor":app.CANTOR_SPRITE,"bugh":app.BUGH_SPRITE}.get(type,app.SPRITES)
+ return app.EnemyArt.STILLS.get(type,app.EnemyArt.STILLS.bone_creature)

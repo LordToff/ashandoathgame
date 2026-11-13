@@ -87,7 +87,7 @@ static func picker(app) -> void:
   if p.kind == "catalog_choice":
    if app.game.catalog_pick(selected.x,selected.y):app.selected = app.game.forced_die
   else:app.game.burden_ally(selected.x,selected.y);app.selected = app.game.forced_die
-  app.choice_preview = Vector2i(-1,-1);app.rebuild(),func():
+  app.resolve_direct_face();app.choice_preview = Vector2i(-1,-1);app.rebuild(),func():
   if p.kind == "catalog_choice":app.game.pending = {};app.game.decline(p.die)
   else:app.game.essence_decline()
   app.selected = -1;app.choice_preview = Vector2i(-1,-1);app.rebuild()],[not eligible,false])

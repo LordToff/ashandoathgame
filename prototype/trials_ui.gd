@@ -145,7 +145,7 @@ static func guide(app) -> void:
  match app.trial_help_topic:
   "How to play":
    M.text(column,"One run, three heroes",27,app.GOLD)
-   M.text(column,"Choose a class and four pieces of gear for each hero, then start. Each fight rolls three Action Dice per hero. Tap a ready ability, tap its target or destination, and confirm the preview. Use opens abilities that need a choice. Held Reactions respond to attacks. Unused results are optional; End turn advances play.",21)
+   M.text(column,"Choose a class and four pieces of gear for each hero, then start. Each fight rolls three Action Dice per hero. Tap an Attack or targeted skill, then its map target. Movement uses ability then destination. Guard and other self effects resolve on tap. Choice abilities open their own picker; a Soulcaster Blank opens compact Gather / create controls. Held Reactions respond to attacks. Unused results are optional; End turn advances play.",21)
    M.text(column,"Red = Attack · Blue = Defense · Yellow = Movement · Purple = Skill · Light gray = Blank · Dark gray = spent.",21)
    M.text(column,"HP is life; 0 HP Downs a hero. Healing can revive them. Block absorbs damage before HP and expires at that unit’s next turn. Poison costs HP at turn start, then decreases by 1. Action Rerolls are a separate bank (normally at most 1); they roll a die again and may show the same result.",21)
    M.text(column,"Five stops lead to your selected boss. HP carries between fights. Camp can heal the party. A safe route / reward checkpoint can resume; leaving during a fight ends the run.",21)

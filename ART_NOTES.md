@@ -1,3 +1,17 @@
+# Current artwork — v0.39
+
+Enemy sprites now use **0x72’s DungeonTileset II v1.7**, original animated pixel art under **CC0**. The artist’s original page explicitly states **“No generative AI was used in the creation of these assets.”**
+
+Source: https://0x72.itch.io/dungeontileset-ii
+
+The original archive, licence/source evidence and SHA-256 are retained under `prototype/assets/vendor/dungeon_tileset_ii/`. `SELECTIONS.json` records every original frame and generated-atlas hash. Run `python tools/make_enemy_sprites.py` to reproduce the extracted atlases. Frames are cropped only to remove transparent padding and packed without resampling, new paint, palette changes or invented in-between frames. The skeleton Sentry additionally uses the artist’s bow. Rendering uses nearest-neighbour integer enlargement.
+
+Distinct sprites cover the six ordinary creature families, five Trial roles, four bosses and worms/mites/cocoons. Real idle and run frames respond to movement. Boss phase, resonance/core and guard indicators remain. Creature sprite sizes fit their one-cell legal footprints; art does not alter targeting, stats, action dice or rewards. Camp portraits use matching stills.
+
+Soul and Memory icons retain the human-authored Kenney CC0 sprites described below. Hero art, arena art and music remain from earlier versions. Historical builds keep their original art.
+
+---
+
 # Current artwork — v0.30
 
 The Soul, Memory and Wilds creature sprites now use **Kenney's Tiny Dungeon 1.0**, a human-authored 16×16 pixel-art pack under **Creative Commons Zero (CC0)**. The included original licence credits Kenney and dates the pack to 5 July 2022.
