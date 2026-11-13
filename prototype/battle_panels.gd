@@ -105,13 +105,13 @@ static func engrave(app) -> void:
 static func collection(app) -> void:
  var column := panel(app,"Collection","Hold locked items to unlock" if app.debug_mode else "")
  M.heroes(app,column,true)
- var souls: Array = ["beginning","hollow","ashroad"]+app.Wilds.SOULS.keys()
+ var souls: Array = ["beginning","hollow","ashroad"]
  M.text(column,"Souls",24,app.GOLD)
  var grid := GridContainer.new();grid.columns = 3 if app.get_viewport_rect().size.x>700 else 2;grid.add_theme_constant_override("h_separation",10);grid.add_theme_constant_override("v_separation",10);column.add_child(grid)
  for soul in souls:
   var owned: bool = soul in app.expedition.camp.souls[app.camp_hero]
-  var b := button(app,grid,app.Wilds.soul_name(soul),func():
-   app.mobile_info = app.Wilds.SOULS.get(soul,{}).get("effect","Spend a rolled Blank as Move 1 once per turn." if soul == "beginning" else "Spend a rolled Blank as Move 2 once per turn.")
+  var b := button(app,grid,app.Model.Equipment.SOULS[soul].name,func():
+   app.mobile_info = app.Model.Equipment.SOULS[soul].text
    app.info_return_collection = true;app.show_collection = false;app.rebuild(),app.GOLD if owned else app.MUTED)
   b.name = "CollectionSoul_"+soul;app.bind_unlock(b,"soul",soul,app.camp_hero)
  M.text(column,"Memories",24,app.GOLD)

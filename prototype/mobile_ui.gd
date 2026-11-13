@@ -38,7 +38,7 @@ static func screen(app, heading: String, key: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
  app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.39",Vector2(18,58),15,MUTED,size.x-36)
+ app.label_at("ASH & OATH · MOBILE · v0.40",Vector2(18,58),15,MUTED,size.x-36)
  var width: float = minf(720,size.x-24)
  var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
@@ -141,8 +141,8 @@ static func forge(app) -> void:
   if app.expedition.camp.owned(id)>0:ids.append(id)
  ids.append_array(app.gifts[app.build_hero])
  for side in range(6):
-  var face: int = app.builds[app.build_hero][app.forge_die][side]
-  choose(app,column,"Side "+str(side+1),ids.map(func(id):return app.Catalog.display_name(id)),ids.find(face),func(index):app.forge_side = side;app.forge_replace(ids[index]))
+  var face: int = app.camp_display_face(app.build_hero,app.forge_die,side)
+  choose(app,column,"Side "+str(side+1),ids.map(func(id):return app.Catalog.display_name(face)+" · replaces Strike" if id==1 and app.Model.Equipment.FACES.has(face) else app.Catalog.display_name(id)),ids.find(int(app.builds[app.build_hero][app.forge_die][side])),func(index):app.forge_side = side;app.forge_replace(ids[index]))
   text(column,app.face_help(face),19)
  text(column,app.party_build_error(),20,Color("efa898"))
  btn(app,column,"Restore this hero’s starter dice",app.restore_hero_build,MUTED)
@@ -194,28 +194,26 @@ static func refit(app, column: Control) -> void:
  var dice := row(column)
  for die in range(3):btn(app,dice,"Die "+str(die+1),func():app.forge_die = die;app.rebuild(),GOLD if app.forge_die == die else MUTED)
  for side in range(6):
-  var face: int = app.builds[app.camp_hero][app.forge_die][side]
+  var face: int = app.camp_display_face(app.camp_hero,app.forge_die,side)
   btn(app,column,"Side %d · %s" % [side+1,app.Catalog.name_for(face)],func():
    if app.camp_remove_mode:app.camp_remove(app.camp_hero,app.forge_die,side)
    else:app.camp_place(E.RECIPES[app.camp_recipe].face,app.camp_hero,app.forge_die,side),app.color_for_face(face))
 static func equipment(app, column: Control) -> void:
- heroes(app,column,true);var hero: int = app.camp_hero
- text(column,"Body · Broken Body",25,GOLD)
- text(column,"%d HP · at least %d Blanks per die. Existing category and ownership limits apply." % [app.balance_number("hero.hp"),app.balance_number("body.blanks")],20)
- choose(app,column,"Weapon",["None","Dagger · Poke"],1 if app.expedition.camp.weapons[hero] == "dagger" else 0,func(index):app.expedition.camp.equip_weapon(hero,"dagger" if index == 1 else "");app.expedition.save();app.rebuild())
- var souls: Array = [""]+app.expedition.camp.souls[hero]
- choose(app,column,"Soul",souls.map(func(key):return W.soul_name(key)),souls.find(app.expedition.camp.equipped_souls[hero]),func(index):app.expedition.camp.equip_soul(hero,souls[index]);app.expedition.save();app.rebuild()).name = "MobileSoulPicker"
- var soul: String = app.expedition.camp.equipped_souls[hero]
- if Camp.NEW_SOUL_ART.has(soul):picture(column,Camp.NEW_SOUL_ART[soul])
- elif soul in ["beginning","hollow","ashroad"]:
-  var icon := AtlasTexture.new();icon.atlas = Camp.ITEM_ART;icon.region = Rect2(["beginning","hollow","ashroad"].find(soul)*16,0,16,16);picture(column,icon)
- text(column,W.SOULS[soul].effect if W.SOULS.has(soul) else ("Spend one rolled Blank as Move 1, once per own turn." if soul == "beginning" else "Spend one rolled Blank as Move 2, once per own turn." if soul != "" else "No Soul equipped."),20)
+ heroes(app,column,true);var hero: int = app.camp_hero;var gear = app.Model.Equipment
+ if app.expedition.camp.migration_message!="":text(column,app.expedition.camp.migration_message,18,GOLD)
+ var bodies: Array = ["broken","fleet","stone"]
+ choose(app,column,"Body",bodies.map(func(key):return gear.BODIES[key].name),maxi(0,bodies.find(gear.body_key(str(app.expedition.camp.bodies[hero])))),func(index):app.camp_equip("body",hero,bodies[index])).name = "MobileBodyPicker"
+ text(column,gear.BODIES[gear.body_key(str(app.expedition.camp.bodies[hero]))].text,20)
+ var weapons: Array = app.expedition.camp.available_weapons()
+ choose(app,column,"Weapon",weapons.map(func(key):return gear.WEAPONS[key].name),maxi(0,weapons.find(app.expedition.camp.weapons[hero])),func(index):app.camp_equip("weapon",hero,weapons[index])).name = "MobileWeaponPicker"
+ text(column,gear.WEAPONS.get(app.expedition.camp.weapons[hero],gear.WEAPONS[""]).text,20)
+ var souls: Array = app.expedition.camp.souls[hero]
+ choose(app,column,"Soul",souls.map(func(key):return gear.SOULS.get(key,gear.SOULS.beginning).name),maxi(0,souls.find(app.expedition.camp.equipped_souls[hero])),func(index):app.camp_equip("soul",hero,souls[index])).name = "MobileSoulPicker"
+ text(column,gear.SOULS.get(app.expedition.camp.equipped_souls[hero],gear.SOULS.beginning).text,20)
  var memories: Array = [""]+app.expedition.camp.memory_keys().filter(func(key):return app.expedition.camp.unlocked.has(key))
- choose(app,column,"Memory",memories.map(func(key):return "None" if key == "" else app.expedition.camp.reward_name(key)),memories.find(app.expedition.camp.memories[hero]),func(index):
-  var old: String = app.expedition.camp.memories[hero]
-  if index>0:app.expedition.camp.equip_memory(hero,memories[index])
-  elif old != "":app.expedition.camp.equip_memory(-1,old)
-  app.expedition.save();app.rebuild())
+ choose(app,column,"Memory",memories.map(func(key):return "None" if key=="" else app.expedition.camp.reward_name(key)),maxi(0,memories.find(app.expedition.camp.memories[hero])),func(index):app.camp_equip("memory",hero,memories[index])).name = "MobileMemoryPicker"
+ var memory: String = app.expedition.camp.memories[hero]
+ text(column,"Memory starts empty. Earn a Memory to gain its passive or a rolled-Blank conversion." if memory=="" else app.expedition.camp.reward_effect(memory),20)
  btn(app,column,"Souls & Memories",func():app.show_collection = true;app.rebuild(),GOLD)
 
 static func setup(app) -> void:
@@ -223,7 +221,7 @@ static func setup(app) -> void:
  var keys := ["hollow","nugh","cantor","bugh"];var names := ["The Hollow","Nu’gh · Worm Summoner","Veyl · Brass Cantor","Bu’gh · Iron Warden"]
  for i in range(4):btn(app,column,("Selected · " if app.encounter == keys[i] else "Choose · ")+names[i],func():app.encounter = keys[i];app.rebuild(),GOLD if app.encounter == keys[i] else MUTED)
  choose(app,column,"Numbers",["Tuned","Original"],0 if app.balanced else 1,func(index):app.balanced = index == 0;app.rebuild())
- choose(app,column,"Sandbox Blank movement",["Use equipped Souls","Override · Move 1","Override · Move 2"],int(app.balance_number("soul.move")) if app.reward_soul else 0,func(index):
+ choose(app,column,"Sandbox Blank movement",["Use equipped Memories","Override · Move 1","Override · Move 2"],int(app.balance_number("soul.move")) if app.reward_soul else 0,func(index):
   app.reward_soul = index > 0
   if index > 0:app.balance_values["soul.move"] = index
   app.rebuild())
@@ -332,7 +330,7 @@ static func battle(app) -> void:
    var target: int = app.friendly_confirm;app.friendly_confirm = -1
    if app.game.hero_action(app.selected,target):app.selected = -1;app.roll_feedback = {}
    app.rebuild(),GOLD,not trial_ready and not immediate and app.friendly_confirm<0,"MobileResolve")
-  if app.trial_fight and app.selected>=0 and app.game.face(active,app.selected) in [73,74] and not trial_ready:
+  if app.trial_fight and app.selected>=0 and app.game.face(active,app.selected) in app.Model.Equipment.FACES and not trial_ready:
    var reason: String = app.Model.TrialRules.weapon_reason(app.game,app.game.face(active,app.selected))
    if reason!="":
     var note: Label = app.label_at(reason,Vector2(x,die_y-27),14,Color("efba99"),width,false,true)
@@ -353,7 +351,7 @@ static func more(app) -> void:
  if app.trial_fight and app.game.active in range(3) and app.game.heroes[app.game.active].get("omen_ready",false):btn(app,grid,"Save with Omen",func():app.mobile_more = false;app.Model.Soulcaster.open_omen(app.game);app.rebuild(),GOLD)
  if app.trial_fight:btn(app,grid,"Equipment & arena help",func():app.mobile_more = false;app.show_trial_guide = true;app.rebuild(),GOLD)
  if app.trial_fight and not app.trial_choice.is_empty():btn(app,grid,"Forecast details",func():app.mobile_info = app.trial_choice.forecast.text;app.mobile_more = false;app.rebuild(),GOLD)
- btn(app,grid,"Poke",func():app.mobile_more = false;app.choosing_poke = true;app.rebuild(),GOLD,app.game.poke_targets().is_empty())
+ btn(app,grid,"Weapon details",func():app.mobile_info = app.Model.Equipment.WEAPONS[app.Model.TrialRules.weapon(app.game,app.game.active)].text;app.rebuild(),GOLD)
  btn(app,grid,"Skip face",func():app.game.decline(app.selected);app.friendly_confirm = -1;app.selected = -1;app.mobile_more = false;app.rebuild(),MUTED,app.selected<0)
  for item in [["Log","show_history"],["Enemies","show_enemy_cards"],["Supplies","show_supplies"],["Menu","show_menu"]]:
   btn(app,grid,item[0],func():app.mobile_more = false;app.set(item[1],true);app.rebuild(),MUTED)

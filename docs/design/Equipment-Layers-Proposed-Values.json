@@ -1,0 +1,196 @@
+{
+  "status": "implemented_v0.40",
+  "date": "2026-11-13",
+  "scope": [
+    "normal",
+    "trials"
+  ],
+  "first_encounter_memory": null,
+  "bodies": {
+    "broken": {
+      "category_limits": {
+        "Defense": {
+          "min": 0,
+          "max": 3
+        },
+        "Movement": {
+          "min": 0,
+          "max": 3
+        },
+        "Skill": {
+          "min": 0,
+          "max": 3
+        }
+      }
+    },
+    "fleet": {
+      "category_limits": {
+        "Defense": {
+          "min": 0,
+          "max": 2
+        },
+        "Movement": {
+          "min": 0,
+          "max": 4
+        },
+        "Skill": {
+          "min": 0,
+          "max": 3
+        }
+      }
+    },
+    "stone": {
+      "category_limits": {
+        "Defense": {
+          "min": 0,
+          "max": 4
+        },
+        "Movement": {
+          "min": 0,
+          "max": 2
+        },
+        "Skill": {
+          "min": 0,
+          "max": 3
+        }
+      }
+    }
+  },
+  "starter_souls": {
+    "beginning": {
+      "max_hp": 6,
+      "minimum_blanks_per_die": 2,
+      "effect_status": "implemented",
+      "effect": "Last Ember: once per encounter, lethal enemy damage leaves you at 1 HP; voluntary HP payments are not cancelled.",
+      "bound_to_hero": true
+    },
+    "soulcaster": {
+      "max_hp": 6,
+      "minimum_blanks_per_die": 4,
+      "effect_status": "supplied_rules",
+      "effect": "Gather and Manifest with existing supplied spell rules.",
+      "bound_to_hero": true
+    }
+  },
+  "weapons": {
+    "dagger": {
+      "attack_min": 2,
+      "attack_max": 5,
+      "strike_replacements": [
+        {
+          "ability": "Poke",
+          "copies": 1
+        }
+      ],
+      "attack_wide_modifiers": []
+    },
+    "venom": {
+      "attack_min": 2,
+      "attack_max": 5,
+      "strike_replacements": [
+        {
+          "ability": "Poison Poke",
+          "copies": 1
+        }
+      ],
+      "attack_wide_modifiers": []
+    },
+    "heavy": {
+      "attack_min": 2,
+      "attack_max": 6,
+      "strike_replacements": [
+        {
+          "ability": "Heavy Poke",
+          "copies": 1
+        }
+      ],
+      "attack_wide_modifiers": []
+    },
+    "spear": {
+      "attack_min": 2,
+      "attack_max": 6,
+      "strike_replacements": [
+        {
+          "ability": "Jab",
+          "copies": 1
+        }
+      ],
+      "attack_wide_modifiers": []
+    },
+    "hammer": {
+      "attack_min": 2,
+      "attack_max": 8,
+      "strike_replacements": [
+        {
+          "ability": "Crack",
+          "copies": 1
+        }
+      ],
+      "attack_wide_modifiers": []
+    },
+    "oathblade": {
+      "attack_min": 3,
+      "attack_max": 6,
+      "strike_replacements": [
+        {
+          "ability": "Oath Cut",
+          "copies": 3
+        }
+      ],
+      "attack_wide_modifiers": [
+        {
+          "effect": "Pierce",
+          "amount": 1
+        }
+      ]
+    }
+  },
+  "memory_proposals": {
+    "first_step": {
+      "effect": "Spend one rolled Blank as Move 1, once per own turn.",
+      "available_in_first_encounter": false
+    }
+  },
+  "pending": [],
+  "earned_soul_proposals": {
+    "hollow": {
+      "max_hp": 6,
+      "minimum_blanks_per_die": 3,
+      "effect": "First enemy-HP-damaging Attack each own turn applies Poison 1; begin with Poison 1.",
+      "bound_to_hero": true
+    },
+    "nugh": {
+      "max_hp": 5,
+      "minimum_blanks_per_die": 3,
+      "effect": "First Poison application each own turn spreads Poison 1 to another adjacent enemy.",
+      "bound_to_hero": true
+    },
+    "cantor": {
+      "max_hp": 6,
+      "minimum_blanks_per_die": 3,
+      "effect": "First Skill each own turn grants +1 next-Attack damage; begin with zero Action Rerolls.",
+      "bound_to_hero": true
+    },
+    "bugh": {
+      "max_hp": 6,
+      "minimum_blanks_per_die": 3,
+      "effect": "Preserve up to 2 Block at own-turn start; movement abilities travel 1 less, minimum 1.",
+      "bound_to_hero": true
+    }
+  },
+  "weapon_rules": {
+    "attack_count_scope": "All Attack faces across the equipped hero's three Action Dice, including weapon replacements.",
+    "attack_limits_source": "weapon_only",
+    "strike_replacement_count_min": 1,
+    "strike_replacement_count_max": 3,
+    "replacement_source": "basic_strike",
+    "replacement_count_policy": "Use the exact count printed on the Weapon; 1-3 is the allowed range between Weapon designs.",
+    "attack_wide_modifier_scope": "All Attack faces of the equipped hero, including remaining basic Strikes, weapon replacements and other equipped Attacks.",
+    "required_display_fields": [
+      "attack_min",
+      "attack_max",
+      "strike_replacements",
+      "attack_wide_modifiers"
+    ]
+  }
+}

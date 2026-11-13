@@ -46,11 +46,11 @@ static func lobby(app) -> void:
  var class_card := act(app,column,"Class · "+run.class_label(run.hero)+" · %d HP\nChange class / see starter dice" % run.maximum_hp(run.hero),func():app.trial_class_preview = class_key;app.trial_class_die = 0;app.trial_view = "classes";app.rebuild(),"TrialClassOverview",app.COLORS[run.hero])
  class_card.add_theme_font_size_override("font_size",20)
  var slots := GridContainer.new();slots.columns = 4 if app.get_viewport_rect().size.x>app.get_viewport_rect().size.y else 2;slots.add_theme_constant_override("h_separation",10);slots.add_theme_constant_override("v_separation",10);column.add_child(slots)
- var labels := {"body":R.BODIES[run.bodies[run.hero]].name,"memory":R.MEMORIES[run.memories[run.hero]].name,"soul":R.SOULS[run.souls[run.hero]].name if run.souls[run.hero]!="" else "Beginning Soul","weapon":R.WEAPONS[run.loadout_weapons[run.hero]].name}
+ var labels := {"body":R.BODIES[run.bodies[run.hero]].name,"memory":R.memory_data(run.memories[run.hero]).name,"soul":R.SOULS[run.souls[run.hero]].name if run.souls[run.hero]!="" else "Beginning Soul","weapon":R.WEAPONS[run.loadout_weapons[run.hero]].name}
  for slot in ["body","memory","soul","weapon"]:
   var pick := act(app,slots,slot.capitalize()+"\n"+labels[slot],func():app.trial_slot = slot;app.rebuild(),"TrialSlot_"+slot,app.GOLD if app.trial_slot==slot else app.MUTED)
   pick.add_theme_font_size_override("font_size",18);pick.custom_minimum_size.y = 68
- M.text(column,{"body":"BODY · base HP and normal movement modifiers", "memory":"MEMORY · an automatic effect; no button to activate it", "soul":"SOUL · what rolled Blanks can do", "weapon":"WEAPON · an attack face, or a separate Poke action"}.get(app.trial_slot,""),18,app.GOLD)
+ M.text(column,{"body":"BODY · Defense / Movement / Skill minimums and maximums", "memory":"MEMORY · passive modifier; first encounter starts empty", "soul":"SOUL · maximum HP, required Blanks and strong effect", "weapon":"WEAPON · Attack limits, 1–3 Strike replacements and optional Attack passive"}.get(app.trial_slot,""),18,app.GOLD)
  match app.trial_slot:
   "body":
    var keys: Array = run.available("body")
@@ -58,13 +58,11 @@ static func lobby(app) -> void:
    M.text(column,R.BODIES[run.bodies[run.hero]].text,20)
    M.text(column,"Your class includes its starting Body free. Crafting unlocks that Body for other classes.",18,app.MUTED)
   "memory":
-   var keys: Array = run.available("memory")
-   M.choose(app,column,"Memory",keys.map(func(key):return R.MEMORIES[key].name),keys.find(run.memories[run.hero]),func(index):run.memories[run.hero] = keys[index];run.save();app.rebuild(),"TrialMemory")
-   M.text(column,R.MEMORIES[run.memories[run.hero]].text,21)
+   M.text(column,"The first encounter starts with this slot empty. After a victory, choose a Memory reward to equip a passive or Blank conversion. Earned Memories are kept in the Trial collection.",21)
   "soul":
    var souls: Array = run.available("soul")
    M.choose(app,column,"Soul",souls.map(func(key):return R.SOULS[key].name if key!="" else "Beginning Soul"),maxi(0,souls.find(run.souls[run.hero])),func(index):run.choose_soul(run.hero,souls[index]);app.rebuild(),"TrialSoul")
-   M.text(column,R.SOULS[run.souls[run.hero]].text if run.souls[run.hero]!="" else "Spend one rolled Blank as Move 1, once per own turn. Defeat bosses to unlock other Souls.",20)
+   M.text(column,R.SOULS[run.souls[run.hero]].text if run.souls[run.hero]!="" else R.SOULS.beginning.text,20)
   "weapon":
    var keys: Array = run.available("weapon")
    M.choose(app,column,"Weapon",keys.map(func(key):return R.WEAPONS[key].name),keys.find(run.loadout_weapons[run.hero]),func(index):run.loadout_weapons[run.hero] = keys[index];run.save();app.rebuild(),"TrialWeapon")
@@ -107,16 +105,22 @@ static func reward(app, column: Control) -> void:
  M.text(column,"Choose one reward",27,app.GOLD)
  var tabs := M.row(column)
  for id in range(3):act(app,tabs,M.NAMES[id],func():run.hero = id;run.reward_face = run.reward_faces(id)[0];app.trial_replacement = Vector2i(-1,-1);app.rebuild(),"TrialRewardHero"+str(id),app.COLORS[id] if id==run.hero else app.MUTED)
- var actions := M.row(column)
- act(app,actions,"New face · 2 Run Essence",func():run.reward_mode = "face";run.reward_face = run.reward_faces(run.hero)[0];app.rebuild(),"TrialRewardFace",app.GOLD,run.essence<2)
- act(app,actions,"Weapon · 2 Run Essence",func():run.reward_mode = "weapon";app.rebuild(),"TrialRewardWeapon",app.GOLD,run.essence<2)
+ var actions := GridContainer.new();actions.columns = 3 if app.get_viewport_rect().size.x>app.get_viewport_rect().size.y else 2;actions.add_theme_constant_override("h_separation",8);actions.add_theme_constant_override("v_separation",8);column.add_child(actions)
+ act(app,actions,"New face · 2",func():run.reward_mode = "face";run.reward_face = run.reward_faces(run.hero)[0];app.rebuild(),"TrialRewardFace",app.GOLD,run.essence<2)
+ act(app,actions,"Weapon · 2",func():run.reward_mode = "weapon";app.rebuild(),"TrialRewardWeapon",app.GOLD,run.essence<2)
+ act(app,actions,"Memory · 2",func():run.reward_mode = "memory";app.rebuild(),"TrialRewardMemory",app.GOLD,run.essence<2)
  if run.reward_mode=="":M.text(column,"Choose a new dice ability, equip a Weapon, or take +2 Run Essence. One reward per victory.",21)
  else:
   if run.reward_mode=="face":
    var faces: Array = run.reward_faces(run.hero)
    M.choose(app,column,"New ability",faces.map(func(face):return app.Catalog.name_for(face)),maxi(0,faces.find(run.reward_face)),func(index):run.reward_face = faces[index];app.trial_replacement = Vector2i(-1,-1);app.rebuild(),"TrialRewardChoice")
    M.text(column,app.AbilityCopy.new().face(run.reward_face),20)
-   M.text(column,"Choose a side to replace. Keep four Blanks per Soulcaster die, two for other Souls and normal category/copy caps. The new physical face belongs to this Trial.",18,app.MUTED)
+   M.text(column,"Choose a side to replace. Keep your Soul’s required Blanks, Body category ranges, Weapon Attack bounds and owned copies. The new physical face belongs to this Trial.",18,app.MUTED)
+  elif run.reward_mode=="memory":
+   for key in run.available("memory"):
+    if key=="":continue
+    M.text(column,R.memory_data(key).text,19)
+    act(app,column,"Equip "+R.memory_data(key).name,func():run.equip_memory_reward(key);app.rebuild(),"TrialMemoryReward_"+key,app.GOLD,run.essence<2)
   else:
    var weapons: Array = ["venom","heavy","spear","hammer"]
    M.choose(app,column,"Weapon",weapons.map(func(key):return R.WEAPONS[key].name),maxi(0,weapons.find(run.reward_weapon)),func(index):run.reward_weapon = weapons[index];app.rebuild(),"TrialWeaponChoice")
@@ -158,7 +162,7 @@ static func guide(app) -> void:
    M.text(column,"Soulcaster gathers these by spending rolled Blanks. Maximum 3; they pay for spells, not rewards or rerolls. They start at 0 each encounter.",21)
   "My heroes":
    M.text(column,"Four slots, one of each per hero",26,app.GOLD)
-   M.text(column,"Body sets base HP and normal movement. Memory triggers its listed bonus automatically. Soul changes Blanks or adds its listed effect. Weapon supplies Poke or replaces one Strike with Jab / Crack. Class is a free starting kit; changing class resets that hero’s gear.",21)
+   M.text(column,"Body limits Defense, Movement and Skill faces. Soul sets HP, minimum Blanks per die and a strong effect. Memory provides a passive and starts empty. Weapon alone sets Attack limits, replaces 1–3 Strikes and may modify all Attack faces. Class is a free starting kit; changing class resets that hero’s gear.",21)
    var shown_builds: Array = app.game.heroes.map(func(h):return h.build) if app.page=="battle" else run.starting_builds() if run.phase=="lobby" else run.builds
    var tabs := M.row(column)
    for id in range(3):act(app,tabs,M.NAMES[id],func():run.hero = id;app.rebuild(),"TrialGuideHero"+str(id),app.COLORS[id] if run.hero==id else app.MUTED)
@@ -166,7 +170,8 @@ static func guide(app) -> void:
    M.text(column,M.NAMES[id]+" · "+run.class_label(id)+" · %d maximum HP" % run.maximum_hp(id),25,app.COLORS[id])
    for slot in ["body","memory","soul","weapon"]:
     var key: String = {"body":run.bodies[id],"memory":run.memories[id],"soul":run.souls[id],"weapon":run.loadout_weapons[id] if run.phase=="lobby" else run.weapons[id]}[slot]
-    var data: Dictionary = {"body":R.BODIES,"memory":R.MEMORIES,"soul":R.SOULS,"weapon":R.WEAPONS}[slot].get(key,{"name":"Beginning Soul","text":"Spend one rolled Blank as Move 1 per own turn."})
+    if slot=="soul" and key=="":key = "beginning"
+    var data: Dictionary = R.memory_data(key) if slot=="memory" else {"body":R.BODIES,"soul":R.SOULS,"weapon":R.WEAPONS}[slot].get(key,R.SOULS.beginning)
     M.text(column,slot.capitalize()+" · "+data.name,23,app.GOLD);M.text(column,data.text,20)
    if run.souls[id]=="soulcaster":act(app,column,"Open Soulcaster spellbook",func():app.show_soulcaster_help = true;app.rebuild(),"TrialSpellbook",Color("c5a5e8"))
    if shown_builds.size()==3:
@@ -186,9 +191,9 @@ static func guide(app) -> void:
    M.text(column,"Cover reduces ranged damage. Spikes hurt when entered. Break barricades with an Attack or Shove. Objective encounters explain their win condition before entry and through the arena button.",21)
   "Boss Souls":
    for key in run.BOSSES:
-    var card: Button = act(app,column,R.SOULS[key].name+(" · owned" if key in run.completed_bosses else " · locked"),func():app.mobile_info = R.SOULS[key].text;app.rebuild(),"TrialSoulCard_"+key,app.GOLD if key in run.completed_bosses else app.MUTED)
+    var card: Button = act(app,column,R.SOULS[key].name+(" · owned" if key in run.bound_souls[run.hero] else " · locked"),func():app.mobile_info = R.SOULS[key].text;app.rebuild(),"TrialSoulCard_"+key,app.GOLD if key in run.bound_souls[run.hero] else app.MUTED)
     app.bind_unlock(card,"trial_soul",key,run.hero)
-    M.text(column,R.SOULS[key].text+("\nUnlocked" if key in run.completed_bosses else "\nDefeat "+run.BOSS_NAMES[run.BOSSES.find(key)]+" in Trials"),20)
+    M.text(column,R.SOULS[key].text+("\nUnlocked" if key in run.bound_souls[run.hero] else "\nDefeat "+run.BOSS_NAMES[run.BOSSES.find(key)]+" in Trials"),20)
   "Soulcaster":
    M.text(column,R.SOULS.soulcaster.text,21)
    act(app,column,"Open the six-spell guide",func():app.show_soulcaster_help = true;app.rebuild(),"TrialSpellbook",Color("c5a5e8"))
@@ -257,7 +262,7 @@ static func build_ideas(app) -> void:
  for key in C.BUILDS:
   var build: Dictionary = C.BUILDS[key]
   M.text(column,build.name,27,app.GOLD);M.text(column,build.text,21)
-  var equipment: Array[String] = [R.BODIES[build.body].name,R.MEMORIES[build.memory].name,R.WEAPONS[build.weapon].name,R.SOULS[build.soul].name if build.soul!="" else "Beginning Soul"]
+  var equipment: Array[String] = [R.BODIES[build.body].name,R.memory_data(build.memory).name,R.WEAPONS[build.weapon].name,R.SOULS[build.soul].name if build.soul!="" else "Beginning Soul"]
   M.text(column," · ".join(equipment),19,Color("a9cbe8"))
   if run.phase=="lobby":act(app,column,"Apply available pieces to "+M.NAMES[run.hero],func():run.apply_build(key,run.hero);app.rebuild(),"TrialBuild_"+key)
   for recipe_key in C.RECIPES:
@@ -295,9 +300,8 @@ static func classes(app) -> void:
  M.text(column,"Use applies this starting gear and dice only to "+M.NAMES[run.hero]+", at no Essence cost. You can adjust equipment before starting a run.",19)
  P.footer(app,["Back to setup","Use "+kit.name],[func():app.trial_view = "run";app.rebuild(),func():run.choose_class(run.hero,key);app.trial_view = "run";app.rebuild()],[false,run.phase!="lobby"])
 static func class_face_help(app, key: String, face: int) -> String:
- var kit: Dictionary = K.CLASSES[key]
- if face==0:return "Beginning Soul: spend one rolled Blank as Move 1, once per own turn. The installed side remains Blank. The Body’s movement bonus or penalty does not change this distance."
+ if face==0:return "Blank: no starting effect. An earned Memory may convert a rolled Blank; Soulcaster enables Gather / Manifest. Bodies do not change movement distance."
  if face in [2,3]:
-  var spaces: int = maxi(1,(1 if face==2 else 3)+(1 if kit.body=="fleet" else -1))
-  return ("Step: move up to %d spaces, turning allowed." if face==2 else "Stride: move up to %d spaces in a straight line.") % spaces+" This includes the starting Body’s movement modifier."
+  var spaces: int = 1 if face==2 else 3
+  return ("Step: move up to %d spaces, turning allowed." if face==2 else "Stride: move up to %d spaces in a straight line.") % spaces+" Bodies do not change printed movement distances."
  return app.Catalog.name_for(face)+"\n\n"+app.AbilityCopy.new().face(face)

@@ -18,7 +18,7 @@ static func decode(text: String, profile: Dictionary = {}) -> Dictionary:
    if not Battle.valid_face_number(id) or int(id) not in Catalog.extended_ids():return {"error":"Bonus designs must be whole numbers from the bonus pool."}
    owned.append(int(id))
   if owned[0] == owned[1]:return {"error":"Each hero must choose two distinct bonus designs."}
-  var error := Battle.validate(saved.builds[hero],owned,profile)
+  var error := Battle.validate(saved.builds[hero],owned,Battle.Equipment.scoped(profile,hero))
   if error != "":return {"error":"Hero %d: %s" % [hero+1,error]}
   var build: Array = []
   for die in saved.builds[hero]:

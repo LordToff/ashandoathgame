@@ -29,7 +29,7 @@ func run_tests() -> void:
  for key in t.Classes.CLASSES:
   for id in range(3):
    var p = T.new(false);p.ensure_classes();p.choose_class(id,key);check(p.choose_soul(id,"soulcaster"),"starter Soul free on either class and every hero")
-   p.start(38);check(p.validate(p.builds)=="" and p.maximum_hp(id)==5,"Memory -1 applies to base 6")
+   p.start(38);check(p.validate(p.builds)=="" and p.maximum_hp(id)==6,"Soul HP stays 6 regardless of Memory")
    var model = E.new();model.start(p.builds,38,true,true,p.profile());check(model.heroes[id].max_hp==p.maximum_hp(id),"UI HP equals live battle")
    for d in p.builds[id]:check(d.count(0)==4,"four starting Blanks per die")
  var candidate: Array = t.builds.duplicate(true);candidate[0][0][2] = 3;check("4 Blanks" in t.validate(candidate),"construction enforces required Blanks")

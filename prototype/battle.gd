@@ -1,5 +1,6 @@
 class_name AshBattle
 extends RefCounted
+const Equipment = preload("res://prototype/equipment.gd")
 const Soulcaster = preload("res://prototype/soulcaster.gd")
 
 const TrialRules = preload("res://prototype/trial_rules.gd")
@@ -90,6 +91,9 @@ static func default_build(profile: Dictionary = {}) -> Array:
   for side in range(5,-1,-1):
    if die.count(0) >= Balance.value(profile,"body.blanks"):break
    die[side] = 0
+ if Equipment.active(profile):
+  var hero: int = int(profile.get("equipment.hero",0))
+  return Equipment.repair(result,Equipment.key(profile,"bodies",hero),Equipment.key(profile,"souls",hero),Equipment.key(profile,"weapons",hero),func(f):return Catalog.category(f))
  return result
 
 static func validate(build: Array, gift: Variant = -1, profile: Dictionary = {}) -> String:
@@ -112,17 +116,19 @@ static func validate(build: Array, gift: Variant = -1, profile: Dictionary = {})
    if not valid_face_number(f):return "Each die face must be a whole number from 0 to 72."
    counts[int(f)] += 1
    if int(f) == 0:blanks += 1
-  if blanks < Balance.value(profile,"body.blanks"):return "Every six-sided die needs at least %d Blanks." % Balance.value(profile,"body.blanks")
+  var minimum: int = int(Equipment.soul_data(profile,int(profile.get("equipment.hero",0))).blanks) if Equipment.active(profile) else Balance.value(profile,"body.blanks")
+  if blanks < minimum:return "Equipped Soul requires at least %d Blanks on every die." % minimum
  for i in range(1,9):
   if counts[i] > Balance.value(profile,"owned."+str(i)) + (Balance.value(profile,"owned.bonus") if i in owned else 0): return "Not enough owned copies of " + Catalog.name_for(i) + "."
  for i in range(9,60):
   if counts[i] > (Balance.value(profile,"owned.bonus") if i in owned else 0): return "Only owned bonus faces may be equipped."
  for id in range(60,Catalog.FACE_COUNT):
   if counts[id] > int(profile.get("earned."+str(id),0)):return "Not enough crafted party copies of "+Catalog.name_for(id)+"."
- var totals := {"Movement":0,"Defense":0,"Skill":0}
+ var totals := {"Attack":0,"Movement":0,"Defense":0,"Skill":0}
  for id in range(1,Catalog.FACE_COUNT):
   var cat: String = Catalog.category(id)
   if totals.has(cat): totals[cat] += counts[id]
+ if Equipment.active(profile):return Equipment.limits_error(build,totals,profile)
  if totals.Movement > Balance.value(profile,"body.Movement") or totals.Defense > Balance.value(profile,"body.Defense") or totals.Skill > Balance.value(profile,"body.Skill"):
   return "Body caps: Movement %d, Defense %d, Skill %d." % [Balance.value(profile,"body.Movement"),Balance.value(profile,"body.Defense"),Balance.value(profile,"body.Skill")]
  return ""
@@ -370,7 +376,7 @@ func activate() -> void:
   h.debt_penalty = maxi(h.debt_penalty,h.debt_next); h.debt_next = 0
   boss.binds = boss.binds.filter(func(bind):return bind.owner != active)
   if h.channel.is_empty() or h.channel.face != 31:
-   var retained: int = mini(h.block,2) if TrialRules.enabled(self) and TrialRules.soul(self,active)=="bugh" else 0
+   var retained: int = mini(h.block,2) if TrialRules.gear_enabled(self) and TrialRules.soul(self,active)=="bugh" else 0
    if h.block>retained:record_event("expire","%s loses %d unspent Block at turn start." % [unit_name(active),h.block-retained],active,active)
    h.block = retained
   h.memory_embers_used = false;h.memory_brood_used = false;h.memory_silence_used = false;h.memory_iron_used = false
@@ -574,6 +580,10 @@ func damage(id: int, amount: int, unavoidable: bool = false, reason: String = ""
    h.defy = false; amount = maxi(0,h.hp-mini(h.hp,v("face46.hp"))); h.stun = true
    for d in range(3):
     if not h.used[d]: h.used[d] = true; break
+  var source: int = attacker if attacker>=0 else action_owner
+  if id<3 and Equipment.active(balance) and TrialRules.soul(self,id) in ["beginning","ashroad"] and not h.get("last_ember_used",false) and source>=0 and enemies(source,id) and h.hp>0 and amount>=h.hp:
+   amount = h.hp-1;h.last_ember_used = true
+   record_event("soul","Last Ember prevents lethal enemy damage: "+unit_name(id)+" remains at 1 HP. Once per encounter.",id,id)
   var old_hp: int = h.hp
   h.hp = maxi(0,h.hp-amount)
   if id == 3 and old_hp > 0 and h.hp == 0:harvest_death(id)
@@ -611,7 +621,7 @@ func damage(id: int, amount: int, unavoidable: bool = false, reason: String = ""
   if ch.face == 25 and outcome == "": damage(id,v("face25.backlash"),false,"Contained Power backlash")
 
 func heal(id: int, value: int = 1) -> void:
- if TrialRules.enabled(self) and TrialRules.memory(self,id)=="venom":value = maxi(0,value-1)
+ if TrialRules.gear_enabled(self) and TrialRules.memory(self,id)=="venom":value = maxi(0,value-1)
  var h: Dictionary = heroes[id]
  if h.dead or value <= 0: return
  if h.hp == 0:
@@ -653,7 +663,7 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
  if h.used[d] or (forced_die >= 0 and forced_die != d): return false
  var f := face(active,d)
  if TrialRules.immobile_object(self,target) and f==8:return false
- if f in [73,74]:return TrialRules.weapon_action(self,d,target)
+ if Equipment.FACES.has(f):return TrialRules.weapon_action(self,d,target)
  if TrialRules.blocked_cell(self,destination):return TrialRules.smash(self,d,destination)
  if f == 6 and focus_reason(d,target) != "":return false
  if not resuming_friendly_attack and prepare_friendly_evasive(d,target,destination):return true
@@ -671,7 +681,7 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
    if reward and destination.x != -99:
     if soul_remaining(active) <= 0 or not soul_cells(active).has(destination): return false
     h.pos = destination; h.soul_moves_used = int(h.get("soul_moves_used",0))+1; h.soul_move_used = h.soul_moves_used >= soul_limit(active)
-    record_event("soul","%s uses their equipped Soul: spends one rolled Blank as Move %d. Soul conversion %d/%d used this hero turn; installed face remains Blank." % [unit_name(active),soul_distance(active),h.soul_moves_used,soul_limit(active)],active,active)
+    record_event("soul","%s uses their Memory: spends one rolled Blank as Move %d. Memory conversion %d/%d used this hero turn; installed face remains Blank." % [unit_name(active),soul_distance(active),h.soul_moves_used,soul_limit(active)],active,active)
   1:
    if target < 0 or target == active or distance(active,target) > face_range(f): return false
    strike(d,target,v("face1.damage"))
@@ -1139,10 +1149,11 @@ func attack_bonus(_target: int) -> int:return 0
 
 func strike(d: int, target: int, base: int, pierce: int = 0, numeric_attack: bool = false, weapon_attack: bool = false) -> int:
  var h: Dictionary = heroes[active]
- if TrialRules.enabled(self) and burden_interrupt.is_empty():h.trial_attack_used = true
+ if TrialRules.gear_enabled(self) and burden_interrupt.is_empty():h.trial_attack_used = true
  var attack_face: int = -1 if weapon_attack else face(active,d)
  var reach: int = 1 if weapon_attack else face_range(attack_face)
  var trial_mod: Dictionary = TrialRules.attack_bonus(self,d,target,weapon_attack)
+ pierce += int(trial_mod.get("pierce",0))
  var offered: int = int(h.get("offering_boost",0))
  if offered > 0:
   h.offering_boost = 0
@@ -1367,10 +1378,7 @@ func leap_cells(id: int) -> Array:
  var result: Array = []
  if heroes[id].get("rooted",0) > 0:return result
  var steps: int = v("face53.move")
- if TrialRules.enabled(self):
-  steps += 1 if TrialRules.body(self,id)=="fleet" else -1 if TrialRules.body(self,id)=="stone" else 0
-  if TrialRules.soul(self,id)=="bugh":steps -= 1
-  steps = maxi(1,steps)
+ if TrialRules.gear_enabled(self) and TrialRules.soul(self,id)=="bugh":steps = maxi(1,steps-1)
  for x in range(-steps,steps+1):
   for y in range(-steps,steps+1):
    if absi(x)+absi(y) > 0 and absi(x)+absi(y) <= steps:
@@ -1622,15 +1630,11 @@ func soul_remaining(id: int) -> int:
 func move_steps(f: int) -> int:
  if f == 0:return soul_distance(active)
  var steps: int = 1 if f==60 else 2 if f==66 else v("face%d.move" % f)
- if not TrialRules.enabled(self):return steps
- if TrialRules.enabled(self):
-  if Catalog.category(f)=="Movement":steps += 1 if TrialRules.body(self,active)=="fleet" else -1 if TrialRules.body(self,active)=="stone" else 0
-  if TrialRules.soul(self,active)=="bugh":steps -= 1
+ if TrialRules.gear_enabled(self) and TrialRules.soul(self,active)=="bugh":steps -= 1
  return maxi(1,steps)
 func face_range(f: int) -> int:
  if Soulcaster.is_spell(f):return int(Soulcaster.SPELLS[f].range)
- if f==73:return 2
- if f==74:return 1
+ if Equipment.FACES.has(f):return int(Equipment.FACES[f].range)
  if f in [63,64,65]:return 2+(1 if f == 63 and balance.get("memory.loss."+str(active),false) else 0)
  if f == 70:return 2
  if f in [60,61,62,66,67,68,69,71,72]:return 1
@@ -2152,6 +2156,7 @@ func credit_enemy_damage(target: int, lost: int) -> void:
    record_event("memory","Memory of Embers bonus applied.",active,active,1)
 
 func poke_reason() -> String:
+ if Equipment.active(balance):return "Poke is a Weapon face. Roll it, select it, then tap an adjacent enemy after earlier enemy HP damage."
  if active not in [0,1,2] or outcome != "":return "Poke is available only during a living hero’s turn."
  var h: Dictionary = heroes[active]
  if h.dead or h.hp <= 0:return "Downed or dead heroes cannot Poke."
@@ -2203,7 +2208,7 @@ func resolve_soul(die: int) -> bool:
  elif mode == "block":actual = modified_value(die,2);h.block += actual
  else:return false
  h.soul_moves_used = int(h.get("soul_moves_used",0))+1;h.soul_move_used = h.soul_moves_used >= soul_limit(active)
- record_event("soul",unit_name(active)+" spends a rolled Blank through their equipped Soul: "+("heal self %d" % actual if mode == "heal" else "+%d Block" % actual)+". Once-per-own-turn allowance consumed; installed side remains Blank.",active,active,actual)
+ record_event("soul",unit_name(active)+" spends a rolled Blank through their Memory: "+("heal self %d" % actual if mode == "heal" else "+%d Block" % actual)+". Once-per-own-turn allowance consumed; installed side remains Blank.",active,active,actual)
  spend(die);return true
 
 func enemy_target(source: int, legal: Array, action: String, slot: int = -1) -> int:

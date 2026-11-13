@@ -53,7 +53,7 @@ static func guide(app) -> void:
  M.text(column,"The loop",27,app.GOLD)
  M.text(column,"1. Tap a rolled Blank. Gather spends it for +1 Soul Charge (maximum 3).\n2. With enough charges, tap another Blank, then tap the spell to create it. Pay its charges and 1 HP.\n3. That result is spent. The spell becomes available only when its new physical side is rolled on a later turn.",21)
  M.text(column,"Your build",27,app.GOLD)
- M.text(column,"Soulcaster starts at 6 base HP, then applies the equipped Memory’s HP penalty. Guard / Momentum Memory makes 5 HP; No Memory keeps 6. Every starting die has four Blanks. Your Weapon still replaces its Strike side with Jab / Crack where applicable. Body movement modifiers still apply to normal movement.",21)
+ M.text(column,"Soulcaster sets 6 maximum HP and four Blanks per die. Memory starts empty and does not reduce maximum HP. Your Weapon replaces its printed 1–3 Strike sides with its attacks. Bodies set Defense / Movement / Skill ranges; movement uses printed distances.",21)
  M.text(column,"Up to four spells may exist on each caster’s dice. Soul Charges begin at 0 each encounter; all manifested sides return to your starting build after it. Soulcasting replaces Blank movement. Soul Charges pay for spells; Action Rerolls reroll dice; Run Essence buys rewards.",21)
  spells(app,column)
  P.footer(app,["Back"],[func():app.show_soulcaster_help = false;app.rebuild()])

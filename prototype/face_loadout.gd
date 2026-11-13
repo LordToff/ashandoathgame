@@ -35,14 +35,14 @@ static func trial(build: Array, gifts: Array, profile: Dictionary, die: int, sid
  next[die][side] = face
  var error := Battle.validate(next,owned,profile)
  # Dropping a new design on a required Blank keeps the requested square and frees a starter on the same die.
- if error.begins_with("Every six-sided die") and source_die < 0 and build[die][side] == 0:
+ if (error.begins_with("Every six-sided die") or error.begins_with("Equipped Soul requires")) and source_die < 0 and build[die][side] == 0:
   var best: Array = [];var best_score := -1
   for slot in range(6):
    var removed: int = next[die][slot]
    if slot == side or removed <= 0 or removed > 8:continue
    var candidate: Array = next.duplicate(true);candidate[die][slot] = 0
    if Battle.validate(candidate,owned,profile) == "" and score(candidate) > best_score:
-    best = candidate;best_score = score(candidate);note = "Replaced %s on Die %s to keep %d Blanks." % [Battle.FACES[removed],["I","II","III"][die],Battle.Balance.value(profile,"body.blanks")]
+    best = candidate;best_score = score(candidate);note = "Replaced %s on Die %s to keep %d Blanks." % [Battle.FACES[removed],["I","II","III"][die],(int(Battle.Equipment.soul_data(profile,int(profile.get("equipment.hero",0))).blanks) if Battle.Equipment.active(profile) else Battle.Balance.value(profile,"body.blanks"))]
   if not best.is_empty():next = best;error = ""
  if error == "" and not owned.all(func(id):return next.any(func(installed):return id in installed)):error = "Keep both selected bonus designs equipped. Replace a starter square instead."
  if error != "":return {"error":error+" Try replacing a face of the same type."}

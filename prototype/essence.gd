@@ -1,4 +1,5 @@
 extends RefCounted
+const Equipment = preload("res://prototype/equipment.gd")
 ## PDF v1 creature rewards plus original v0.33 boss rewards; balance is provisional.
 const Wilds = preload("res://prototype/wilds.gd")
 const FACE_FIRST = 60
@@ -34,6 +35,8 @@ const TYPES = {
  "cinder_mite":{"name":"Cinder Mite","rank":"normal","condition":"regular","faces":[]}
 }
 const RECIPES = {
+ "weapon_oathblade":{"enemy":"bugh","category":"Weapon","cost":4,"weapon":"oathblade","name":"Oathblade","effect":Equipment.WEAPONS.oathblade.text},
+ "memory_first_step":{"enemy":"movement_creature","category":"Memory","cost":1,"memory":"first_step","name":"Memory of the First Step","effect":Equipment.BLANK_MEMORIES.first_step.text},
  "ember_cut":{"enemy":"hollow","category":"Attack Face","cost":2,"face":69},
  "brood_needle":{"enemy":"nugh","category":"Attack Face","cost":2,"face":70},
  "quiet_note":{"enemy":"cantor","category":"Skill Face","cost":2,"face":71},
@@ -42,9 +45,9 @@ const RECIPES = {
  "memory_brood":{"enemy":"nugh","category":"Memory","cost":3,"name":"Memory of the Brood","effect":"Your first Poison application each own turn adds 1 extra Poison. Your friendly Nu’gh counts."},
  "memory_silence":{"enemy":"cantor","category":"Memory","cost":3,"name":"Memory of Silence","effect":"The first Skill you resolve each own turn grants 1 Block."},
  "memory_iron":{"enemy":"bugh","category":"Memory","cost":3,"name":"Memory of Iron","effect":"The first Defense you resolve each own turn grants 1 extra Block."},
- "mire_soul":{"enemy":"mire_leech","category":"Soul · bound","cost":3,"soul":"mire","name":"Soul of the Mire","effect":Wilds.SOULS.mire.effect},
- "glasswing_soul":{"enemy":"glasswing_moth","category":"Soul · bound","cost":3,"soul":"glasswing","name":"Glasswing Soul","effect":Wilds.SOULS.glasswing.effect},
- "iron_soul":{"enemy":"iron_husk","category":"Soul · bound","cost":3,"soul":"iron","name":"Ironbound Soul","effect":Wilds.SOULS.iron.effect},
+ "mire_soul":{"enemy":"mire_leech","category":"Memory","cost":3,"memory":"mire","name":"Memory of the Mire","effect":Equipment.BLANK_MEMORIES.mire.text},
+ "glasswing_soul":{"enemy":"glasswing_moth","category":"Memory","cost":3,"memory":"glasswing","name":"Glasswing Memory","effect":Equipment.BLANK_MEMORIES.glasswing.text},
+ "iron_soul":{"enemy":"iron_husk","category":"Memory","cost":3,"memory":"ironbound","name":"Ironbound Memory","effect":Equipment.BLANK_MEMORIES.ironbound.text},
  "bone_growth":{"enemy":"bone_creature","category":"Skill Face · Bone","cost":1,"face":60},
  "bone_strike":{"enemy":"bone_creature","category":"Attack Face · Bone","cost":2,"face":61},
  "bone_guard":{"enemy":"bone_creature","category":"Defense Face · Bone","cost":3,"face":62},
@@ -62,22 +65,35 @@ var copies: Dictionary = {}
 var seen: Dictionary = {}
 var defeated: Dictionary = {}
 var settled: Dictionary = {}
+var memory_copies: Dictionary = {}
+var migration_message := ""
 var memories: Array = ["","",""]
 var souls: Array = [["beginning"],["beginning"],["beginning"]]
 var equipped_souls: Array = ["beginning","beginning","beginning"]
 var weapons: Array = ["dagger","dagger","dagger"]
 var bodies: Array = ["broken_body","broken_body","broken_body"]
 func encode() -> Dictionary:
- return {"bank":bank,"unlocked":unlocked,"copies":copies,"seen":seen,"defeated":defeated,"settled":settled,"memories":memories,"souls":souls,"equipped_souls":equipped_souls,"weapons":weapons,"bodies":bodies}
+ return {"equipment_version":40,"memory_copies":memory_copies,"migration_message":migration_message,"bank":bank,"unlocked":unlocked,"copies":copies,"seen":seen,"defeated":defeated,"settled":settled,"memories":memories,"souls":souls,"equipped_souls":equipped_souls,"weapons":weapons,"bodies":bodies}
 func decode(data: Dictionary):
- for key in ["bank","unlocked","copies","seen","defeated","settled"]:
+ for key in ["bank","unlocked","copies","seen","defeated","settled","memory_copies"]:
   if data.get(key) is Dictionary:set(key,data[key].duplicate(true))
  for key in ["memories","souls","equipped_souls"]:
   if data.get(key) is Array and data[key].size() == 3:set(key,data[key].duplicate(true))
  for hero in range(3):
   if "beginning" not in souls[hero]:souls[hero].push_front("beginning")
-  if data.get("weapons") is Array and data.weapons.size() == 3 and data.weapons[hero] in ["","dagger"]:weapons[hero] = data.weapons[hero]
-  if data.get("bodies") is Array and data.bodies.size() == 3 and data.bodies[hero] == "broken_body":bodies[hero] = "broken_body"
+  if data.get("weapons") is Array and data.weapons.size() == 3 and Equipment.WEAPONS.has(str(data.weapons[hero])):weapons[hero] = data.weapons[hero]
+  if data.get("bodies") is Array and data.bodies.size() == 3 and Equipment.BODIES.has(Equipment.body_key(str(data.bodies[hero]))):bodies[hero] = Equipment.body_key(str(data.bodies[hero]))
+ if int(data.get("equipment_version",0))<40:
+  for hero in range(3):
+   for old in ["mire","glasswing","iron"]:
+    if old not in souls[hero]:continue
+    var recipe: String = {"mire":"mire_soul","glasswing":"glasswing_soul","iron":"iron_soul"}[old]
+    memory_copies[recipe] = int(memory_copies.get(recipe,0))+1;unlocked[recipe] = true;souls[hero].erase(old)
+    if equipped_souls[hero]==old:
+     equipped_souls[hero] = "beginning"
+     if memories[hero]=="":memories[hero] = recipe
+  migration_message = "Equipment updated: Souls now set HP / Blanks; Weapons set Attack limits and replace Strikes. Existing Blank-conversion Souls were kept as Memory copies. Check your dice before fighting."
+ else:migration_message = str(data.get("migration_message",""))
 func discovered(type: String) -> bool:return TYPES.get(type,{}).get("rank","normal") == "normal" or defeated.has(type)
 func recipes_for(type: String) -> Array:
  var result: Array = []
@@ -121,14 +137,19 @@ func profile(base: Dictionary) -> Dictionary:
  for hero in range(3):
   for key in memory_keys():result["memory."+key.trim_prefix("memory_")+"."+str(hero)] = memories[hero] == key
   result["weapon.dagger."+str(hero)] = weapons[hero] == "dagger"
- return result
+ return Equipment.configure(result,bodies,equipped_souls,weapons,memories.map(func(m):return str(RECIPES.get(m,{}).get("memory",Equipment.memory_key(str(m))))))
 func memory_keys() -> Array:
  return RECIPES.keys().filter(func(key):return RECIPES[key].category == "Memory")
 func equip_memory(hero: int, memory: String = "memory_loss") -> bool:
  if hero not in [-1,0,1,2] or memory not in memory_keys() or not unlocked.has(memory):return false
- for i in range(3):
-  if memories[i] == memory:memories[i] = ""
- if hero >= 0:memories[hero] = memory
+ if hero<0:
+  for i in range(3):
+   if memories[i]==memory:memories[i] = ""
+  return true
+ if memories[hero]==memory:return true
+ if memories.count(memory)>=int(memory_copies.get(memory,1)):
+  memories[memories.find(memory)] = ""
+ memories[hero] = memory
  return true
 func debug_unlock(key: String, recipient: int) -> bool:
  if not RECIPES.has(key):return false
@@ -155,14 +176,16 @@ static func eligible(unit: Dictionary, condition: String) -> bool:
  return false
 
 func grant_soul(hero: int, soul: String) -> bool:
- if hero not in range(3) or soul == "" or soul in souls[hero]:return false
+ if hero not in range(3) or soul == "" or not Equipment.SOULS.has(soul) or soul in souls[hero]:return false
  souls[hero].append(soul);return true
 
+func available_weapons() -> Array:
+ return ["dagger","spear","hammer"]+(["oathblade"] if unlocked.has("weapon_oathblade") else [])
 func equip_weapon(hero: int, weapon: String) -> bool:
- if hero not in range(3) or weapon not in ["","dagger"]:return false
+ if hero not in range(3) or weapon not in available_weapons():return false
  weapons[hero] = weapon;return true
 func equip_body(hero: int, body: String) -> bool:
- if hero not in range(3) or body != "broken_body":return false
+ if hero not in range(3) or not Equipment.BODIES.has(Equipment.body_key(body)):return false
  bodies[hero] = body;return true
 
 func recipe_progress(key: String) -> String:

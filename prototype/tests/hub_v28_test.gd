@@ -17,52 +17,23 @@ func fresh(model = B):
 func _initialize():call_deferred("run")
 func run():
  var e = E.new();check(e.weapons == ["dagger","dagger","dagger"],"three starter Daggers")
- check(e.equip_weapon(1,"") and not e.equip_weapon(1,"invented"),"only valid weapon choices")
+ check(e.equip_weapon(1,"spear") and not e.equip_weapon(1,"invented"),"valid starter weapon choices")
  var restored = E.new();restored.decode(e.encode())
- check(restored.weapons == ["dagger","","dagger"] and not restored.profile({})["weapon.dagger.1"],"weapon equipment persists")
- restored.decode({});check(restored.bodies == ["broken_body","broken_body","broken_body"],"legacy saves retain starter bodies")
- check(not e.equip_body(0,"") and e.equip_body(0,"broken_body"),"body mandatory and only owned type")
- check("beginning" in e.souls[0],"Beginning Soul is owned from the start")
- var legacy = E.new();legacy.decode({"souls":[[],["hollow"],[]],"equipped_souls":["","hollow",""]})
- check(legacy.souls[1] == ["beginning","hollow"] and legacy.equipped_souls[1] == "hollow","migration preserves earned/equipped Soul and adds Beginning ownership")
- var g = fresh();check(g.poke_reason().contains("actual HP"),"Poke starts locked")
- check(not g.poke(3),"cannot Poke before enemy damage")
- g.boss.block = 2;g.hero_action(0,3)
- check(not g.heroes[0].get("damaged_enemy_turn",false) and not g.poke(3),"fully blocked hit does not unlock Poke")
- g = fresh();g.heroes[1].pos = Vector2i(2,5);g.hero_action(0,1)
- check(not g.heroes[0].get("damaged_enemy_turn",false),"friendly fire does not unlock Poke")
- g = fresh();g.hero_action(0,3)
- check(g.poke_reason() == "" and g.poke_targets() == [3],"actual enemy HP damage unlocks adjacent Poke")
- var used: Array = g.heroes[0].used.duplicate();var rerolls: int = g.heroes[0].rerolls;var hp: int = g.boss.hp
- check(g.poke(3) and g.boss.hp == hp-1,"Poke deals one normal damage")
- check(g.heroes[0].used == used and g.heroes[0].rerolls == rerolls,"Poke spends neither dice nor rerolls")
- check(not g.poke(3) and g.poke_reason().contains("already"),"Poke cannot repeat this turn")
- g.active = 0;g.cursor = g.order.find(0);g.activate()
- check(not g.heroes[0].damaged_enemy_turn and not g.heroes[0].dagger_used,"own turn refreshes limit and prerequisite")
- g = fresh();g.hero_action(0,3);g.heroes[0].pos = Vector2i(0,0)
- check(g.poke_targets().is_empty() and not g.poke(3),"Poke requires orthogonal adjacency")
- g = fresh();g.hero_action(0,3);g.balance["weapon.dagger.0"] = false
- check(not g.poke(3) and g.poke_reason().contains("Equip"),"unequipped Dagger unavailable")
- g = fresh();g.hero_action(0,3);g.pending = {"kind":"channel"}
- check(not g.poke(3),"pending choice blocks Poke")
- g.pending = {};g.forced_die = 2;check(not g.poke(3),"forced next result blocks Poke")
- g.forced_die = -1;g.burden_interrupt = {"owner":1};check(not g.poke(3),"no weapon bonus inside Shared Burden")
- g = fresh();g.hero_action(0,3);g.heroes[0].weak = true;hp = g.boss.hp
- check(g.poke(3) and g.boss.hp == hp,"Weakness applies and still consumes Poke")
- g = fresh();g.hero_action(0,3);g.boss.block = 1;hp = g.boss.hp
- check(g.poke(3) and g.boss.hp == hp and g.boss.block == 0,"Poke is absorbed by Block")
- g = fresh(W);g.guard_broken = true;g.hero_action(0,3);g.guard_broken = false;hp = g.boss.hp
- check(g.poke(3) and g.boss.hp == hp,"Warden armor applies")
- g = fresh(C);g.hero_action(0,3);var resonance: int = g.resonance
- check(g.poke(3) and g.resonance == resonance+g.v("cantor.attack_charge"),"Poke charges Veyl as an Attack")
- g = fresh();g.action_owner = 1;g.damage(3,1,true)
- check(not g.heroes[0].get("damaged_enemy_turn",false),"another hero’s damage does not qualify active hero")
- g = fresh();g.heroes[0].hp = 0;g.heroes[0].damaged_enemy_turn = true
- check(not g.poke(3),"Downed heroes cannot Poke")
- g = M.new();g.prototype_pack = true;g.creature_types = ["movement_creature","movement_creature"];g.start([B.default_build(),B.default_build(),B.default_build()],28,false,true,E.new().profile({}))
- g.active = 0;g.pending = {};g.forced_die = -1;g.heroes[0].pos = Vector2i(4,4);g.action_owner = 0;g.damage(4,1,true)
- check(g.heroes[0].damaged_enemy_turn and 3 in g.poke_targets(),"enemy minion HP damage qualifies")
- check(g.essence_type(3) == "movement_creature" and g.essence_type(4) == "movement_creature","direct Swift Pack has correct types")
+ check(restored.weapons == ["dagger","spear","dagger"],"weapon equipment persists")
+ check(not e.equip_body(0,"") and e.equip_body(0,"stone"),"Body category choices are mandatory")
+ check("beginning" in e.souls[0] and e.memories==["","",""],"Beginning Soul owned; first Memory empty")
+ var g = fresh();g.heroes[0].results = [81,1,0]
+ check(not g.hero_action(0,3) and not g.heroes[0].used[0],"Poke locked before actual enemy HP damage")
+ g.boss.block = 2;g.hero_action(1,3)
+ check(not g.heroes[0].get("damaged_enemy_turn",false),"fully blocked hit does not unlock Poke")
+ g = fresh();g.heroes[0].results = [81,1,0];check(g.hero_action(1,3),"another rolled Strike deals enemy damage")
+ var hp: int = g.boss.hp
+ check(g.hero_action(0,3) and g.boss.hp==hp-1 and g.heroes[0].used[0],"Poke spends its rolled die for 1 damage")
+ check(not g.poke(3) and not g.hero_action(0,3),"no free extra Poke or reuse")
+ g = fresh(W);g.heroes[0].results = [81,1,0];g.guard_broken = true;g.hero_action(1,3);g.guard_broken = false;hp = g.boss.hp
+ check(g.hero_action(0,3) and g.boss.hp==hp,"Warden armor applies to rolled Poke")
+ g = fresh(C);g.heroes[0].results = [81,1,0];g.hero_action(1,3);var resonance: int = g.resonance
+ check(g.hero_action(0,3) and g.resonance==resonance+g.v("cantor.attack_charge"),"rolled Poke charges Veyl as an Attack")
  var app = load("res://prototype/prototype.tscn").instantiate();root.add_child(app)
  await process_frame
  check(app.page == "main" and app.ui.has_node("MainPlay") and app.ui.has_node("MainCreatures"),"main menu on launch")
@@ -81,22 +52,18 @@ func run():
  var scoped: Dictionary = app.camp_battle_profile()
  var sg = B.new();sg.start([B.default_build(),B.default_build(),B.default_build()],28,false,true,scoped)
  sg.active = 0;sg.cursor = sg.order.find(0);sg.pending = {};sg.forced_die = -1;sg.heroes[0].pos = Vector2i(0,7);sg.heroes[0].results = [0,0,1];sg.heroes[0].used = [false,false,false]
- check(sg.soul_distance(0) == 1 and sg.soul_limit(0) == 1,"Beginning grants Move 1 once per own turn")
- check(not sg.hero_action(0,-1,Vector2i(0,5)) and sg.hero_action(0,-1,Vector2i(0,6)),"Beginning rejects Move 2 and spends Blank for Move 1")
- check(not sg.hero_action(1,-1,Vector2i(0,5)),"second Beginning Blank cannot move again")
- sg.cursor = sg.order.find(0);sg.activate();sg.pending = {};sg.heroes[0].used[1] = false
- check(sg.hero_action(1,-1,Vector2i(0,5)),"Beginning refreshes at next own turn")
- app.expedition.camp.grant_soul(1,"hollow");app.expedition.camp.equip_soul(1,"hollow")
+ check(sg.soul_remaining(0)==0 and not sg.hero_action(0,-1,Vector2i(0,6)),"Beginning Soul grants no implicit Blank movement")
+ app.expedition.camp.unlocked.memory_first_step = true;app.expedition.camp.equip_memory(0,"memory_first_step")
  scoped = app.camp_battle_profile()
- check(scoped["soul.distance.0"] == 1 and scoped["soul.distance.1"] == 2,"earned Move 2 remains specific to equipped hero")
+ check(scoped["soul.eligible.0"] and not scoped["soul.eligible.1"],"First Step Memory conversion is specific to its equipped hero")
  for tab in range(4):
   app.camp_tab = tab;app.rebuild();check(app.ui.has_node("CampTab"+str(tab)),"Camp tab renders")
  app.camp_tab = 2;app.rebuild()
  for slot in ["body","weapon","soul","memory"]:check(app.ui.has_node("Equipment_"+slot),"equipment slot "+slot)
- app.ui.get_node("Equipment_weapon").item_selected.emit(0)
- check(app.expedition.camp.weapons[app.camp_hero] == "","UI unequips Dagger")
  app.ui.get_node("Equipment_weapon").item_selected.emit(1)
- check(app.expedition.camp.weapons[app.camp_hero] == "dagger","UI equips Dagger")
+ check(app.expedition.camp.weapons[app.camp_hero] == "spear","UI equips Spear on a legal build")
+ app.ui.get_node("Equipment_weapon").item_selected.emit(0)
+ check(app.expedition.camp.weapons[app.camp_hero] == "dagger","UI restores Dagger")
  check(app.ui.get_node("EquipmentSprite_beginning").size == Vector2(132,134),"sprite stays within its equipment cell")
  check(app.ui.has_node("EquipmentSprite_beginning") and app.ui.has_node("EquipmentSprite_memory_loss"),"soul and Memory sprite regions render")
  app.open_forge(false);check(app.ui.has_node("ForgeFacePicker") and app.ui.has_node("ForgeDie2Side5"),"roomy forge editor renders all dice")

@@ -10,11 +10,13 @@ func check(ok: bool, why: String):
  checks += 1
  if not ok:failures += 1;printerr("TRIAL FAIL: ",why)
 func fresh(group: int = 0, paths: Array = ["venom","guard","stride"], souls: Array = ["","",""]):
- var run = Run.new(false);run.memories = paths;run.souls = souls;run.start(34)
+ var run = Run.new(false);run.memories = paths;run.souls = souls;run.start(34);run.memories = paths.duplicate()
+ for id in range(3):
+  if souls[id] in ["hearth","wind"]:run.memories[id] = souls[id];run.souls[id] = ""
  var profile: Dictionary = run.profile();profile["trial.terrain"] = "none";profile["face1.damage"] = 2 # Fixed hit size isolates Memory arithmetic.
  var g = Fight.new();g.group_index = group;g.start(run.builds,34,true,true,profile)
  g.order = [0,1,2,3];g.cursor = 0;g.active = 0;g.pending = {};g.forced_die = -1;g.boss.hp = 20;g.boss.max_hp = 20
- for h in g.heroes:h.used = [false,false,false];h.reaction = [];h.results = [1,4,2];h.rolls = [0,0,0];h.poison = 0;h.hp = h.max_hp
+ for h in g.heroes:h.used = [false,false,false];h.reaction = [];h.results = [1,4,2];h.rolls = [2,0,0];h.poison = 0;h.hp = h.max_hp
  g.heroes[0].pos = Vector2i(3,5);g.heroes[1].pos = Vector2i(0,7);g.heroes[2].pos = Vector2i(8,7);g.unit_data(4).pos = Vector2i(7,1)
  g.trial_state.positions = {}
  for id in range(g.unit_count()):g.trial_state.positions[id] = g.unit_data(id).pos
@@ -35,7 +37,7 @@ func run_tests():
  g.heroes[0].used[0] = false;g.hero_action(0,3);check(g.boss.poison==1,"Venom once per own turn")
  g.heroes[0].hp = 3;g.heal(0,2);check(g.heroes[0].hp==4,"Venom healing tradeoff")
  g = fresh();g.active = 1;g.heroes[1].pos = Vector2i(3,5);g.heroes[0].pos = Vector2i(0,7);g.heroes[1].block = 2;g.action_owner = 3
- g.damage(1,2,false,"Bash",3);check(g.heroes[1].hp==5 and g.heroes[1].trial_counter,"Iron vow primes after fully blocked hit")
+ g.damage(1,2,false,"Bash",3);check(g.heroes[1].hp==6 and g.heroes[1].trial_counter,"Iron vow primes after fully blocked hit")
  var hp_before: int = g.boss.hp;g.hero_action(0,3);check(hp_before-g.boss.hp==3 and not g.heroes[1].trial_counter,"counterattack +1 consumed")
  g.heroes[1].used[0] = false;hp_before = g.boss.hp;g.hero_action(0,3);check(hp_before-g.boss.hp==2,"next Attack returns to normal")
  g = fresh();g.active = 2;g.heroes[2].pos = Vector2i(3,5);g.heroes[0].pos = Vector2i(0,7);g.heroes[2].moved_turn = 2
@@ -84,7 +86,7 @@ func run_tests():
  g = fresh(0,["guard","guard","stride"],["hollow",""," "]);g.heroes[0].trial_cinder_used = false;g.hero_action(0,3)
  check(g.boss.poison==1,"Cinder Soul adds Poison after damaging Attack")
  g = fresh(0,["guard","guard","stride"],["nugh","",""]);g.unit_data(4).pos = Vector2i(4,4);g.apply_poison(0,3,2)
- check(g.heroes[0].max_hp==4 and g.unit_data(4).poison==1,"Brood Soul spreads first Poison and reduces maximum HP")
+ check(g.heroes[0].max_hp==5 and g.unit_data(4).poison==1,"Brood Soul spreads first Poison and reduces maximum HP")
  g.apply_poison(0,3,1);check(g.unit_data(4).poison==1,"Brood spread once per own turn")
  g = fresh(0,["guard","guard","stride"],["cantor","",""]);g.heroes[0].results[1] = 7;g.heroes[0].hp = 3;g.hero_action(1,0)
  check(g.heroes[0].rerolls==0 and g.heroes[0].trial_echo==1,"Echo Soul starts without reroll and powers next Attack after Skill")
@@ -98,13 +100,13 @@ func run_tests():
  check(not run.add_face(69,0,1),"cannot claim second face reward")
  run = reward_run();check(run.equip_weapon("venom") and run.weapons[0]=="venom" and run.essence==3,"Weapon reward occupies one Weapon slot and pays once")
  check(not run.equip_weapon("heavy"),"second reward cannot be claimed")
- g = fresh(0,["guard","guard","stride"]);g.balance["trial.weapons"] = ["venom","dagger","dagger"];g.heroes[0].damaged_enemy_turn = true;g.poke(3)
+ g = fresh(0,["guard","guard","stride"]);g.balance["equipment.weapons"] = ["venom","dagger","dagger"];g.heroes[0].results[0] = 82;g.heroes[0].damaged_enemy_turn = true;g.hero_action(0,3)
  check(g.boss.poison==1,"Poison Dagger Poke applies Poison on HP loss")
- g = fresh(0,["guard","guard","stride"]);g.balance["trial.weapons"] = ["heavy","dagger","dagger"];hp_before = g.boss.hp;g.hero_action(0,3)
- check(hp_before-g.boss.hp==2 and g.heroes[0].hp==5,"Weapon reward does not modify die abilities")
- hp_before = g.boss.hp;g.poke(3);check(hp_before-g.boss.hp==2 and g.heroes[0].hp==4,"Heavy Dagger Poke trades one HP for two damage")
+ g = fresh(0,["guard","guard","stride"]);g.balance["equipment.weapons"] = ["heavy","dagger","dagger"];hp_before = g.boss.hp;g.hero_action(0,3)
+ check(hp_before-g.boss.hp==2 and g.heroes[0].hp==6,"Weapon reward does not modify ordinary Strike")
+ hp_before = g.boss.hp;g.heroes[0].results[1] = 83;g.hero_action(1,3);check(hp_before-g.boss.hp==2 and g.heroes[0].hp==5,"Heavy Dagger Poke trades one HP for two damage")
  run = reward_run();check(run.bank_reward() and run.essence==7 and run.stage==1 and not run.bank_reward(),"saving reward trades offer for currency once")
- run.choose(0);run.hp = [0,2,4];check(run.camp(true) and run.hp==[2,4,5] and run.stage==2,"Camp heals and revives without exceeding path maximum")
+ run.choose(0);run.hp = [0,2,4];check(run.camp(true) and run.hp==[2,4,6] and run.stage==2,"Camp heals and revives without exceeding path maximum")
  run.stage = 3;run.phase = "route";run.choose(0);var bank: int = run.essence;check(run.event(false) and run.essence==bank+1 and not run.event(false),"safe cache reward once")
  for boss_index in range(4):
   run = Run.new(false);run.selected_boss = boss_index;run.start(34)
@@ -130,7 +132,7 @@ func run_tests():
  app.trials = Run.new(false);var normal_builds: Array = app.builds.duplicate(true);var normal_bank: Dictionary = app.expedition.camp.encode().duplicate(true)
  for size in [Vector2i(360,640),Vector2i(390,844),Vector2i(844,390),Vector2i(1440,900)]:
   root.size = size;app.set_mobile_mode(size.x<1440,false);await process_frame;await process_frame;app.open_trials();await process_frame
-  check(button(app.ui,"TrialMemory")!=null and button(app.ui,"TrialBoss")!=null,"Trial lobby renders on phone and desktop")
+  check(button(app.ui,"TrialSlot_memory")!=null and button(app.ui,"TrialBoss")!=null,"Trial lobby renders on phone and desktop")
  app.trials.start(34);app.choose_trial_route(0);app.dice_tray.cancel();app.rolling_time = 0;app.game.pending = {};app.game.active = 0;app.rebuild();await process_frame
  check(app.trial_fight and app.builds==normal_builds,"Trial uses separate party build")
  app.game.damage(3,999,true)

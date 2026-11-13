@@ -54,6 +54,7 @@ func run_tests() -> void:
  check(g.objective_ids("ritual").size()==3 and g.enemy_intents().size()==6,"ritual has three objects and no object enemy turns")
  var stone: int = g.objective_ids("ritual")[0];g.heroes[0].pos = Vector2i(2,6)
  check(stone in Reach.for_face(g,1).targets,"ritual stone is a real highlighted Attack target")
+ g.heroes[0].rolls[0] = 3
  g.apply_poison(0,stone,3);check(g.unit_data(stone).poison==0,"ritual objects cannot receive Poison")
  g.heroes[0].results[1] = 8;before = signature(g);check(not g.hero_action(1,stone,Vector2i.UP) and signature(g)==before,"ritual objects cannot be Shoved")
  check(g.hero_action(0,stone) and g.unit_data(stone).hp==1,"ordinary Strike damages the actual stone")
@@ -92,11 +93,11 @@ func run_tests() -> void:
  run.phase = "lobby";check(run.apply_build("movement",0) and run.bodies[0]=="fleet" and run.loadout_weapons[0]=="spear" and run.souls[0]=="","build applies owned pieces with Beginning Soul fallback")
  run.ingredients.cinder = 3;check(run.craft("wind_soul"),"Wind Soul has a real paid recipe")
  run.apply_build("movement",0);run.start(36);g = F.new();g.start(run.builds,36,true,true,run.profile());ready(g)
- check(g.heroes[0].max_hp==4 and g.move_steps(2)==2 and g.soul_distance(0)==2,"Movement combination uses Body, Memory, Weapon and Soul together")
+ check(g.heroes[0].max_hp==6 and g.move_steps(2)==1 and g.soul_remaining(0)==0,"Movement combination uses Body, Memory, Weapon and Soul together")
  run.phase = "reward";run.ingredients.ward = 3;run.craft("stone");run.phase = "lobby";run.apply_build("protection",1);run.start(36);g = F.new();g.start(run.builds,36,true,true,run.profile());ready(g);g.active = 1
- check(g.heroes[1].max_hp==6 and g.move_steps(3)==2,"Protection combination uses Stone HP and shorter movement")
+ check(g.heroes[1].max_hp==6 and g.move_steps(3)==3,"Protection combination uses Stone HP and shorter movement")
  run.phase = "reward";run.ingredients.ward = 2;check(run.craft("shelter_memory"),"Memory has its own recipe without an extra upgrade category")
- run.memories[0] = "shelter";run.start(36);g = F.new();g.start(run.builds,36,true,true,run.profile());ready(g);g.heroes[0].results = [4,4,1]
+ run.start(36);run.memories[0] = "shelter";g = F.new();g.start(run.builds,36,true,true,run.profile());ready(g);g.heroes[0].results = [4,4,1]
  check(g.hero_action(0) and g.heroes[0].block==2,"crafted Memory adds Block to first own-turn Defense")
  g.hero_action(1);check(g.heroes[0].block==3,"Memory of Shelter does not repeat this own turn")
  run.phase = "reward";run.save();var restored = T.new(true)
@@ -124,7 +125,7 @@ func run_tests() -> void:
   check(pure.event_id==old_log and pure.rng.state==old_rng,"reading every Trial group intent is pure")
  for body in ["broken","fleet","stone"]:
   for face in [0,2,3,53,54,57,60,66]:
-   g = fresh();g.balance["trial.bodies"] = [body,"broken","broken"];g.heroes[0].results[0] = face
+   g = fresh();g.balance["equipment.memories"][0] = "first_step";g.balance["soul.eligible.0"] = true;g.balance["equipment.bodies"] = [body,"broken","broken"];g.heroes[0].results[0] = face
    var preview: Dictionary = Reach.for_face(g,face)
    check(not preview.destinations.is_empty(),"each Body retains legal movement destinations")
    for cell in preview.destinations:
@@ -135,7 +136,7 @@ func run_tests() -> void:
  g = fresh("spear");g.on_roll(g.heroes[0],0)
  check(g.heroes[0].round_history[-1].face==73,"rolled history records the actual Jab face for Shared Burden")
  # Forecast all ordinary face IDs plus two scoped weapon faces; the live state is byte-identical.
- g = fresh();g.heroes[0].results = [1,34,2];g.boss.block = 1;g.balance["face1.damage"] = 3
+ g = fresh();g.heroes[0].rolls[0] = 3;g.balance["equipment.memories"][0] = "venom";g.heroes[0].results = [1,34,2];g.boss.block = 1;g.balance["face1.damage"] = 3
  before = signature(g);var forecast: Dictionary = P.calculate(g,0,3)
  check(forecast.valid and "2 HP damage" in forecast.text and "1 blocked" in forecast.text and "Poison +1" in forecast.text,"compact fixed preview includes HP loss, Block and status")
  check(signature(g)==before,"forecast never changes live state, event log, dice presentation or RNG")
@@ -156,7 +157,7 @@ func run_tests() -> void:
   check(app.ui.find_child("TrialWeapon",true,false)!=null,"weapon selector is reachable in phone and desktop lobby")
   app.trial_view = "craft";app.rebuild();await process_frame
   check(app.ui.find_child("TrialRecipe",true,false)!=null and app.ui.find_child("TrialPin",true,false)!=null,"wishlist/Forge render on every layout")
- app.trials = T.new(false);app.trials.start(36);app.choose_trial_route(1);app.dice_tray.cancel();app.rolling_time = 0;ready(app.game);app.game.heroes[0].pos = Vector2i(2,6);app.selected = 0;app.inspect_actor = app.game.active;app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
+ app.trials = T.new(false);app.trials.start(36);app.choose_trial_route(1);app.dice_tray.cancel();app.rolling_time = 0;ready(app.game);app.game.heroes[0].rolls[0] = 3;app.game.heroes[0].pos = Vector2i(2,6);app.selected = 0;app.inspect_actor = app.game.active;app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
  stone = app.game.objective_ids("ritual")[0];hp = app.game.unit_data(stone).hp;app.stage_trial_choice(stone)
  check(not app.trial_choice.is_empty() and app.game.unit_data(stone).hp==hp and not app.game.heroes[0].used[0],"actual target tap stages forecast without spending or damaging")
  await process_frame

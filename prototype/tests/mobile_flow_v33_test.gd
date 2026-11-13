@@ -18,7 +18,7 @@ func find(node: Node, name: String):
  return node.find_child(name,true,false)
 func _initialize():call_deferred("run")
 func run():
- var e=E.new();check(e.memory_keys().size()==5,"five Memory designs")
+ var e=E.new();check(e.memory_keys().size()==9,"nine Memory designs including converted Blank effects")
  for type in [B,N,C,W]:
   var g=fresh(type);var key: String = g.encounter_id;g.damage(3,999,true)
   check(g.harvest_tokens.filter(func(token):return token.type==key).size()==3,"boss drops three matching Essence")
@@ -26,7 +26,7 @@ func run():
   check(e.bank.get(key,0)==3,"boss bank has three")
   check(not e.settle(g.harvest_run,true,g.harvest_tokens,g.harvest_deaths,g.encounter_types()),"no double claim")
   var recipes: Array = e.recipes_for(key)
-  check(recipes.size()==2,"ability and Memory for every boss")
+  check(recipes.size()==(3 if key=="bugh" else 2),"ability and Memory for every boss; Warden also has a unique Weapon")
   var face: String = recipes.filter(func(id):return E.RECIPES[id].has("face"))[0]
   check(e.craft(face)=="" and e.owned(E.RECIPES[face].face)==1,"boss face crafts and owns copy")
  e=E.new();e.unlocked={"memory_embers":true,"memory_iron":true}
@@ -52,7 +52,7 @@ func run():
  app.debug_mode=true;check(app.debug_unlock("recipe","ember_cut",0),"debug unlock face")
  check(app.expedition.camp.owned(69)==1 and app.expedition.camp.bank.is_empty(),"debug grants without spending")
  check(not app.debug_unlock("recipe","ember_cut",0),"debug grant idempotent")
- check(app.debug_unlock("soul","mire",1) and "mire" not in app.expedition.camp.souls[0],"debug Soul bound to chosen hero")
+ check(app.debug_unlock("soul","nugh",1) and "nugh" not in app.expedition.camp.souls[0],"debug Soul bound to chosen hero")
  for size in [Vector2i(390,844),Vector2i(360,640),Vector2i(844,390)]:
   root.size=size;app.set_mobile_mode(true,false);await process_frame;await process_frame;app.combat_notices.clear();app.game.pending={};app.game.active=0;app.rebuild();await process_frame
   var end=find(app.ui,"MobileEndTurn");var dice=find(app.ui,"MobileDie0")

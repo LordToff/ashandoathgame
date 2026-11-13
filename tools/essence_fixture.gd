@@ -48,6 +48,8 @@ func proof(args):
   data.forecast = app.trial_choice
   data.objective = app.game.objective_summary() if app.game.has_method("objective_summary") else ""
   data.effective = app.game.heroes.map(func(h):return range(3).map(func(die):return app.game.face(app.game.heroes.find(h),die)))
+  data.ui_text = ui_text(app.ui)
+  data.equipment_profile = app.camp_battle_profile()
   data.event_count = app.game.event_id;data.rng = str(app.game.rng.state)
   data.units = []
   for id in range(app.game.unit_count()):
@@ -68,6 +70,22 @@ func proof(args):
  if mode.begins_with("art39_"):
   app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trials.selected_boss = app.trials.BOSSES.find(mode.trim_prefix("art39_"));app.trials.start(39);app.trials.stage = 5;app.trials.choose(0);app.start_trial_battle()
   app.game.active = 0;app.game.cursor = app.game.order.find(0);app.game.pending = {};app.game.forced_die = -1;app.roll_seen = app.game.roll_presentations.size();app.seen_event = app.game.event_id;app.dice_tray.cancel();app.rolling_time = 0;app.rebuild();return
+ elif mode.begins_with("gear40_"):
+  app.expedition.camp = E.new()
+  app.expedition.camp.unlocked.weapon_oathblade = true;app.expedition.camp.unlocked.memory_first_step = true
+  if mode=="gear40_camp":
+   app.open_camp();app.camp_tab = 2;app.equipment_slot = "weapon";app.rebuild()
+  elif mode=="gear40_oathblade":
+   app.expedition.camp.weapons[0] = "oathblade"
+   app.builds[0] = [[1,4,0,0,0,0],[1,34,0,0,0,0],[1,7,0,0,0,0]]
+   setup_reward(1);app.game.heroes[0].results = [1,34,1];app.game.heroes[0].rolls = [0,1,0];app.game.heroes[0].stored_num = 1;app.game.boss.block = 1
+   app.game.heroes[0].pos = Vector2i(2,3);app.game.boss.pos = Vector2i(3,3)
+  elif mode=="gear40_poke":
+   setup_reward(1);app.game.heroes[0].results = [1,1,4];app.game.heroes[0].rolls = [0,0,0]
+   app.game.heroes[0].weapon_slots = [Vector2i(0,0)]
+   app.game.heroes[0].pos = Vector2i(2,3);app.game.boss.pos = Vector2i(3,3)
+  elif mode=="gear40_trial_reward":
+   app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trials.start(40);app.trials.phase = "reward";app.trials.essence = 3;app.page = "trials";app.trial_view = "run"
  elif mode.begins_with("direct39_"):
   app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trials.memories[0] = "";app.trials.bodies[0] = "broken";app.trials.loadout_weapons[0] = "dagger"
   if mode=="direct39_normal":
@@ -76,13 +94,14 @@ func proof(args):
    app.trials.start(39);app.trials.choose(0);app.start_trial_battle()
   app.game.active = 0;app.game.cursor = app.game.order.find(0);app.game.pending = {};app.game.forced_die = -1
   for h in app.game.heroes:h.used = [false,false,false];h.reaction = [];h.rolls = [0,0,0];h.results = [1,4,2]
+  app.game.heroes[0].rolls[0] = 3
   app.game.heroes[0].pos = Vector2i(3,5);app.game.heroes[1].pos = Vector2i(2,5);app.game.heroes[2].pos = Vector2i(8,8);app.game.boss.pos = Vector2i(3,4);app.game.boss.hp = 10;app.game.boss.max_hp = 10;app.game.boss.block = 0
   if app.game.unit_count()>4:app.game.unit_data(4).pos = Vector2i(7,1)
   if app.trial_fight:
    app.game.trial_state.cover = [];app.game.trial_state.crates = [];app.game.trial_state.spikes = [];app.game.trial_state.charges = [];app.game.trial_state.positions = {}
    for id in range(app.game.unit_count()):app.game.trial_state.positions[id] = app.game.unit_data(id).pos
   if mode=="direct39_numeric":app.game.heroes[0].results[0] = 34;app.game.heroes[0].stored_num = 1
-  elif mode=="direct39_stitch":app.game.heroes[0].results[0] = 78;app.game.heroes[0].build[0][0] = 78;app.game.heroes[1].hp = 2
+  elif mode=="direct39_stitch":app.game.heroes[0].results[0] = 78;app.game.heroes[0].build[0][3] = 78;app.game.heroes[1].hp = 2
   elif mode=="direct39_borrow":app.game.heroes[0].results[0] = 16;app.game.heroes[1].results[0] = 4
   app.inspect_actor = 0;app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()
  elif mode.begins_with("soul38_"):
@@ -114,7 +133,7 @@ func proof(args):
    for id in range(3):
     var h: Dictionary = app.game.heroes[id]
     h.used = [false,false,false];h.reaction = [];h.rolls = [0,0,1]
-    if id==0 and class_key=="vanguard":h.rolls = [0,1,1]
+    if id==0:h.rolls = [0,1,1]
     h.results = range(3).map(func(d):return h.build[d][h.rolls[d]])
    app.game.heroes[0].pos = Vector2i(3,7) if class_key=="skirmisher" else Vector2i(3,5)
    app.game.heroes[1].pos = Vector2i(0,8);app.game.heroes[2].pos = Vector2i(8,8);app.game.boss.pos = Vector2i(3,4);app.game.unit_data(4).pos = Vector2i(7,1)
@@ -246,3 +265,8 @@ func proof(args):
  elif mode == "evasive":
   setup_reward(68);app.game.heroes[0].used[0] = true;app.game.heroes[0].reaction = [0];app.game.pending = {"kind":"attack","action":"Test Attack","victims":[0],"reacted":[],"amount":1,"source":3,"range":1};app.game.continue_attack()
  app.inspect_actor = app.game.active;app.rebuild()
+
+func ui_text(node: Node) -> String:
+ var text: String = str(node.text)+"\n" if node is Label or node is Button or node is RichTextLabel else ""
+ for child in node.get_children():text += ui_text(child)
+ return text

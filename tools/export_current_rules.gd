@@ -23,12 +23,15 @@ func _initialize():
  var wilds = preload("res://prototype/wilds.gd")
  var creatures = preload("res://prototype/event_battle.gd").new()
  var essence = preload("res://prototype/essence.gd")
- result.wilds = {"souls":wilds.SOULS,"groups":wilds.GROUPS,"enemies":{}}
+ result.wilds = {"memories":wilds.MEMORIES,"groups":wilds.GROUPS,"enemies":{}}
  for type in ["mire_leech","glasswing_moth","iron_husk"]:result.wilds.enemies[type] = {"name":essence.type_name(type),"hp":essence.TYPES[type].hp,"dice":creatures.creature_dice(type),"description":creatures.creature_help(type)}
  var trial_rules = preload("res://prototype/trial_rules.gd")
  var trial_content = preload("res://prototype/trial_content.gd")
  result.trials = {"memories":trial_rules.MEMORIES,"souls":trial_rules.SOULS,"bodies":trial_rules.BODIES,"weapons":trial_rules.WEAPONS,"recipes":trial_content.RECIPES,"essence":trial_content.ESSENCE,"builds":trial_content.BUILDS,"objectives":trial_content.OBJECTIVES}
  var classes = preload("res://prototype/trial_classes.gd")
+ var gear = preload("res://prototype/equipment.gd")
+ result.equipment = {"bodies":gear.BODIES,"souls":gear.SOULS,"weapons":gear.WEAPONS,"faces":gear.FACES,"memories":gear.BLANK_MEMORIES}
+ result.trials.memories = trial_rules.MEMORIES.duplicate(true);result.trials.memories.merge(gear.BLANK_MEMORIES)
  result.trials.soulcaster = trial_rules.Soulcaster.SPELLS
  result.trials.soulcaster_dice = trial_rules.Soulcaster.STARTER_DICE.map(func(die):return die.map(func(face):return C.name_for(face)))
  result.trials.classes = classes.CLASSES

@@ -34,7 +34,7 @@ func run():
  check(e.craft("memory_loss") != "" and e.bank.support_creature == 16,"Memory permanent unlock cannot be bought twice")
  check(e.equip_memory(0) and e.equip_memory(2) and e.memories == ["","","memory_loss"],"Memory shared copy can transfer at refitting")
  check(e.equip_memory(-1) and e.memories == ["","",""] and e.unlocked.has("memory_loss"),"Memory can stay unequipped without losing ownership")
- check(e.grant_soul(1,"test_soul") and not e.equip_soul(0,"test_soul") and e.equip_soul(1,"test_soul"),"Soul binds to recipient and cannot trade")
+ check(e.grant_soul(1,"nugh") and not e.equip_soul(0,"nugh") and e.equip_soul(1,"nugh"),"Soul binds to recipient and cannot trade")
  e = E.new();e.bank.bone_creature = 1;e.bank.support_creature = 10
  check(e.craft("bone_strike") != "" and e.bank.bone_creature == 1 and e.bank.support_creature == 10,"cannot mix Essence types for a purchase")
  var g = group();g.damage(3,99,true)

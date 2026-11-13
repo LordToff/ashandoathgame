@@ -36,7 +36,7 @@ func run_tests() -> void:
      var kit: Dictionary = K.CLASSES[run.classes[id]]
      check(run.reward_faces(id)==kit.rewards,"reward offers follow the chosen class, not the hero name")
      check(run.weapons[id]==kit.weapon and run.bodies[id]==kit.body and run.memories[id]==kit.memory,"class supplies its declared Weapon, Body and Memory")
-     check(g.heroes[id].max_hp==(4 if run.classes[id]=="skirmisher" else 6),"real combat maximum HP matches the class explanation")
+     check(g.heroes[id].max_hp==6,"real combat maximum HP matches the class explanation")
      var weapon_faces := 0
      for die in range(3):
       for side in range(6):
@@ -44,7 +44,7 @@ func run_tests() -> void:
        check(actual==K.face_for(run.classes[id],die,side),"six-side preview and actual equipped weapon face agree")
        if actual in [73,74]:weapon_faces += 1
      check(weapon_faces==1 and not g.balance["weapon.dagger."+str(id)],"weapon attack is one rolled face; no additional free Poke")
-     check(g.soul_distance(id)==1 and g.soul_limit(id)==1,"Beginning Soul keeps one Blank to Move 1")
+     check(g.soul_remaining(id)==0,"No Blank movement with empty Memory")
  # Each class works for any of the three named heroes.
  for key in K.CLASSES:
   var run = new_party();var prior: Array = [run.classes.duplicate(),run.memories.duplicate(),run.bodies.duplicate(),run.loadout_weapons.duplicate()]
@@ -57,14 +57,14 @@ func run_tests() -> void:
   var before: int = g.boss.hp
   check(not g.hero_action(0,3) and not g.heroes[0].used[0],"class weapon requirements do not spend failed attempts")
   if key=="skirmisher":
-   g.heroes[0].results[1] = 2;g.heroes[0].pos = Vector2i(3,7);g.trial_state.positions[0] = g.heroes[0].pos
-   check(g.move_steps(2)==2 and g.hero_action(1,-1,Vector2i(3,5)) and g.heroes[0].moved_turn==2,"real Fleet Step supplies the two spaces needed for Jab")
-   check(g.hero_action(0,3) and g.boss.hp==before-2 and g.heroes[0].used[0],"class example really deals Jab 1 plus Momentum 1 and spends its die")
+   g.heroes[0].results[1] = 3;g.heroes[0].pos = Vector2i(3,7);g.trial_state.positions[0] = g.heroes[0].pos
+   check(g.move_steps(3)==3 and g.hero_action(1,-1,Vector2i(3,5)) and g.heroes[0].moved_turn==2,"printed Stride supplies the two spaces needed for Jab")
+   check(g.hero_action(0,3) and g.boss.hp==before-1 and g.heroes[0].used[0],"class example deals Jab 1 with empty Memory and spends its die")
   else:
    g.heroes[0].results[1] = 1;g.heroes[0].rolls[1] = 1;g.boss.block = 3
-   check(g.move_steps(3)==2 and g.hero_action(1,3) and g.boss.block==2,"Vanguard retains real normal Strikes to set up Crack")
+   check(g.move_steps(3)==3 and g.hero_action(1,3) and g.boss.block==2,"Vanguard retains real normal Strikes to set up Crack")
    check(g.hero_action(0,3) and g.boss.block==0 and g.boss.hp==before,"rolled Crack strips the remaining two Block without hidden damage")
-   g.heroes[0].block = 2;g.action_owner = 3;g.damage(0,2,false,"Bash",3)
+   g.balance["equipment.memories"][0] = "guard";g.heroes[0].block = 2;g.action_owner = 3;g.damage(0,2,false,"Bash",3)
    check(g.heroes[0].trial_counter and g.heroes[0].hp==6,"Vanguard's Memory actually primes after a perfect block")
   check(not run.choose_class(0,"vanguard" if key=="skirmisher" else "skirmisher"),"class cannot be changed during a run")
  for key in K.CLASSES:
@@ -92,13 +92,13 @@ func run_tests() -> void:
   check(app.ui.find_child("TrialClassOverview",true,false)!=null,"class card is reachable in every lobby layout")
   app.trial_view = "classes";app.trial_class_preview = "vanguard";app.trial_class_die = 0;app.rebuild();await process_frame
   var text := text_content(app.ui)
-  check("Vanguard" in text and "Stone Body" in text and "Memory of Guard" in text and "Hammer" in text and "Crack" in text,"class page explains gear and shows its weapon face")
+  check("Vanguard" in text and "Stone Body" in text and "No Memory" in text and "Hammer" in text and "Crack" in text,"class page explains gear and shows its weapon face")
   check(app.ui.find_child("TrialClassFace0",true,false).text=="Crack" and app.ui.find_child("TrialClassFace3",true,false).text=="Strike","preview shows both Crack and retained Strike on real sides")
-  check(app.TrialUI.class_face_help(app,"skirmisher",2).contains("2 spaces") and app.TrialUI.class_face_help(app,"vanguard",3).contains("2 spaces"),"movement face help includes the starting Body modifier")
+  check(app.TrialUI.class_face_help(app,"skirmisher",2).contains("1 spaces") and app.TrialUI.class_face_help(app,"vanguard",3).contains("3 spaces"),"movement face help includes the starting Body modifier")
  app.trials = T.new(false);app.trials.ensure_classes();app.trials.start(37);app.choose_trial_route(0);app.game.active = 0;app.game.pending = {}
- check(app.face_help(2).contains("2 orthogonal spaces") and app.short_face_help(3).contains("4 spaces"),"Skirmisher combat Details show actual Body-modified Step and Stride")
+ check(app.face_help(2).contains("1 orthogonal spaces") and app.short_face_help(3).contains("3 spaces"),"Skirmisher combat Details show actual Body-modified Step and Stride")
  app.go_main();app.trials = T.new(false);app.trials.ensure_classes();app.trials.choose_class(0,"vanguard");app.trials.start(37);app.choose_trial_route(0);app.game.active = 0;app.game.pending = {}
- check(app.face_help(3).contains("2 spaces") and app.short_face_help(2).contains("1 orthogonal spaces"),"Vanguard combat Details show actual shorter movement")
+ check(app.face_help(3).contains("3 spaces") and app.short_face_help(2).contains("1 orthogonal spaces"),"Vanguard combat Details show actual shorter movement")
  check(app.expedition.camp.encode()==normal_bank and app.builds==normal_builds,"class browsing and setup leave normal Camp and builds untouched")
  app.queue_free();await process_frame
  print("CLASSES v0.37: %d checks, %d failures" % [checks,failures]);quit(1 if failures else 0)

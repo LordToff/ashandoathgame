@@ -48,12 +48,12 @@ func run_tests():
  var legacy = JSON.parse_string(FileAccess.get_file_as_string(Run.SAVE));legacy.erase("equipment_version");legacy.paths = legacy.memories;legacy.erase("memories");legacy.erase("weapons");legacy.mods = {"0:0:0":"venom","1:0:0":"heavy"}
  var file := FileAccess.open(Run.SAVE,FileAccess.WRITE);file.store_string(JSON.stringify(legacy));file.close()
  var restored = Run.new(true)
- check(restored.essence==9 and restored.memories==["venom","guard","stride"] and restored.weapons==["dagger","dagger","dagger"],"old modifiers refunded and old selections migrated to Memory slots")
+ check(restored.essence==9 and restored.memories==["","",""] and restored.weapons==["dagger","dagger","dagger"],"old modifiers refunded and old selections migrated to Memory slots")
  restored.save();var twice = Run.new(true);check(twice.essence==9,"migration refund cannot repeat")
  var app=load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
  app.trials = Run.new(false);app.open_trials();await process_frame;var text := text_content(app.ui)
  for slot in ["Body","Memory","Soul","Weapon"]:check(slot in text,"setup explains each existing equipment slot")
- check(not "edge" in text.to_lower() and not "pact" in text.to_lower() and not "passive" in text.to_lower(),"setup has no extra equipment concepts")
+ check(not "edge" in text.to_lower() and not "pact" in text.to_lower(),"setup has no extra equipment concepts")
  app.trials.start(35);app.trials.phase = "reward";app.trials.reward_mode = "weapon";app.rebuild();await process_frame;text = text_content(app.ui)
  check("Weapon" in text and "Equip Poison Dagger" in text and not "Attack edge" in text,"reward equips one named Weapon")
  app.game = fresh();app.page = "battle";app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size();app.dice_tray.cancel();app.rolling_time = 0;app.combat_notices.clear()

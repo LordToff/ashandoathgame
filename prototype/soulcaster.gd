@@ -2,7 +2,7 @@ extends RefCounted
 ## Trials-only Soul from Soulcaster Soul Rules and Spells. No normal catalog ownership.
 const FIRST = 75
 const LAST = 80
-const STARTER_DICE = [[1,4,0,0,0,0],[2,34,0,0,0,0],[7,6,0,0,0,0]]
+const STARTER_DICE = [[1,4,0,0,0,0],[3,34,0,0,0,0],[7,6,0,0,0,0]]
 const SPELLS = {
  75:{"name":"Wraith Exchange","category":"Movement","cost":2,"range":4,"text":"Swap with a standing ally within 4. Then each hero may Move 1. Rooted prevents the swap; the follow-up steps stay Move 1."},
  76:{"name":"Soul Harvester","category":"Attack","cost":1,"range":3,"text":"Spend 1 Soul Charge to deal 1 normal Attack damage to an enemy within 3. Killing an enemy creature or boss grants 2 Soul Charges, up to 3."},
@@ -11,8 +11,8 @@ const SPELLS = {
  79:{"name":"Hoarded Omen","category":"Skill","cost":1,"range":3,"text":"Choose yourself or a standing ally within 3. On their next turn they may save one ordinary ready ability. Its original die stays aside and the saved result is ready on their turn in the following round. No Reactions, Channels, when-rolled results, penalties, Blanks or Hoarded Omen."},
  80:{"name":"Fatebreaker","category":"Skill","cost":2,"range":0,"text":"When rolled: gain 1 Action Reroll, up to its normal cap, then reroll one eligible unresolved enemy die. Each enemy die can be rerolled once per shared round. If none is eligible, only the Action Reroll is gained."}
 }
-static func enabled(g) -> bool:return bool(g.balance.get("trial.enabled",false))
-static func equipped(g, hero: int) -> bool:return enabled(g) and hero in range(3) and str(g.balance.get("trial.souls",["","",""])[hero])=="soulcaster"
+static func enabled(g) -> bool:return bool(g.balance.get("trial.enabled",false)) or bool(g.balance.get("equipment.enabled",false))
+static func equipped(g, hero: int) -> bool:return enabled(g) and hero in range(3) and str(g.balance.get("equipment.souls",g.balance.get("trial.souls",["","",""]))[hero])=="soulcaster"
 static func is_spell(face: int) -> bool:return SPELLS.has(face)
 static func text(face: int) -> String:return SPELLS[face].text if is_spell(face) else ""
 static func charges(g, hero: int) -> int:return int(g.heroes[hero].get("soul_charges",0))

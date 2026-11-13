@@ -1,6 +1,6 @@
 extends RefCounted
 ## Resolve isolated copies, across all Numeric sides, never the live model/RNG.
-const TARGETED = [0,1,2,3,7,8,15,19,34,35,36,37,38,39,40,41,53,54,55,57,58,59,60,61,66,67,69,70,73,74,75,76,78,79]
+const TARGETED = [0,1,2,3,7,8,15,19,34,35,36,37,38,39,40,41,53,54,55,57,58,59,60,61,66,67,69,70,73,74,75,76,78,79,81,82,83,84]
 const IMMEDIATE = [4,14,20,21,22,27,29,42,43,47,50,51,54,56,60,62,71,72]
 static func copy_battle(g):
  var model = g.get_script().new()
@@ -27,7 +27,7 @@ static func calculate(g, die: int, target: int = -1, destination: Vector2i = Vec
  if face not in TARGETED and face not in IMMEDIATE:
   result.text = "Use opens this ability’s choices; no result is predicted yet."
   return result
- if face in [73,74]:
+ if g.Equipment.FACES.has(face):
   var reason: String = g.TrialRules.weapon_reason(g,face,target)
   if reason!="":result.text = reason;return result
  var before := snapshot(g);var samples: Array = [];var choices := false

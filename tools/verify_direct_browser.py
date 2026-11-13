@@ -47,7 +47,7 @@ with sync_playwright() as pw:
   tap(name=die+'1');assert state()['block'][0]==1 and state()['used'][0][1];no_confirmation()
   tap(name=die+'2');cell(4,5);assert state()['positions'][0]==[4,5] and state()['used'][0][2];snap('direct-combat-new-enemies');no_confirmation()
   fixture('direct39_normal');tap(name=die+'0');cell(3,4);assert state()['boss_hp']==9 and state()['used'][0][0];tap(name=die+'1');assert state()['block'][0]==1;no_confirmation()
-  fixture('direct39_stitch');tap(name=die+'0');cell(2,5);assert state()['hp'][1]==4 and state()['used'][0][0] and state()['live_builds'][0][0][0]==0;no_confirmation()
+  fixture('direct39_stitch');tap(name=die+'0');cell(2,5);assert state()['hp'][1]==4 and state()['used'][0][0] and state()['live_builds'][0][0][3]==0;no_confirmation()
   fixture('direct39_borrow');tap(name=die+'0');assert state()['pending']['kind']=='catalog_choice';tap(name='RolledChoice1_0');tap(text='Use');assert state()['block'][0]==1 and state()['used'][0][0] and not state()['pending'];no_confirmation()
   fixture('soul38_blank');tap(name=die+'0');data=state();assert data['pending']['kind']=='soul_blank' and not any(v['name']=='BattlePanelScroll' for v in data['controls']);assert len([v for v in data['controls'] if v['name'].startswith('SoulSpell')])==6;snap('compact-soulcaster')
   tap(name='SoulSpell76');data=state();assert data['live_builds'][0][0][2]==76 and data['hp'][0]==5 and data['soul_charges'][0]==1 and data['used'][0][0] and data['effective'][0][0]==0
@@ -55,7 +55,7 @@ with sync_playwright() as pw:
   tap(name=die+'1');tap(name='SoulSpell80');assert state()['soul_charges'][0]==1 and state()['live_builds'][0][1][2]==80;snap('one-tap-spell-created')
   fixture('soul38_harvest');tap(name=die+'0');cell(3,4);assert state()['soul_charges'][0]==1 and state()['used'][0][0];no_confirmation()
   fixture('soul38_wraith');tap(name=die+'0');cell(3,5);assert state()['pending']['kind']=='soul_steps';tap(name='WraithStep4');tap(name='WraithStep4');assert not state()['pending'];no_confirmation()
-  fixture('class37_skirmisher');tap(name=die+'1');cell(3,5);assert state()['positions'][0]==[3,5];tap(name=die+'0');cell(3,4);assert state()['boss_hp']==8 and state()['used'][0][0];no_confirmation();snap('direct-jab')
+  fixture('class37_skirmisher');tap(name=die+'1');cell(3,5);assert state()['positions'][0]==[3,5];tap(name=die+'0');cell(3,4);assert state()['boss_hp']==9 and state()['used'][0][0];no_confirmation();snap('direct-jab')
   fixture('class37_vanguard');tap(name=die+'1');cell(3,4);assert state()['enemy_block']==2;tap(name=die+'0');cell(3,4);assert state()['enemy_block']==0 and state()['boss_hp']==10;no_confirmation();snap('direct-crack')
   assert not errors,errors
   row={'viewport':[width,height],'result':'passed','browser_errors':errors,'tested':['Strike ability then map target','one-tap Guard','Step then destination','normal and Trial direct controls','direct targeted Grave Stitch','Borrow Shape copied Guard resolves','compact board-visible Soulcaster','two taps total to Gather/create','creation costs and delayed spell','direct Harvester/Wraith/Jab/Crack','licensed animated enemy render']};results.append(row);(out/'checkpoint.json').write_text(json.dumps(results,indent=2));print(json.dumps(row),flush=True);c.close()

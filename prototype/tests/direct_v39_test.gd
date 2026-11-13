@@ -13,6 +13,7 @@ func fresh(app) -> void:
  var profile: Dictionary = app.trials.profile();profile["trial.terrain"] = "none";app.game.start(app.trials.builds,39,true,true,profile)
  app.page = "battle";app.trial_fight = true;app.game.active = 0;app.game.cursor = app.game.order.find(0);app.game.pending = {};app.game.forced_die = -1;app.selected = -1
  for h in app.game.heroes:h.used = [false,false,false];h.reaction = [];h.results = [1,4,2];h.rolls = [0,0,0]
+ app.game.heroes[0].rolls[0] = 3
  app.game.heroes[0].pos = Vector2i(3,5);app.game.heroes[1].pos = Vector2i(2,5);app.game.heroes[2].pos = Vector2i(8,8);app.game.boss.pos = Vector2i(3,4);app.game.boss.block = 0;app.game.boss.hp = 10;app.game.unit_data(4).pos = Vector2i(8,0)
  app.game.trial_state.positions = {}
  for id in range(app.game.unit_count()):app.game.trial_state.positions[id] = app.game.unit_data(id).pos
@@ -28,7 +29,7 @@ func run_tests() -> void:
  fresh(app);app.select_combat_die(2);check(app.game.heroes[0].pos==Vector2i(3,5),"movement selection does not move before target")
  click(app,Vector2i(4,5));check(app.game.heroes[0].pos==Vector2i(4,5) and app.game.heroes[0].used[2],"Step moves on destination tap, no Confirm")
  fresh(app);app.select_combat_die(0);var rng_before: int = app.game.rng.state;click(app,Vector2i(8,0));check(not app.game.heroes[0].used[0] and app.game.boss.hp==10 and app.game.rng.state==rng_before,"invalid target spends neither die nor RNG")
- fresh(app);app.game.heroes[0].results[0] = 78;app.game.heroes[0].build[0][0] = 78;app.game.heroes[1].hp = 2;app.select_combat_die(0);click(app,Vector2i(2,5));check(app.game.heroes[1].hp==4 and app.game.heroes[0].used[0] and app.game.heroes[0].build[0][0]==0,"Grave Stitch heals the tapped ally and returns to Blank directly")
+ fresh(app);app.game.heroes[0].results[0] = 78;app.game.heroes[0].build[0][3] = 78;app.game.heroes[1].hp = 2;app.select_combat_die(0);click(app,Vector2i(2,5));check(app.game.heroes[1].hp==4 and app.game.heroes[0].used[0] and app.game.heroes[0].build[0][3]==0,"Grave Stitch heals the tapped ally and returns to Blank directly")
  for key in Art.STILLS:
   var first: AtlasTexture = Art.texture(key,0);var next: AtlasTexture = Art.texture(key,.25);var walk: AtlasTexture = Art.texture(key,0,true)
   check(first.region!=next.region and first.region!=walk.region,"licensed sprite has real idle/run frames: "+key)

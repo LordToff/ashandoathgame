@@ -218,6 +218,7 @@ func _ready() -> void:
  setup_combat_audio()
  expedition.load_save()
  load_balance_profile()
+ for hero in range(3):builds[hero] = Model.default_build(camp_build_profile(hero))
  make_offers()
  dice_tray = Tray.new();add_child(dice_tray)
  dice_tray.finished.connect(func(): rolling_time = 0;play_hit_sound(queued_hit_sound);queued_hit_sound = -1;rebuild())
@@ -389,7 +390,7 @@ func rebuild() -> void:
   button("Menu",Vector2(288,112),Vector2(120,26),func():show_menu = true;rebuild(),GOLD)
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.39",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.40",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -438,7 +439,7 @@ func begin() -> void:
  if allocation != "":hint = allocation;page = "forge";rebuild();return
  combat_notices.clear();choosing_reroll = false
  for hero in range(3):
-  var error := Model.validate(builds[hero],gifts[hero],expedition.camp.profile(balance_values))
+  var error := Model.validate(builds[hero],gifts[hero],camp_build_profile(hero))
   if error != "":hint = error;page = "forge";rebuild();return
  training = false
  lab = false
@@ -557,10 +558,10 @@ func battle_ui() -> void:
   button("Return to "+game.unit_name(game.burden_interrupt.owner)+" →" if not game.burden_interrupt.is_empty() else "End hero turn   →",Vector2(760,682),Vector2(328,54),func():game.finish_turn();selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
   var poke_error: String = game.poke_reason()
   var poke_targets: Array = game.poke_targets()
-  var poke_button := button("Weapon · no Dagger equipped" if not game.balance.get("weapon.dagger."+str(game.active),false) else "Dagger · Poke 1" if poke_error == "" else ("Dagger · Poke used" if h.get("dagger_used",false) else "Dagger · damage an enemy first"),Vector2(760,746),Vector2(328,34),func():choosing_poke = true;rebuild(),GOLD,poke_error != "" or poke_targets.is_empty())
-  if trial_fight and Model.TrialRules.weapon(game,game.active) in ["spear","hammer"]:
-   poke_button.text = Model.TrialRules.WEAPONS[Model.TrialRules.weapon(game,game.active)].name+" · uses rolled "+("Jab" if Model.TrialRules.weapon(game,game.active)=="spear" else "Crack")
-  poke_button.name = "DaggerPoke";poke_button.add_theme_font_size_override("font_size",13)
+  var weapon_key: String = Model.TrialRules.weapon(game,game.active)
+  var weapon_info: Dictionary = Model.Equipment.WEAPONS.get(weapon_key,Model.Equipment.WEAPONS[""])
+  var poke_button := button(weapon_info.name+" · rolled Weapon face · ?",Vector2(760,746),Vector2(328,34),func():mobile_info = weapon_info.text;rebuild(),GOLD)
+  poke_button.name = "EquipmentWeapon";poke_button.add_theme_font_size_override("font_size",13)
   poke_button.tooltip_text = poke_error if poke_error != "" else ("No adjacent enemy." if poke_targets.is_empty() else "Once per turn. 1 normal Attack damage to an adjacent enemy. No die spent.")
   var tags: Array[String] = []
   for tag in game.status_map(game.active):
@@ -594,15 +595,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · SOUL LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(428,117),13,Color("d7b3eb"),310)
- var goal := "v0.39 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.40 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.39 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.39 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.40 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.40 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.39 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.40 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · COUNTERATTACK" if game.guard_broken else "BULWARK −%d · Guard or evade" % game.v("warden.armor"),Vector2(426,112),Vector2(310,25),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.39 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.40 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · CORE %s · ?" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(424,112),Vector2(314,24),func():show_turn = true;rebuild(),Color("8cdae4"))
   meter.add_theme_font_size_override("font_size",12);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -635,13 +636,13 @@ func face_help(f: int) -> String:
  if f == 0 and page=="battle" and Model.Soulcaster.equipped(game,game.active):return "Soulcaster Blank: Gather +1 Soul Charge, or create a spell for its charge cost and 1 HP. Tap a Blank to choose. The new spell must be rolled on a later turn.\n\n"+SoulcasterUI.resource(game,game.active)
  if f == 0:
   var actor: int = game.active if page == "battle" else build_hero
-  if actor not in [0,1,2]:return "Blank: check the acting hero’s equipped Soul and remaining conversion allowance."
+  if actor not in [0,1,2]:return "Blank: a Memory can give it an alternate use."
   var scoped: Dictionary = game.balance if page == "battle" else camp_battle_profile()
   var enabled: bool = (game.reward if page == "battle" else true) and scoped.get("soul.eligible."+str(actor),true)
-  if not enabled:return "Blank: no movement for this hero. Equip a Soul at Camp or enable the sandbox override. You may still spend this result without effect."
+  if not enabled:return "Blank: no alternate use for this hero. Equip a Memory that uses Blanks at Camp, or enable the sandbox override. You may still spend this result without effect."
   var mode: String = str(scoped.get("soul.mode."+str(actor),"move"))
   if mode != "move":
-   var soul_text: String = Wilds.SOULS.values().filter(func(definition):return definition.mode == mode)[0].effect
+   var soul_text: String = Wilds.MEMORIES.values().filter(func(definition):return definition.mode == mode)[0].effect
    if page == "battle":soul_text += "\n\n%d use(s) left this own turn." % game.soul_remaining(actor)
    return soul_text
   var count: int = game.soul_limit(actor) if page == "battle" else int(scoped["soul.allowance."+str(actor)])
@@ -662,7 +663,7 @@ func face_help(f: int) -> String:
 
 func default_face_help(f: int) -> String:
  if f >= 9: return Catalog.text(f) + (" Numeric die: 2, 2, 1, 1, 1, 0 by default." if f in range(34,43) or f in [15,17,19,50,51,55] else "")
- return ["Blank: no starting effect. Beginning Soul spends one rolled Blank as Move 1 per own turn; earned Souls use Move 2. This does not permanently change the installed face.","Strike: %d damage to one adjacent unit. Weakness subtracts 1. Allies are legal targets." % balance_number("face1.damage"),"Step: move up to 1 orthogonal space.","Stride: move up to 3 spaces in one straight orthogonal direction; no turning.","Guard: gain 1 Block. Block expires at your next turn start.","Reaction: stored when rolled. On being targeted, gain 2 Block before the hit. No movement.","Focus: select another unresolved die to reroll it. Keep and resolve its new face.","First Aid: heal yourself or an adjacent hero for 1. Revives Downed heroes with Broken.","Shove: choose an adjacent unit, then a directly-away direction. Moves the full boss footprint. No collision penalty."][f]
+ return ["Blank: no starting effect. An equipped Memory may let you spend a Blank; Soulcaster instead enables Gather / Manifest. This does not permanently change the installed face.","Strike: %d damage to one adjacent unit. Weakness subtracts 1. Allies are legal targets." % balance_number("face1.damage"),"Step: move up to 1 orthogonal space.","Stride: move up to 3 spaces in one straight orthogonal direction; no turning.","Guard: gain 1 Block. Block expires at your next turn start.","Reaction: stored when rolled. On being targeted, gain 2 Block before the hit. No movement.","Focus: select another unresolved die to reroll it. Keep and resolve its new face.","First Aid: heal yourself or an adjacent hero for 1. Revives Downed heroes with Broken.","Shove: choose an adjacent unit, then a directly-away direction. Moves the full boss footprint. No collision penalty."][f]
 
 func pending_ui() -> void:
  if SoulcasterUI.pending(self):return
@@ -800,7 +801,7 @@ func _gui_input(event: InputEvent) -> void:
   for u in range(game.unit_count()):
    if game.unit_data(u).get("dead",false): continue
    if c in game.cells(u): target = u
-  if Catalog.is_attack(f) and f not in [61,67,69,70,73,74,76] and target >= 0 and game.friendly(target) and target != game.active and friendly_confirm != target:
+  if Catalog.is_attack(f) and f not in [61,67,69,70,73,74,76,81,82,83,84] and target >= 0 and game.friendly(target) and target != game.active and friendly_confirm != target:
    friendly_confirm = target; hint = "FRIENDLY FIRE: click this ally again to confirm the attack."; rebuild(); return
   friendly_confirm = -1
   var done := false
@@ -815,7 +816,7 @@ func _gui_input(event: InputEvent) -> void:
     var dir := Vector2i(signi(delta.x),0) if absi(delta.x) >= absi(delta.y) else Vector2i(0,signi(delta.y))
     done = game.hero_action(selected,shove_target,dir)
   elif f in [61,67,69,70]:done = game.hero_action(selected,target)
-  elif f in [1,7,12,15,19,34,35,36,37,38,39,40,41,55,58,73,74,75,76,78,79]: done = game.hero_action(selected,target)
+  elif f in [1,7,12,15,19,34,35,36,37,38,39,40,41,55,58,73,74,75,76,78,79,81,82,83,84]: done = game.hero_action(selected,target)
   if done: selected = -1; shove_target = -1; roll_feedback = {}; hint = "Choose another die, or end this hero’s turn."
   else:
    hint = explain_invalid(f,target,c)
@@ -1174,14 +1175,14 @@ func choose_gift(id: int) -> void:
    for side in range(6):
     if die[side] == id:die[side] = 0
  else:
-  var result := FaceLoadout.quick_equip(builds[build_hero],gifts[build_hero],expedition.camp.profile(balance_values),id)
+  var result := FaceLoadout.quick_equip(builds[build_hero],gifts[build_hero],camp_build_profile(build_hero),id)
   if result.error != "":draft_error = result.error
   else:builds[build_hero] = result.build;gifts[build_hero] = result.gifts
  rebuild()
 
 func confirm_gifts() -> void:
  if gifts[build_hero].size() != 2:return
- var error := Model.validate(builds[build_hero],gifts[build_hero],expedition.camp.profile(balance_values))
+ var error := Model.validate(builds[build_hero],gifts[build_hero],camp_build_profile(build_hero))
  if error != "" or not gifts[build_hero].all(func(id):return builds[build_hero].any(func(die):return id in die)):
   draft_error = error if error != "" else "Place both chosen designs on the dice first.";rebuild();return
  var next := -1
@@ -1252,13 +1253,13 @@ func draft_ui() -> void:
   pad.set_drag_forwarding(Callable(),func(_at,data):return face_drop_allowed(die,-1,data),func(_at,data):place_dragged_face(die,-1,data))
   label_at("DIE "+["I","II","III"][die],base-Vector2(0,24),13,GOLD,200)
   for side in range(6):
-   var face: int = builds[build_hero][die][side]
+   var face: int = camp_display_face(build_hero,die,side)
    var slot := button(Catalog.name_for(face),base+Vector2(NET[side])*72,Vector2(70,70),func():
     inspected_gift = face;rebuild(),color_for_face(face))
    slot.name = "DraftDie%dSide%d" % [die,side];slot.clip_text = true;slot.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART;slot.add_theme_font_size_override("font_size",12);slot.size = Vector2(70,70);slot.tooltip_text = face_help(face)
    for state_name in ["normal","hover","pressed"]:
     slot.get_theme_stylebox(state_name).content_margin_left = 4;slot.get_theme_stylebox(state_name).content_margin_right = 4
-   slot.set_drag_forwarding(func(_at):return face_drag_data(slot,face,die,side),func(_at,data):return face_drop_allowed(die,side,data),func(_at,data):place_dragged_face(die,side,data))
+   slot.set_drag_forwarding(func(_at):return face_drag_data(slot,int(builds[build_hero][die][side]),die,side),func(_at,data):return face_drop_allowed(die,side,data),func(_at,data):place_dragged_face(die,side,data))
  var drop_hint := label_at(draft_error if draft_error != "" else "Picked: "+(" + ".join(gifts[build_hero].map(func(id):return Catalog.name_for(id))) if not gifts[build_hero].is_empty() else "Click any two cards on the left."),Vector2(700,544),13,GOLD if draft_error != "" else MUTED,680,false,true);drop_hint.name = "DraftDropHint";drop_hint.max_lines_visible = 2
  label_at(Catalog.display_name(inspected_gift),Vector2(700,590),20,color_for_face(inspected_gift),680,true,true).name = "GiftPreviewTitle"
  var detail := RichTextLabel.new();detail.name = "GiftDetail";detail.position = Vector2(700,626);detail.size = Vector2(680,108);detail.add_theme_font_size_override("normal_font_size",16);detail.text = short_face_help(inspected_gift);ui.add_child(detail)
@@ -1289,8 +1290,8 @@ func face_drag_data(source: Control, face: int, die: int = -1, side: int = -1) -
 
 func face_drop_result(die: int, side: int, data: Variant) -> Dictionary:
  if not data is Dictionary or data.get("hero",-1) != build_hero:return {"error":"Drag a face for the currently selected hero."}
- if side < 0:return FaceLoadout.best_drop(builds[build_hero],gifts[build_hero],expedition.camp.profile(balance_values),die,data)
- return FaceLoadout.trial(builds[build_hero],gifts[build_hero],expedition.camp.profile(balance_values),die,side,data)
+ if side < 0:return FaceLoadout.best_drop(builds[build_hero],gifts[build_hero],camp_build_profile(build_hero),die,data)
+ return FaceLoadout.trial(builds[build_hero],gifts[build_hero],camp_build_profile(build_hero),die,side,data)
 
 func face_drop_allowed(die: int, side: int, data: Variant) -> bool:
  var result := face_drop_result(die,side,data)
@@ -1403,13 +1404,13 @@ func lab_tools_ui() -> void:
  button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
  button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
  button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.39 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
+ button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.40 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
  button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
  button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.39",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.40",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1483,7 +1484,7 @@ func dice_ui() -> void:
     rolled = game.boss_sides.size() == 3 and game.boss_sides[d] == side
    else:
     var build: Array = game.heroes[dice_hero].build if in_fight else builds[dice_hero]
-    id = Model.TrialRules.effective_face(game,dice_hero,build[d][side],d,side) if in_fight else build[d][side]; current = Catalog.name_for(id)
+    id = Model.TrialRules.effective_face(game,dice_hero,build[d][side],d,side) if in_fight else camp_display_face(dice_hero,d,side); current = Catalog.name_for(id)
     original = Catalog.name_for(game.initial_builds[dice_hero][d][side]) if in_fight else current
     rolled = in_fight and game.heroes[dice_hero].rolls[d] == side
    var changed := current != original
@@ -1504,7 +1505,7 @@ func dice_ui() -> void:
  else:
   var h: Dictionary = game.heroes[dice_hero] if in_fight else {}
   var build: Array = h.build if in_fight else builds[dice_hero]
-  var id: int = build[d][side]
+  var id: int = Model.TrialRules.effective_face(game,dice_hero,int(build[d][side]),d,side) if in_fight else camp_display_face(dice_hero,d,side)
   info = "DIE %s · SIDE %d · %s\n%s" % [["I","II","III"][d],side+1,Catalog.display_name(id),short_face_help(id)]
   if in_fight:
    info += "\nRecorded roll: %s · %s. Installed sides may change while an earlier recorded result stays valid." % [Catalog.name_for(game.face(dice_hero,d)),"reaction held" if d in h.reaction else ("channel held" if not h.channel.is_empty() and h.channel.die == d else ("spent" if h.used[d] else "ready"))]
@@ -1535,7 +1536,7 @@ func explain_invalid(f: int, target: int, cell: Vector2i) -> String:
 func save_preset() -> void:
  if gifts.any(func(pool):return pool.size() != 2):hint = "Choose two bonus faces per hero before saving a preset."; rebuild(); return
  for hero in range(3):
-  if Model.validate(builds[hero],gifts[hero],expedition.camp.profile(balance_values)) != "":hint = "Fix illegal builds before saving.";rebuild();return
+  if Model.validate(builds[hero],gifts[hero],camp_build_profile(hero)) != "":hint = "Fix illegal builds before saving.";rebuild();return
  var file := FileAccess.open("user://ash_build_preset.json",FileAccess.WRITE)
  if not file: hint = "Could not save preset."; rebuild(); return
  file.store_string(JSON.stringify({"builds":builds,"gifts":gifts,"balanced":balanced,"test_soul":reward_soul}));file.close()
@@ -1613,12 +1614,12 @@ func set_soul_enabled(enabled: bool, live: bool = true) -> void:
   for hero in range(3):
    if lab or training:game.balance.erase("soul.eligible."+str(hero))
    else:
-    var soul: String = expedition.camp.equipped_souls[hero]
-    game.balance["soul.eligible."+str(hero)] = enabled or soul != ""
-    game.balance["soul.mode."+str(hero)] = "move" if enabled else Wilds.SOULS.get(soul,{}).get("mode","move")
-    game.balance["soul.distance."+str(hero)] = balance_number("soul.move") if enabled else int(Wilds.SOULS[soul].distance) if Wilds.SOULS.has(soul) else (1 if soul == "beginning" else balance_number("soul.move"))
-    game.balance["soul.allowance."+str(hero)] = balance_number("soul.uses") if enabled or soul in ["hollow","ashroad",""] else 1
-  game.record_event("info","Blank → Move %d " % game.soul_distance(game.active) + ("enabled: %d conversions per hero turn." % game.v("soul.uses") if enabled else "sandbox disabled; equipped Soul effects remain."))
+    var equipped: Dictionary = expedition.camp.profile(balance_values)
+    game.balance["soul.eligible."+str(hero)] = enabled or bool(equipped.get("soul.eligible."+str(hero),false))
+    game.balance["soul.mode."+str(hero)] = "move" if enabled else equipped.get("soul.mode."+str(hero),"move")
+    game.balance["soul.distance."+str(hero)] = balance_number("soul.move") if enabled else equipped.get("soul.distance."+str(hero),1)
+    game.balance["soul.allowance."+str(hero)] = balance_number("soul.uses") if enabled else 1
+  game.record_event("info","Blank → Move %d " % game.soul_distance(game.active) + ("enabled: %d conversions per hero turn." % game.v("soul.uses") if enabled else "sandbox disabled; equipped Memory effects remain."))
  hint = "Blank → Move %d is " % balance_number("soul.move") + ("ON. Select a rolled Blank, then a highlighted cell. %d conversions per hero turn." % balance_number("soul.uses") if enabled else "OFF. Rolled Blanks cannot be spent for movement.")
  rebuild()
 
@@ -1657,7 +1658,7 @@ func options_ui() -> void:
  label_at("COMBAT RULES",Vector2(214,264),14,GOLD,470)
  var enabled: bool = game.reward if page == "battle" and (lab or training) else reward_soul
  button("Sandbox Blank movement: "+("ON" if enabled else "OFF"),Vector2(214,310),Vector2(472,52),func():set_soul_enabled(not enabled),Color("82c8b9")).name = "OptionsSoulOverride"
- CampUI.detail(self,"ON: %d Blank conversion(s) per turn, each Move %d. OFF uses each hero’s equipped Soul. Switching never refills spent uses." % [balance_number("soul.uses"),balance_number("soul.move")],Rect2(214,382,472,76),16)
+ CampUI.detail(self,"ON: %d Blank conversion(s) per turn, each Move %d. OFF uses each hero’s equipped Memory. Switching never refills spent uses." % [balance_number("soul.uses"),balance_number("soul.move")],Rect2(214,382,472,76),16)
  button("Action Rerolls: "+("ANY TIME" if balance_number("hero.reroll_anytime") else "OPENING ONLY"),Vector2(214,482),Vector2(472,52),func():
   var value := 0 if balance_number("hero.reroll_anytime") else 1
   balance_values["hero.reroll_anytime"] = value
@@ -1762,7 +1763,7 @@ func apply_balance_profile(values: Dictionary, editor: Control = null) -> void:
   else:
    var legal := true
    for i in range(3):
-    if Model.validate(builds[i],gifts[i],expedition.camp.profile(balance_values)) != "":legal = false
+    if Model.validate(builds[i],gifts[i],camp_build_profile(i)) != "":legal = false
    if legal:begin()
    else:page = "forge";hint = "Profile saved. Adjust your dice to the new body / copy limits before entering.";rebuild()
 
@@ -1912,7 +1913,7 @@ func draw_hero_debuffs(id: int, center: Vector2) -> void:
   draw_line(badge+Vector2(-5,0),badge+Vector2(5,-1),Color("f28c9e"),2)
 
 func restore_hero_build() -> void:
- var restored: Array = Model.bonus_build(gifts[build_hero],balance_values) if gifts[build_hero].size() == 2 else Model.default_build(balance_values)
+ var restored: Array = Model.bonus_build(gifts[build_hero],camp_build_profile(build_hero)) if gifts[build_hero].size() == 2 else Model.default_build(camp_build_profile(build_hero))
  if restored.is_empty():hint = "The selected bonus designs cannot fit this balance profile. Choose different designs or adjust the limits."
  else:builds[build_hero] = restored;hint = "Restored a legal starter build with your selected bonus designs equipped."
  rebuild()
@@ -1920,7 +1921,7 @@ func restore_hero_build() -> void:
 func short_face_help(f: int) -> String:
  var movement := trial_movement_help(f)
  if movement!="":return movement+reward_live_notes(f)
- if f in [73,74]:return Catalog.text(f)
+ if Model.Equipment.FACES.has(f):return Catalog.text(f)
  if f == 0:return face_help(0)
  var copy := AbilityCopy.new();copy.values = active_balance();copy.tuned = game.tuned if page == "battle" else balanced
  var text: String = copy.face(f)
@@ -2137,7 +2138,12 @@ func setup_ui() -> void:
   option.name = "SetupSoul%d" % index;option.add_theme_font_size_override("font_size",14)
  label_at("Sandbox rule only. Earned Souls are bound/equipped at Camp. %d conversion(s) per own turn." % balance_number("soul.uses"),Vector2(512,407),15,MUTED,838)
  var boss_hp: int = balance_number("bugh.hp") if encounter == "bugh" else balance_number("cantor.hp") if encounter == "cantor" else (balance_number("nugh.hp") if encounter == "nugh" else balance_number("boss.hp"))
- label_at("Heroes: %d HP · %d starting reroll(s) (bank cap %d)\nBoss: %d HP · every ability upgrades at %d%% HP\nDice: minimum %d Blanks per die\nPer hero across all 3 dice: Movement %d · Defense %d · Skill %d" % [balance_number("hero.hp"),balance_number("hero.rerolls"),balance_number("hero.reroll_cap"),boss_hp,balance_number("boss.phase.percent"),balance_number("body.blanks"),balance_number("body.Movement"),balance_number("body.Defense"),balance_number("body.Skill")],Vector2(512,458),18,Color("e2e8ed"),838,false,true)
+ var equipment_lines: Array[String] = []
+ for hero in range(3):
+  var soul: Dictionary = Model.Equipment.soul_data(camp_battle_profile(),hero)
+  var weapon: Dictionary = Model.Equipment.WEAPONS[expedition.camp.weapons[hero]]
+  equipment_lines.append("%s: %d HP · %d+ Blanks per die · Attacks %d–%d" % [["Vesper","Rook","Wren"][hero],soul.hp,soul.blanks,weapon.min,weapon.max])
+ label_at("\n".join(equipment_lines)+"\nBoss: %d HP · upgrades at %d%% HP" % [boss_hp,balance_number("boss.phase.percent")],Vector2(512,458),18,Color("e2e8ed"),838,false,true)
  label_at("YOUR PARTY",Vector2(512,579),16,GOLD,600)
  for hero in range(3):
   var names: Array[String] = []
@@ -2145,7 +2151,7 @@ func setup_ui() -> void:
   label_at(["Vesper","Rook","Wren"][hero]+" · "+" + ".join(names),Vector2(512,618+hero*33),16,COLORS[hero],830)
  var error := ""
  for hero in range(3):
-  var invalid: String = Model.validate(builds[hero],gifts[hero],expedition.camp.profile(balance_values))
+  var invalid: String = Model.validate(builds[hero],gifts[hero],camp_build_profile(hero))
   if gifts[hero].size() != 2:error = "Choose two faces for each hero first."
   elif invalid != "":error = invalid
  label_at(error if error != "" else "Review the boss and rules, then enter. Your chosen faces and placements are preserved.",Vector2(50,782),15,Color("edac94") if error != "" else MUTED,1320)
@@ -2210,7 +2216,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.39",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.40",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2334,15 +2340,30 @@ func restart_to_menu() -> void:
 
 
 func app_gold() -> Color:return GOLD
+func camp_build_profile(hero: int) -> Dictionary:return Model.Equipment.scoped(expedition.camp.profile(balance_values),hero)
 func camp_battle_profile() -> Dictionary:
  var result: Dictionary = expedition.camp.profile(balance_values)
- for hero in range(3):
-  var soul: String = expedition.camp.equipped_souls[hero]
-  result["soul.eligible."+str(hero)] = reward_soul or soul != ""
-  result["soul.mode."+str(hero)] = "move" if reward_soul else Wilds.SOULS.get(soul,{}).get("mode","move")
-  result["soul.distance."+str(hero)] = balance_number("soul.move") if reward_soul else int(Wilds.SOULS[soul].distance) if Wilds.SOULS.has(soul) else (1 if soul == "beginning" else balance_number("soul.move"))
-  result["soul.allowance."+str(hero)] = balance_number("soul.uses") if reward_soul or soul in ["hollow","ashroad",""] else 1
+ if reward_soul:
+  for hero in range(3):
+   result["soul.eligible."+str(hero)] = true;result["soul.mode."+str(hero)] = "move";result["soul.distance."+str(hero)] = balance_number("soul.move");result["soul.allowance."+str(hero)] = balance_number("soul.uses")
  return result
+func camp_display_face(hero: int, die: int, side: int) -> int:
+ return Model.Equipment.effective(builds[hero],str(expedition.camp.weapons[hero]),int(builds[hero][die][side]),die,side)
+func camp_equip(slot: String, hero: int, key: String) -> void:
+ var before: Dictionary = expedition.camp.encode().duplicate(true)
+ var changed := false
+ match slot:
+  "body":changed = expedition.camp.equip_body(hero,key)
+  "weapon":changed = expedition.camp.equip_weapon(hero,key)
+  "soul":changed = expedition.camp.equip_soul(hero,key)
+  "memory":
+   if key=="":expedition.camp.memories[hero] = "";changed = true
+   else:changed = expedition.camp.equip_memory(hero,key)
+ if not changed:camp_message = "That item is not owned by this hero.";rebuild();return
+ var error: String = Model.validate(builds[hero],gifts[hero],camp_build_profile(hero))
+ if error!="":expedition.camp.decode(before);camp_message = error+" Edit the dice first, then equip this item."
+ else:expedition.save();camp_message = ["Vesper","Rook","Wren"][hero]+"’s "+slot+" saved."
+ rebuild()
 func camp_allocation_error(candidate: Array) -> String:
  var used := {}
  for build in candidate:
@@ -2354,7 +2375,7 @@ func camp_allocation_error(candidate: Array) -> String:
  return ""
 func camp_place(face: int, hero: int, die: int, side: int) -> void:
  var next: Array = builds.duplicate(true);next[hero][die][side] = face
- var error := Model.validate(next[hero],gifts[hero],expedition.camp.profile(balance_values))
+ var error := Model.validate(next[hero],gifts[hero],camp_build_profile(hero))
  if error == "":error = camp_allocation_error(next)
  if error == "" and not gifts[hero].all(func(id):return next[hero].any(func(faces):return id in faces)):error = "Keep the two selected bonus designs equipped; replace a starter or another crafted face."
  if error != "":camp_message = error
@@ -2471,9 +2492,13 @@ func reward_live_notes(face: int) -> String:
  return text
 
 func camp_remove(hero: int, die: int, side: int) -> void:
- var face: int = builds[hero][die][side]
- if face < 60:camp_message = "Only crafted faces return to the collection here; edit starter/bonus faces in the dice forge."
- else:builds[hero][die][side] = 0;camp_message = Catalog.name_for(face)+" returned to the shared collection. It stays permanently owned; no Essence refund."
+ var face: int = int(builds[hero][die][side])
+ if face<60:camp_message = "Only crafted faces return to the collection here; edit starter/bonus faces in the dice forge."
+ else:
+  var next: Array = builds.duplicate(true);next[hero][die][side] = 0
+  var error: String = Model.validate(next[hero],gifts[hero],camp_build_profile(hero))
+  if error!="":camp_message = error
+  else:builds = next;camp_message = Catalog.name_for(face)+" returned to the shared collection. It stays owned; no Essence refund."
  rebuild()
 
 
@@ -2496,14 +2521,14 @@ func party_build_error() -> String:
  if error != "":return error
  for hero in range(3):
   if gifts[hero].size() != 2:return "Choose two bonus faces for each hero before fighting."
-  error = Model.validate(builds[hero],gifts[hero],expedition.camp.profile(balance_values))
+  error = Model.validate(builds[hero],gifts[hero],camp_build_profile(hero))
   if error != "":return ["Vesper","Rook","Wren"][hero]+": "+error
   if not gifts[hero].all(func(id):return builds[hero].any(func(die):return id in die)):return "Keep each hero’s two chosen bonus designs equipped."
  return ""
 
 func forge_replace(face: int) -> void:
  var next: Array = builds.duplicate(true);next[build_hero][forge_die][forge_side] = face
- var error := Model.validate(next[build_hero],gifts[build_hero],expedition.camp.profile(balance_values))
+ var error := Model.validate(next[build_hero],gifts[build_hero],camp_build_profile(build_hero))
  if error == "":error = camp_allocation_error(next)
  if error == "" and not gifts[build_hero].all(func(id):return next[build_hero].any(func(die):return id in die)):error = "Keep your two bonus designs equipped. Change them through Choose bonus faces."
  if error != "":hint = error
@@ -2644,8 +2669,8 @@ func bind_unlock(pick: Button, kind: String, key: String, hero: int) -> void:
    debug_hold = {"button":pick,"kind":kind,"key":key,"hero":hero,"origin":get_viewport().get_mouse_position(),"started":Time.get_ticks_msec()})
 func debug_locked(kind: String, key: String, hero: int) -> bool:
  if kind=="trial_recipe":return Trials.C.RECIPES.has(key) and key not in trials.crafted
- if kind=="trial_soul":return Trials.BOSSES.has(key) and key not in trials.completed_bosses
- if kind == "soul":return hero in range(3) and key not in expedition.camp.souls[hero]
+ if kind=="trial_soul":return hero in range(3) and Trials.BOSSES.has(key) and key not in trials.bound_souls[hero]
+ if kind == "soul":return hero in range(3) and Model.Equipment.SOULS.has(key) and key not in expedition.camp.souls[hero]
  if not Essence.RECIPES.has(key):return false
  var recipe: Dictionary = Essence.RECIPES[key]
  if recipe.has("soul"):return recipe.soul not in expedition.camp.souls[hero]
@@ -2653,7 +2678,9 @@ func debug_locked(kind: String, key: String, hero: int) -> bool:
 func debug_unlock(kind: String, key: String, hero: int) -> bool:
  if not debug_mode or not debug_locked(kind,key,hero):return false
  if kind=="trial_recipe":trials.crafted.append(key);trials.save();return true
- if kind=="trial_soul":trials.completed_bosses.append(key);trials.save();return true
+ if kind=="trial_soul":
+  if key not in trials.completed_bosses:trials.completed_bosses.append(key)
+  trials.bound_souls[hero].append(key);trials.save();return true
  var changed: bool = expedition.camp.grant_soul(hero,key) if kind == "soul" else expedition.camp.debug_unlock(key,hero)
  if changed:
   expedition.save();camp_message = "Unlocked · "+(Wilds.soul_name(key) if kind == "soul" else expedition.camp.reward_name(key))
@@ -2750,7 +2777,7 @@ func trial_forecast_text() -> String:
  if not trial_choice.is_empty():return trial_choice.forecast.text
  if selected<0 or game.active not in range(3):return "Choose a die, then a target."
  var f: int = game.face(game.active,selected)
- if f in [73,74]:
+ if Model.Equipment.FACES.has(f):
   var reason: String = Model.TrialRules.weapon_reason(game,f)
   if reason!="":return reason
  if f in TrialForecast.IMMEDIATE:

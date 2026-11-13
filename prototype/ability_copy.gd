@@ -8,10 +8,10 @@ func reach(f: int) -> String:
  return "an adjacent unit" if distance == 1 else "a unit within %d" % distance
 func face(f: int) -> String:
  if f in range(75,81):return preload("res://prototype/soulcaster.gd").text(f)
- if f in [73,74]:return preload("res://prototype/catalog.gd").text(f)
+ if preload("res://prototype/equipment.gd").FACES.has(f):return preload("res://prototype/catalog.gd").text(f)
  if f >= 60 and f < 73:return preload("res://prototype/essence.gd").FACES[f-60][2]
  match f:
-  0:return "Beginning Soul: spend one rolled Blank as Move 1, once per own turn. Earned Souls grant Move 2. No equipped Soul: no ordinary effect. The separate sandbox can test Move %d with %d use(s)." % [n("soul.move"),n("soul.uses")]
+  0:return "Blanks have no starting effect. An equipped Memory may provide a conversion; Soulcaster enables Gather / Manifest. The separate sandbox can test Move %d with %d use(s)." % [n("soul.move"),n("soul.uses")]
   1:return "Deal %d damage to %s." % [n("face1.damage"),reach(f)]
   2:return "Move up to %d orthogonal spaces. Occupied cells block the path." % n("face2.move")
   3:return "Move up to %d spaces in a straight line. No turning or passing through units." % n("face3.move")

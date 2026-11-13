@@ -38,7 +38,7 @@ static func eligible(g, face: int, target: int) -> bool:
  if face==52:return target!=actor and unit.hp>0
  if g.TrialRules.immobile_object(g,target) and face==8:return false
  if g.Catalog.is_attack(face):
-  if face in [73,74]:return g.TrialRules.weapon_reason(g,face,target)==""
+  if g.Equipment.FACES.has(face):return g.TrialRules.weapon_reason(g,face,target)==""
   if target==actor:return false
   if face in [61,67,69,70] and (not g.enemies(actor,target) or unit.hp<=0):return false
   if face==67 and int(g.heroes[actor].get("moved_turn",0))<2:return false

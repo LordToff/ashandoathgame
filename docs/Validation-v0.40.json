@@ -1,0 +1,386 @@
+{
+  "version": "0.40",
+  "date": "2026-11-13",
+  "engine": "4.6.3.stable",
+  "result": "passed",
+  "native_check_count": 2846,
+  "native_suites": [
+    {
+      "test": "direct_v39",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "DIRECT v39: 43 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "soulcaster_v38",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "SOULCASTER v38: 144 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "classes_v37",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CLASSES v0.37: 610 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "trials_v36",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "TRIALS v0.36: 324 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "clarity_v35",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CLARITY v0.35: 98 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "trials_v34",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "TRIALS v0.34: 244 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "mobile_flow_v33",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "MOBILE FLOW v0.33: 55 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "clarity_v32",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CLARITY v0.32: 62 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "essence_v27",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "ESSENCE V0.27: 115 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "hub_v28",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "HUB V0.28: 35 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "wilds_v29",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "WILDS V0.29: 64 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "mobile_v31",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "MOBILE v0.31: 17 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "usability_v26",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.26 usability: 69 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "playtest_v12",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.12 PLAYTEST: 51 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "trial_regression",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "TRIAL REGRESSIONS: 12 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "balance",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CUSTOM BALANCE: 51 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "warden_v24",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.24 WARDEN: 38 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "cantor_v20",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.20 CANTOR: 34 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "encounter_v19",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.19 ENCOUNTERS: 358 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "summons_v22",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.22 SUMMONS: 269 checks, 0 failures; seeded friendly hits 33/120"
+      ],
+      "failures": []
+    },
+    {
+      "test": "worm_path_v221",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.22.1 WORM PATH: 75 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "equipment_v40",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "EQUIPMENT v40: 78 checks, 0 failures"
+      ],
+      "failures": []
+    }
+  ],
+  "equipment_browser": {
+    "result": "passed",
+    "devices": [
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "normal equipment limits and 3-Strike unique Weapon",
+          "rolled Poke prerequisite and die spending",
+          "Attack passive on weapon and other Attack",
+          "Trial Soul HP and empty starting Memories",
+          "earned Memory after first encounter"
+        ]
+      },
+      {
+        "viewport": [
+          360,
+          640
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "normal equipment limits and 3-Strike unique Weapon",
+          "rolled Poke prerequisite and die spending",
+          "Attack passive on weapon and other Attack",
+          "Trial Soul HP and empty starting Memories",
+          "earned Memory after first encounter"
+        ]
+      },
+      {
+        "viewport": [
+          844,
+          390
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "normal equipment limits and 3-Strike unique Weapon",
+          "rolled Poke prerequisite and die spending",
+          "Attack passive on weapon and other Attack",
+          "Trial Soul HP and empty starting Memories",
+          "earned Memory after first encounter"
+        ]
+      },
+      {
+        "viewport": [
+          1440,
+          900
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "normal equipment limits and 3-Strike unique Weapon",
+          "rolled Poke prerequisite and die spending",
+          "Attack passive on weapon and other Attack",
+          "Trial Soul HP and empty starting Memories",
+          "earned Memory after first encounter"
+        ]
+      }
+    ]
+  },
+  "direct_browser": {
+    "result": "passed",
+    "devices": [
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "Strike ability then map target",
+          "one-tap Guard",
+          "Step then destination",
+          "normal and Trial direct controls",
+          "direct targeted Grave Stitch",
+          "Borrow Shape copied Guard resolves",
+          "compact board-visible Soulcaster",
+          "two taps total to Gather/create",
+          "creation costs and delayed spell",
+          "direct Harvester/Wraith/Jab/Crack",
+          "licensed animated enemy render"
+        ]
+      },
+      {
+        "viewport": [
+          360,
+          640
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "Strike ability then map target",
+          "one-tap Guard",
+          "Step then destination",
+          "normal and Trial direct controls",
+          "direct targeted Grave Stitch",
+          "Borrow Shape copied Guard resolves",
+          "compact board-visible Soulcaster",
+          "two taps total to Gather/create",
+          "creation costs and delayed spell",
+          "direct Harvester/Wraith/Jab/Crack",
+          "licensed animated enemy render"
+        ]
+      },
+      {
+        "viewport": [
+          844,
+          390
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "Strike ability then map target",
+          "one-tap Guard",
+          "Step then destination",
+          "normal and Trial direct controls",
+          "direct targeted Grave Stitch",
+          "Borrow Shape copied Guard resolves",
+          "compact board-visible Soulcaster",
+          "two taps total to Gather/create",
+          "creation costs and delayed spell",
+          "direct Harvester/Wraith/Jab/Crack",
+          "licensed animated enemy render"
+        ]
+      },
+      {
+        "viewport": [
+          1440,
+          900
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "Strike ability then map target",
+          "one-tap Guard",
+          "Step then destination",
+          "normal and Trial direct controls",
+          "direct targeted Grave Stitch",
+          "Borrow Shape copied Guard resolves",
+          "compact board-visible Soulcaster",
+          "two taps total to Gather/create",
+          "creation costs and delayed spell",
+          "direct Harvester/Wraith/Jab/Crack",
+          "licensed animated enemy render"
+        ]
+      }
+    ]
+  },
+  "shipping_browser": [
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "result": "passed",
+      "no_test_hooks": true,
+      "browser_errors": []
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "result": "passed",
+      "no_test_hooks": true,
+      "browser_errors": []
+    }
+  ],
+  "limitations": [
+    "Chromium desktop/touch emulation; no physical phone hardware test.",
+    "Native UI suites retain historical exit-time resource warnings; no script errors.",
+    "Windows artifacts were not rebuilt."
+  ]
+}

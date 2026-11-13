@@ -4,23 +4,23 @@ const DEFAULTS = ["skirmisher","vanguard","skirmisher"]
 const CLASSES = {
  "skirmisher":{
   "name":"Skirmisher","role":"Move first, then strike from range 2.",
-  "body":"fleet","memory":"stride","weapon":"spear",
-  "play":"Step moves 2. Move first, then use Jab; Momentum adds +1 to your first eligible Attack.",
-  "dice":[[1,34,4,1,0,0],[2,3,5,2,0,0],[67,7,6,4,0,0]],
+  "body":"fleet","memory":"","weapon":"spear",
+  "play":"Move at least 2 spaces with Stride or two Steps, then use Jab. Memory starts empty.",
+  "dice":[[1,34,4,1,0,0],[2,3,5,2,0,0],[67,7,6,0,0,0]],
   "rewards":[67,66,53],
-  "hp_text":"4 maximum HP: Fleet Body 5, Memory of Momentum −1.",
-  "turn":"Example: roll Step and Jab on different dice. Fleet Body makes Step move 2; move first, then Jab reaches an enemy within 2 and deals 2 damage with Memory of Momentum. That Memory boosts only the first eligible Attack. Jab itself is once per own turn and spends its die.",
-  "tradeoff":"Fast but fragile. Beginning Soul still converts one Blank to Move 1; Fleet Body does not increase Blank movement. Keep ordinary Strikes or Strike Numeric for turns without enough movement."
+  "hp_text":"6 maximum HP from Beginning Soul. Fleet Body sets category limits; Memory starts empty.",
+  "turn":"Example: roll Stride and Jab on different dice. Move at least 2 spaces with Stride, then Jab deals 1 damage within 2. Each ability spends its rolled die. Step moves its printed 1 space.",
+  "tradeoff":"Fleet Body allows up to 4 Movement faces but only 2 Defense faces. Spear allows 2–6 Attack faces. Beginning Soul requires 2 Blanks per die and supplies Last Ember. Earn a Memory later for a passive."
  },
  "vanguard":{
   "name":"Vanguard","role":"Guard the front line and break enemy Block.",
-  "body":"stone","memory":"guard","weapon":"hammer",
-  "play":"Use another Attack before Crack. Fully block an enemy hit to ready +1 next-Attack damage.",
+  "body":"stone","memory":"","weapon":"hammer",
+  "play":"Use another Attack before Crack. Build Block with rolled Defense abilities; Memory starts empty.",
   "dice":[[1,4,72,1,0,0],[34,1,1,3,0,0],[41,7,8,5,0,0]],
   "rewards":[72,68,51],
-  "hp_text":"6 maximum HP: Stone Body 7, Memory of Guard −1.",
-  "turn":"Use Guard, Iron Shelter or a held Reaction to block an enemy Attack completely; Memory of Guard readies +1 damage for your next Attack. During your own turn, use another rolled Attack first, then spend a rolled Crack to remove up to 2 Block from an adjacent enemy. Crack deals no HP damage.",
-  "tradeoff":"Durable but slower: Stone Body makes Stride travel 2 instead of 3. Beginning Soul still converts one Blank to Move 1. Ordinary Strikes, Strike Numeric and Engrave give you attacks to set up Crack."
+  "hp_text":"6 maximum HP from Beginning Soul. Stone Body sets category limits; Memory starts empty.",
+  "turn":"Use Guard, Iron Shelter or a held Reaction for Block. During your own turn, use another rolled Attack first, then spend a rolled Crack to remove up to 2 Block from an adjacent enemy. Crack deals no HP damage.",
+  "tradeoff":"Stone Body allows up to 4 Defense faces but only 2 Movement faces. Hammer allows 2–8 Attack faces. Stride keeps its printed Move 3. Beginning Soul requires 2 Blanks per die and supplies Last Ember."
  }
 }
 static func valid(key: String) -> bool:return CLASSES.has(key)
