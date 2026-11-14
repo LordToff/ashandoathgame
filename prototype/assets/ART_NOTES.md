@@ -1,3 +1,11 @@
+# Current artwork — v0.41
+
+At the user's request, Nu’gh, phase II, hostile and friendly worms, mites, cocoon and the familiar Bone / Support / Movement creatures return to the earlier repository pixel sheets. Wilds return to the existing Kenney Tiny Dungeon CC0 selections. Camp portraits and combat use matching selections through `enemy_art.gd`.
+
+This is an asset reversion; no new image generation was used. The existing 0x72 DungeonTileset II CC0 art remains for the other bosses and Trial roles. All original archives, licences, source evidence and reproduction scripts are retained. Sprite changes do not alter footprints, stats, targeting or rewards.
+
+---
+
 # Pixel art · v0.14
 
 All three heroes now use armoured knight sprites and helmet icons, with teal, purple and gold tabards / shields. Cinder Brand and Ember Burst fire is drawn as animated pixel rectangles without touching gameplay RNG.

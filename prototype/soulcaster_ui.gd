@@ -32,19 +32,27 @@ static func blank(app) -> void:
   var board: Rect2 = M.board_rect(app);var x: float = board.end.x+12 if size.x>size.y else 12
   at = Vector2(x,size.y-280);width = size.x-x-12;height = 280;card_height = 56
  app.setup_panel(Rect2(at,Vector2(width,height)),app.GOLD)
- app.label_at("Soulcaster · "+resource(g,hero),at+Vector2(10,7),16,app.GOLD,width-20,false,true)
+ var heading: String = ("Soulcaster · %d/3 charges · %d/4 spells" % [S.charges(g,hero),S.count_spells(g,hero)]) if app.mobile_mode else "Soulcaster · "+resource(g,hero)
+ var summary: Label = app.label_at(heading,at+Vector2(10,7),16,app.GOLD,width-20)
+ summary.name = "SoulcasterResourceSummary"
  var hp: int = g.heroes[hero].hp
  app.label_at("Create costs 1 HP · %d HP now%s" % [hp," · will Down you" if hp==1 else ""],at+Vector2(10,29),15,Color("efba99") if hp==1 else app.MUTED,width-20)
- var usable: float = width-20;var gather_width: float = usable*.48;var other_width: float = (usable-gather_width-12)/2
+ var usable: float = width-20;var extra_move: bool = bool(g.balance.get("blank.move_override",false));var gather_width: float = usable*(.35 if extra_move else .48);var other_width: float = (usable-gather_width-(18 if extra_move else 12))/(3 if extra_move else 2)
  var gather: Button = app.button("Gather +1" if S.charges(g,hero)<3 else "Charges full",at+Vector2(10,52),Vector2(gather_width,40),func():change(app,func():S.gather(g)),app.GOLD,S.charges(g,hero)>=3);gather.name = "SoulcasterGather";gather.add_theme_font_size_override("font_size",18);gather.size = Vector2(gather_width,40)
  var help: Button = app.button("Help",at+Vector2(16+gather_width,52),Vector2(other_width,40),func():app.show_soulcaster_help = true;app.rebuild(),app.MUTED);help.name = "SoulcasterHelp";help.add_theme_font_size_override("font_size",18);help.size = Vector2(other_width,40)
- var close: Button = app.button("Close",at+Vector2(22+gather_width+other_width,52),Vector2(other_width,40),func():g.pending = {};app.rebuild(),app.MUTED);close.name = "SoulcasterCancel";close.add_theme_font_size_override("font_size",18);close.size = Vector2(other_width,40)
+ var close: Button = app.button("Close",at+Vector2((28+gather_width+other_width*2) if extra_move else (22+gather_width+other_width),52),Vector2(other_width,40),func():g.pending = {};app.rebuild(),app.MUTED);close.name = "SoulcasterCancel";close.add_theme_font_size_override("font_size",18);close.size = Vector2(other_width,40)
+ M.fit_button(gather,Vector2(gather_width,40),18);M.fit_button(help,Vector2(other_width,40),16);M.fit_button(close,Vector2(other_width,40),16)
+ if extra_move:
+  var move: Button = app.button("Move 1",at+Vector2(22+gather_width+other_width,52),Vector2(other_width,40),func():
+   if g.soul_remaining(hero)<=0:return
+   var die: int = g.pending.die;g.pending = {};app.selected = die;app.hint = "Choose a highlighted tile: spend this Blank as Move 1.";app.rebuild(),app.GOLD,g.soul_remaining(hero)<=0)
+  move.name = "SoulcasterMoveOne";M.fit_button(move,Vector2(other_width,40),16)
  for index in range(6):
   var face: int = 75+index;var info: Dictionary = S.SPELLS[face];var reason: String = S.manifest_reason(g,hero,face)
   var w: float = (usable-6)/2;var top: float = (98 if app.mobile_mode else 104)+(index/2)*(card_height+4)
   var caption: String = ("Mirror (Reaction)" if face==77 else str(info.name))+"\n%d charge%s · 1 HP" % [int(info.cost),"s" if int(info.cost)!=1 else ""]
   var button: Button = app.button(caption,at+Vector2(10+(index%2)*(w+6),top),Vector2(w,card_height),func():change(app,func():S.manifest(g,face)),app.color_for_face(face),reason!="")
-  button.name = "SoulSpell"+str(face);button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART;button.add_theme_font_size_override("font_size",18 if app.mobile_mode else 17);button.size = Vector2(w,card_height)
+  button.name = "SoulSpell"+str(face);button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART;button.add_theme_font_size_override("font_size",18 if app.mobile_mode else 17);M.fit_button(button,Vector2(w,card_height),18 if app.mobile_mode else 17)
   button.tooltip_text = info.text+"\n\n"+(reason if reason!="" else "Create on the selected Blank. It must roll on a later turn.")
  if not app.mobile_mode:
   app.label_at("Tap Gather, or tap a spell to create it.\nSpells must roll on a later turn.\nHelp explains each spell before you spend.",at+Vector2(12,446),18,app.MUTED,width-24,false,true)

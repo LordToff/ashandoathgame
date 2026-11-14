@@ -56,12 +56,12 @@ func run():
  var e=E.new();check(e.reward_name("bone_strike")=="Bone Strike" and "Adjacent" in e.reward_effect("bone_strike"),"recipes readable before paying")
  check(e.recipe_progress("bone_strike").contains("2 more"),"Essence deficit explicit")
  var app=load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
- app.page="battle";app.game=fresh();app.game.heroes[0].poison=2;app.game.tick_poison(0);app.seen_event=0;app.sync_presentation()
+ app.page="battle";app.game=fresh();app.game.heroes[0].poison=2;app.game.tick_poison(0);app.seen_event=0;app.sync_presentation();preload("res://prototype/tests/presentation_helpers.gd").drain(app)
  check("poison_tick" in app.status_sounds,"poison damage queues sound")
  check(app.effects.any(func(f):return f.kind=="poison_tick"),"poison damage has its own visual")
- app.status_sounds.clear();app.game.heroes[0].hp=2;app.game.heal(0,1);app.sync_presentation();check("heal" in app.status_sounds,"positive healing queues sound")
- app.status_sounds.clear();app.game.heroes[0].stun=true;app.sync_presentation();check("stun" in app.status_sounds,"Stun transition queues sound")
- var event_count: int = app.status_sounds.size();app.sync_presentation();check(app.status_sounds.size()==event_count,"redrawing does not replay feedback")
+ app.status_sounds.clear();app.game.heroes[0].hp=2;app.game.heal(0,1);app.sync_presentation();preload("res://prototype/tests/presentation_helpers.gd").drain(app);check("heal" in app.status_sounds,"positive healing queues sound")
+ app.status_sounds.clear();app.game.heroes[0].stun=true;app.sync_presentation();preload("res://prototype/tests/presentation_helpers.gd").drain(app);check("stun" in app.status_sounds,"Stun transition queues sound")
+ var event_count: int = app.status_sounds.size();app.sync_presentation();preload("res://prototype/tests/presentation_helpers.gd").drain(app);check(app.status_sounds.size()==event_count,"redrawing does not replay feedback")
  check(app.feedback_streams.heal.data!=app.feedback_streams.stun.data and app.feedback_streams.heal.data!=app.feedback_streams.poison_tick.data,"three distinct synthesized sounds")
  check(app.color_for_face(0)==Color("c3c9d2") and app.color_for_face(2)==Color("e7cc75"),"Blank grey and movement yellow")
  app.dice_tray.cancel();app.rolling_time=0;app.combat_notices.clear();app.game.pending={"kind":"catalog_choice","face":16,"hero":0,"die":0,"stage":0};app.game.heroes[0].results=[16,1,0];app.rebuild();await process_frame

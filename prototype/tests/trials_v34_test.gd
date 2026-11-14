@@ -137,7 +137,7 @@ func run_tests():
  check(app.trial_fight and app.builds==normal_builds,"Trial uses separate party build")
  app.game.damage(3,999,true)
  for id in app.game.living_minions():app.game.damage(id,999,true)
- app.rebuild();await process_frame;app.settle_essence()
+ app.rebuild();preload("res://prototype/tests/presentation_helpers.gd").drain(app);await process_frame;app.settle_essence()
  check(app.trials.phase=="reward" and app.expedition.camp.encode()==normal_bank,"Trial victory never changes ordinary ledger")
  app.continue_trial();check(app.page=="trials" and not app.trial_fight,"outcome returns to Trial rewards")
  app.trials.bank_reward();app.trials.stage = 2;app.trials.phase = "route";app.choose_trial_route(0);app.go_main()

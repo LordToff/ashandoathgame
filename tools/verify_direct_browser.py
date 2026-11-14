@@ -26,6 +26,7 @@ with sync_playwright() as pw:
     session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});p.wait_for_timeout(220)
    raise AssertionError(('unreachable',v))
   def tap(name=None,text=None):
+   p.wait_for_function('()=>{window.essenceProof("state");return !JSON.parse(window.essenceState).rolling;}')
    v,x,y=reach(name,text);p.wait_for_timeout(750 if mobile else 120);v,x,y=reach(name,text);assert not v['disabled'],v;(p.touchscreen.tap if mobile else p.mouse.click)(x,y);p.wait_for_timeout(220)
   def select(name,index):
    tap(name=name);data=state();popup=next(item for item in data['popups'] if item['control']==name)

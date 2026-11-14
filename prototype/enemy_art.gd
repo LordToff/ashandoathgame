@@ -20,8 +20,31 @@ const STILLS = {
  "mite":preload("res://prototype/assets/enemies/mite.tres"),
  "cocoon":preload("res://prototype/assets/enemies/cocoon.tres"),
 }
+# Restored established silhouettes; no newly generated sprite imagery.
+const RESTORED = {
+ "nugh":[preload("res://prototype/assets/pixel_nugh.png"),32,32,1],
+ "nugh_phase2":[preload("res://prototype/assets/pixel_nugh_phase2.png"),32,32,1],
+ "worm":[preload("res://prototype/assets/pixel_screaming_worm.png"),16,16,2],
+ "friendly_worm":[preload("res://prototype/assets/pixel_friendly_nugh.png"),16,16,2],
+ "mite":[preload("res://prototype/assets/pixel_mite.png"),16,16,2],
+ "cocoon":[preload("res://prototype/assets/pixel_cocoon.png"),16,16,2],
+ "bone_creature":[preload("res://prototype/assets/bone_creature.png"),16,16,2],
+ "support_creature":[preload("res://prototype/assets/support_creature.png"),16,16,2],
+ "movement_creature":[preload("res://prototype/assets/movement_creature.png"),16,16,2]
+}
+const WILDS = {
+ "mire_leech":preload("res://prototype/assets/mire_leech.tres"),
+ "glasswing_moth":preload("res://prototype/assets/glasswing_moth.tres"),
+ "iron_husk":preload("res://prototype/assets/iron_husk.tres")
+}
 static var frames: Dictionary = {}
 static func texture(key: String, seconds: float = 0, moving: bool = false) -> Texture2D:
+ if WILDS.has(key):return WILDS[key]
+ if RESTORED.has(key):
+  var data: Array = RESTORED[key];var index: int = int(seconds*(8 if moving else 3))%int(data[3]);var cache: String = key+str(index)
+  if not frames.has(cache):
+   var frame := AtlasTexture.new();frame.atlas = data[0];frame.region = Rect2(index*int(data[1]),0,int(data[1]),int(data[2]));frames[cache] = frame
+  return frames[cache]
  if not STILLS.has(key):key = "bone_creature"
  var index: int = int(seconds*(10 if moving else 5))%4+(4 if moving else 0)
  var cache: String = key+str(index)
@@ -30,10 +53,10 @@ static func texture(key: String, seconds: float = 0, moving: bool = false) -> Te
   frame.region = Rect2(still.region.position+Vector2((index%4)*32,(index/4)*32),still.region.size);frames[cache] = frame
  return frames[cache]
 static func key_for(g, id: int) -> String:
- if id==3 and g.encounter_id!="event":return g.encounter_id
+ if id==3 and g.encounter_id!="event":return "nugh_phase2" if g.encounter_id=="nugh" and g.phase_two else g.encounter_id
  var unit: Dictionary = g.unit_data(id)
  if unit.has("trial_role"):return str(unit.trial_role)
- if g.friendly(id):return "worm"
+ if g.friendly(id):return "friendly_worm"
  if g.encounter_id=="event":return g.essence_type(id)
  return "cocoon" if unit.get("kind","")=="cocoon" else "mite" if unit.get("kind","")=="mite" else "worm"
 static func draw(app, key: String, foot: Vector2, seconds: float, moving: bool = false, boss: bool = false) -> void:

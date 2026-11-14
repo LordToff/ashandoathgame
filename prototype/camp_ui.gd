@@ -183,7 +183,7 @@ static func creatures(app) -> void:
   var group: Dictionary = W.GROUPS[index];var type: String = group.enemy;var x := 48+i*454
   app.setup_panel(Rect2(x,210,436,534))
   app.label_at(group.title,Vector2(x+28,236),13,app.GOLD,380)
-  art(app,app.CREATURE_SPRITES[type],Rect2(x+118,280,200,160))
+  art(app,source_texture(app,type),Rect2(x+118,280,200,160))
   app.label_at(E.type_name(type),Vector2(x+28,459),27,Color("ede8dc"),380,true)
   detail(app,group.description,Rect2(x+28,508,380,110),17)
   app.label_at(group.reward,Vector2(x+28,638),16,Color("9acfc0"),380)
@@ -192,4 +192,4 @@ static func creatures(app) -> void:
  app.button("Wilds creatures →" if app.creature_page == 0 else "Creatures 2 / 2",Vector2(650,831),Vector2(265,44),func():app.creature_page = 1;app.rebuild(),app.GOLD).name = "CreatureNextPage"
 
 static func source_texture(app, type: String) -> Texture2D:
- return app.EnemyArt.STILLS.get(type,app.EnemyArt.STILLS.bone_creature)
+ return app.EnemyArt.texture(type,0)

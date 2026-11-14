@@ -173,6 +173,9 @@ func unit_name(id: int) -> String:
 func record_event(kind: String, text: String, source: int = -1, target: int = -1, value: int = 0) -> void:
  event_id += 1
  event_log.append({"id":event_id,"round":round_no,"kind":kind,"text":text,"source":source,"target":target,"value":value,"action":action_label})
+ if balance.get("presentation.capture",false):
+  event_log[-1].roll_cursor = roll_presentations.size()
+  if heroes.size()==3 and boss!=null and kind in ["attack","damage","block","block_gain","heal","poison","poison_tick","roll","phase","summon","minion_action","minion_death","move","stun"]:event_log[-1].visual_state = preload("res://prototype/combat_playback.gd").capture(self)
  log_lines.append("R%02d  %s" % [round_no,text])
 
 func note(text: String) -> void:
@@ -669,7 +672,7 @@ func hero_action(d: int, target: int = -1, destination: Vector2i = Vector2i(-99,
  if not resuming_friendly_attack and prepare_friendly_evasive(d,target,destination):return true
  begin_action(active,action_name(active,f),target if f != 6 else -1,d)
  if Soulcaster.is_spell(f):return Soulcaster.action(self,d,target)
- if f==0 and Soulcaster.equipped(self,active):return Soulcaster.blank(self,d)
+ if f==0 and Soulcaster.equipped(self,active) and (destination.x==-99 or not balance.get("blank.move_override",false)):return Soulcaster.blank(self,d)
  if f >= 60:return essence_action(d,target,destination)
  if f >= 9: return catalog_action(d,target,destination)
  match f:
@@ -1957,7 +1960,7 @@ func activate_friendly(id: int) -> void:
  var amount := v("face59.damage") if side < v("face59.hit_faces") else 0
  var faces: Array = []
  for n in range(6):faces.append(str(v("face59.damage") if n < v("face59.hit_faces") else 0))
- roll_presentations.append({"actor":unit_name(id),"kind":"Numeric · Friendly Bite","faces":[faces],"sides":[side],"results":[str(amount)],"dice":[0]})
+ roll_presentations.append({"actor":unit_name(id)+" → "+unit_name(target),"kind":"Numeric · Friendly Bite","faces":[faces],"sides":[side],"results":[str(amount)],"dice":[0]})
  record_event("roll","%s bites %s: d6 side %d [%s] = %d." % [unit_name(id),unit_name(target),side+1,", ".join(faces),amount],id,target)
  var before: int = unit_data(target).hp
  damage(target,maxi(0,amount-int(unit_data(id).get("weak",0))),false,"Friendly Nu’gh Bite",id)

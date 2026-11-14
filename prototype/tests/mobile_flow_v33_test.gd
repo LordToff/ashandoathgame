@@ -43,7 +43,7 @@ func run():
  g=fresh();g.heroes[0].results[0]=72;g.hero_action(0);check(g.heroes[0].block==2,"Iron Shelter empty Block")
  var app=load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
  app.game=fresh();app.page="battle";app.seen_event=app.game.event_id;app.roll_seen=app.game.roll_presentations.size();app.dice_tray.cancel();app.rolling_time=0
- app.game.heroes[0].poison=2;app.game.tick_poison(0);app.sync_presentation()
+ app.game.heroes[0].poison=2;app.game.tick_poison(0);app.sync_presentation();preload("res://prototype/tests/presentation_helpers.gd").drain(app)
  check(app.combat_notices.is_empty(),"Poison never opens a popup")
  check(app.effects.any(func(f):return f.kind=="poison_tick"),"Poison still has effect")
  check(not app.floaters.any(func(f):return "POISON" in f.text),"no Poison text pop")

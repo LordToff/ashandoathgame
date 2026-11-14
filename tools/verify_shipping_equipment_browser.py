@@ -16,12 +16,12 @@ with sync_playwright() as pw:
   def capture(name):
    file=out/f'{width}x{height}-{name}.png';p.screenshot(path=str(file));return file
   def ocr(file):return subprocess.check_output(['tesseract',str(file),'stdout','--psm','11'],stderr=subprocess.DEVNULL,text=True)
-  def tap_words(phrase):
+  def tap_words(phrase,last=False):
    file=capture('current');tsv=subprocess.check_output(['tesseract',str(file),'stdout','--psm','11','tsv'],stderr=subprocess.DEVNULL,text=True)
    lines={}
    for item in csv.DictReader(io.StringIO(tsv),delimiter='\t',quoting=csv.QUOTE_NONE):
     if item.get('text','').strip():lines.setdefault((item['block_num'],item['par_num'],item['line_num']),[]).append(item)
-   for line in lines.values():
+   for line in (list(lines.values())[::-1] if last else lines.values()):
     text=' '.join(item['text'] for item in line)
     if phrase.lower() in text.lower():
      start=text.lower().index(phrase.lower());end=start+len(phrase);selected=[];offset=0
@@ -31,7 +31,7 @@ with sync_playwright() as pw:
      left=min(int(i['left']) for i in selected);right=max(int(i['left'])+int(i['width']) for i in selected);top=min(int(i['top']) for i in selected);bottom=max(int(i['top'])+int(i['height']) for i in selected)
      (p.touchscreen.tap if mobile else p.mouse.click)((left+right)/2/scale,(top+bottom)/2/scale);p.wait_for_timeout(500);return
    raise AssertionError((phrase,ocr(file)))
-  assert 'v0.40' in ocr(capture('main-menu'))
+  assert 'v0.41' in ocr(capture('main-menu'))
   tap_words('Camp & Essence Forge');tap_words('Equipment')
   if not mobile:
    p.mouse.click(155,445);p.wait_for_timeout(350)
@@ -40,6 +40,8 @@ with sync_playwright() as pw:
    text=ocr(capture('body'));assert 'Defense' in text and 'Movement' in text and 'Skill' in text,text
    p.mouse.click(1290,62);p.wait_for_timeout(300);p.mouse.click(1090,685);p.wait_for_timeout(500)
    text=ocr(capture('trial-lobby'));assert 'Skirmisher' in text and '6 HP' in text and 'No Memory' in text,text
+   tap_words('Begin Trial',last=True);tap_words('Fight',last=True);capture('compact-shared-roll');p.wait_for_timeout(3500)
+   text=ocr(capture('trial-combat'));assert 'Battle log' in text and ('End hero turn' in text or 'Resolve' in text),text
   else:
    text=ocr(capture('equipment'));assert 'Broken Body' in text and 'Defense' in text and 'Weapon' in text,text
   assert not errors,errors

@@ -38,7 +38,7 @@ static func screen(app, heading: String, key: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
  app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.40",Vector2(18,58),15,MUTED,size.x-36)
+ app.label_at("ASH & OATH · MOBILE · v0.41",Vector2(18,58),15,MUTED,size.x-36)
  var width: float = minf(720,size.x-24)
  var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
@@ -87,11 +87,11 @@ static func render(app) -> void:
  if app.show_supplies:modal(app,app.supplies_ui);return
  if app.show_menu:menu(app);return
  if app.page == "battle":
-  if app.game.outcome != "":
+  if app.game.outcome!="" and not app.playback.busy():
    if app.trial_fight:app.TrialUI.outcome(app)
    else:modal(app,app.outcome_ui)
    return
-  if not app.game.pending.is_empty():
+  if not app.game.pending.is_empty() and not app.playback.busy():
    if app.SoulcasterUI.pending(app):pass
    elif app.rolled_choice_pending():app.BattlePanels.picker(app)
    else:modal(app,app.pending_ui)
@@ -162,7 +162,7 @@ static func camp(app) -> void:
   3:
    for index in range(W.GROUPS.size()):
     var group: Dictionary = W.GROUPS[index]
-    picture(column,app.CREATURE_SPRITES[group.enemy]);text(column,group.title,25,GOLD);text(column,group.description)
+    picture(column,app.CampUI.source_texture(app,group.enemy));text(column,group.title,25,GOLD);text(column,group.description)
     text(column,group.reward,20,Color("9acfc0"));btn(app,column,"Fight this group",func():app.start_creature_encounter(index)).name = "MobileFight"+str(index)
  footer(app,["Menu","Party","Boss review"],[app.go_main,func():app.open_forge(false),app.open_setup])
 static func crafting(app, column: Control) -> void:
@@ -252,17 +252,30 @@ static func events(app) -> void:
 
 static func board_rect(app) -> Rect2:
  var size: Vector2 = app.get_viewport_rect().size
- if size.x > size.y:
-  var edge: float = minf(size.y-102,size.x*0.45)
-  return Rect2(8,94,edge,edge)
- var reserved: float = 494 if app.game.pending.get("kind","")=="soul_blank" else 442
- var edge: float = minf(size.x-16,size.y-reserved)
- return Rect2((size.x-edge)/2,208+maxf(0,(size.y-reserved-edge)/2),edge,edge)
+ if size.x>size.y:
+  var edge: float = minf(size.y-98,size.x*0.45)
+  return Rect2(8,90,edge,edge)
+ var top := 196.0
+ var bottom: float = 286 if app.game.pending.get("kind","")=="soul_blank" else 192
+ var edge: float = maxf(90,minf(size.x-16,size.y-top-bottom))
+ return Rect2((size.x-edge)/2,top+maxf(0,(size.y-top-bottom-edge)/2),edge,edge)
+static func fit_button(pick: Button, dimensions: Vector2, preferred: int = 20) -> void:
+ pick.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART;pick.clip_text = true
+ pick.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+ var font: Font = pick.get_theme_font("font")
+ var padding := Vector2.ZERO
+ for state in ["normal","hover","pressed","disabled"]:padding = padding.max(pick.get_theme_stylebox(state).get_minimum_size())
+ var size: int = preferred
+ while size>12:
+  var measured: Vector2 = font.get_multiline_string_size(pick.text,HORIZONTAL_ALIGNMENT_LEFT,maxf(24,dimensions.x-padding.x-4),size,-1,TextServer.BREAK_MANDATORY|TextServer.BREAK_WORD_BOUND|TextServer.BREAK_ADAPTIVE)
+  if measured.y<=dimensions.y-padding.y-2 and measured.x<=dimensions.x-padding.x-4:break
+  size -= 1
+ pick.add_theme_font_size_override("font_size",size);pick.custom_minimum_size = Vector2.ZERO;pick.size = dimensions
 static func board_point(app, at: Vector2) -> Vector2:
  var rect := board_rect(app);return SOURCE_RECT.position+(at-rect.position)*(SOURCE_RECT.size.x/rect.size.x)
 static func touch(app, caption: String, at: Vector2, size: Vector2, action: Callable, tint: Color = GOLD, disabled: bool = false, name: String = "") -> Button:
  var pick: Button = app.button(caption,at,size,action,tint,disabled)
- pick.add_theme_font_size_override("font_size",20);pick.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+ fit_button(pick,size,20)
  if name != "":pick.name = name
  return pick
 static func battle(app) -> void:
@@ -271,53 +284,55 @@ static func battle(app) -> void:
  var width: float = size.x-x-12
  var active: int = app.game.active
  var actor: String = "Enemies" if app.trial_fight and active==3 else app.game.unit_name(active)
- var class_key: String = str(app.game.balance.get("trial.classes",["","",""])[active]) if app.trial_fight and active in range(3) else ""
- var heading: String = actor+(" · "+app.Trials.Classes.name_for(class_key) if app.Trials.Classes.valid(class_key) else "")+" · R"+str(app.game.round_no)
- if app.Model.Soulcaster.equipped(app.game,active):heading = actor+" · %d/3 charges · %d/4 spells · R%d" % [app.Model.Soulcaster.charges(app.game,active),app.Model.Soulcaster.count_spells(app.game,active),app.game.round_no]
- elif app.trial_fight:heading += " · %d Run Essence" % int(app.game.trial_state.get("purse",0))
- app.label_at(heading,Vector2(12,8),17 if app.Trials.Classes.valid(class_key) else 19 if app.trial_fight else 23,GOLD,board.size.x if landscape else size.x-24,true)
+ var heading: String = actor+" · R"+str(app.game.round_no)
+ if app.Model.Soulcaster.equipped(app.game,active):heading += " · %d charges" % app.Model.Soulcaster.charges(app.game,active)
+ app.label_at(heading,Vector2(12,7),18,GOLD,board.size.x if landscape else size.x-24,true)
  var party_width: float = board.size.x if landscape else size.x-24
  for hero in range(3):
-  var h: Dictionary = app.game.heroes[hero];var w: float = (party_width-12)/3
-  var b := touch(app,NAMES[hero]+"\n%d HP · %d Block" % [h.hp,h.block],Vector2(12+hero*(w+6),38),Vector2(w,48),func():app.mobile_info = NAMES[hero]+"\n"+app.game.status_description(hero);app.rebuild(),app.COLORS[hero])
-  b.add_theme_font_size_override("font_size",13)
+  var h: Dictionary = app.display_unit(hero);var w: float = (party_width-12)/3
+  var b := touch(app,NAMES[hero]+"\n%d HP · %d B" % [h.hp,h.block],Vector2(12+hero*(w+6),34),Vector2(w,42),func():app.mobile_info = NAMES[hero]+"\n"+app.game.status_description(hero);app.rebuild(),app.COLORS[hero])
+  fit_button(b,Vector2(w,42),13)
  var enemies: Array = app.game.enemy_intents()
  var sources: Array = []
  for entry in enemies:
   if entry.source not in sources:sources.append(entry.source)
  if app.mobile_enemy not in sources:app.mobile_enemy = sources[0] if not sources.is_empty() else 3
- var enemy: Dictionary = app.game.unit_data(app.mobile_enemy)
+ var enemy: Dictionary = app.display_unit(app.mobile_enemy)
  var enemy_x: float = x if landscape else 12
- var enemy_y: float = 8 if landscape else 92
+ var enemy_y: float = 8 if landscape else 82
  var enemy_width: float = width if landscape else size.x-24
- var stat := touch(app,app.game.unit_name(app.mobile_enemy)+" · %d HP · %d Block" % [enemy.hp,enemy.block],Vector2(enemy_x,enemy_y),Vector2(enemy_width,44),func():app.intent_focus = Vector2i(app.mobile_enemy,maxi(0,mini(2,app.game.boss_visible_index())));app.show_intents = true;app.rebuild(),Color("a9cbe8"),false,"EnemyStatsButton")
- stat.add_theme_font_size_override("font_size",20)
+ var stat := touch(app,app.game.unit_name(app.mobile_enemy)+" · %d HP · %d Block" % [enemy.hp,enemy.block],Vector2(enemy_x,enemy_y),Vector2(enemy_width,40),func():app.intent_focus = Vector2i(app.mobile_enemy,maxi(0,mini(2,app.game.boss_visible_index())));app.show_intents = true;app.rebuild(),Color("a9cbe8"),false,"EnemyStatsButton")
+ fit_button(stat,Vector2(enemy_width,40),18 if landscape else 16)
  var intents: Array = enemies.filter(func(entry):return entry.source == app.mobile_enemy)
  for i in range(intents.size()):
   var entry: Dictionary = intents[i];var w: float = (enemy_width-16)/3
-  var b := touch(app,entry.action,Vector2(enemy_x+i*(w+8),64 if landscape else 144),Vector2(w,60),func():app.intent_focus = Vector2i(entry.source,entry.slot);app.show_intents = true;app.rebuild(),app.BattlePanels.intent_color(entry.action),false,"EnemyIntent"+str(i))
-  b.add_theme_font_size_override("font_size",16)
+  var b := touch(app,entry.action,Vector2(enemy_x+i*(w+8),56 if landscape else 126),Vector2(w,40),func():app.intent_focus = Vector2i(entry.source,entry.slot);app.show_intents = true;app.rebuild(),app.BattlePanels.intent_color(entry.action),false,"EnemyIntent"+str(i))
+  fit_button(b,Vector2(w,40),15)
   if active == 3 and i == app.game.boss_visible_index():b.add_theme_stylebox_override("normal",app.style(Color("303c4b"),GOLD))
+ if app.playback.last_roll!="":
+  var result: Label = app.label_at(app.playback.last_roll,Vector2(x,106) if landscape else Vector2(12,174),13,Color("edcd94"),width,false,true)
+  result.name = "LastRollResult";result.max_lines_visible = 2 if landscape else 1
  if app.trial_fight:app.trial_objective_button()
- var die_y: float = size.y-228
+ var die_y: float = size.y-180
  if active < 3:
   var h: Dictionary = app.game.heroes[active]
   if app.trial_fight and not app.trial_choice.is_empty():
-   app.setup_panel(Rect2(x,die_y,width,82),Color("b7d2ef"))
+   app.setup_panel(Rect2(x,die_y,width,64),Color("b7d2ef"))
    var forecast: Label = app.label_at(app.trial_choice.forecast.text,Vector2(x+10,die_y+8),16,Color("e5e8e9"),width-20,false,true)
    forecast.name = "TrialForecast";forecast.max_lines_visible = 3;forecast.clip_text = true;forecast.tooltip_text = app.trial_choice.forecast.text
   else:
    for die in range(3):
     var face: int = app.game.face(active,die);var w: float = (width-16)/3
-    var b := touch(app,app.Catalog.name_for(face),Vector2(x+die*(w+8),die_y),Vector2(w,82),func():app.mobile_die = die;app.select_combat_die(die),app.color_for_face(face),not app.game.pending.is_empty() or app.game.outcome != "" or h.dead or h.hp<=0,"MobileDie"+str(die))
+    var b := touch(app,app.Catalog.name_for(face),Vector2(x+die*(w+8),die_y),Vector2(w,64),func():app.mobile_die = die;app.select_combat_die(die),app.color_for_face(face),not app.game.pending.is_empty() or app.game.outcome != "" or h.dead or h.hp<=0,"MobileDie"+str(die))
+    fit_button(b,Vector2(w,64),18)
     if app.Model.Soulcaster.held(app.game,active,die):b.text = "Saved · "+app.Catalog.name_for(face)
     elif h.used[die] and die not in h.reaction and (h.channel.is_empty() or h.channel.die != die):app.mark_spent(b)
     elif app.selected == die:b.add_theme_stylebox_override("normal",app.style(Color("293747"),app.color_for_face(face)))
-  var action_y: float = size.y-138;var w: float = (width-16)/3
-  touch(app,"Cancel" if app.trial_fight and not app.trial_choice.is_empty() else "Details",Vector2(x,action_y),Vector2(w,60),func():
+  var action_y: float = size.y-108;var w: float = (width-16)/3
+  touch(app,"Cancel" if app.trial_fight and not app.trial_choice.is_empty() else "Details",Vector2(x,action_y),Vector2(w,44),func():
    if app.trial_fight and not app.trial_choice.is_empty():app.trial_choice.clear();app.rebuild()
    else:app.show_mobile_details(),MUTED,false,"MobileDetails")
-  touch(app,"Reroll",Vector2(x+w+8,action_y),Vector2(w,60),func():
+  touch(app,"Reroll",Vector2(x+w+8,action_y),Vector2(w,44),func():
    app.friendly_confirm = -1
    if app.selected >= 0 and app.game.reroll_reason(app.selected) == "":app.perform_reroll(app.selected)
    else:app.choosing_reroll = true;app.selected = -1;app.rebuild(),GOLD,app.game.reroll_window_reason() != "","MobileReroll")
@@ -325,25 +340,28 @@ static func battle(app) -> void:
   if app.selected >= 0 and app.game.face(active,app.selected) == 0:immediate = app.Model.Soulcaster.equipped(app.game,active) or not app.game.reward or app.game.soul_remaining(active)<=0 or app.game.soul_mode(active) in ["heal","block"]
   if app.selected >= 0 and app.game.face(active,app.selected) == 59 and app.game.owned_worm(active)>=0:immediate = true
   var trial_ready: bool = app.trial_fight and not app.trial_choice.is_empty()
-  touch(app,"Confirm" if trial_ready else "Confirm hit" if app.friendly_confirm>=0 else "Use" if immediate else "Target",Vector2(x+2*(w+8),action_y),Vector2(w,60),func():
+  var needs_resolve: bool = trial_ready or immediate or app.friendly_confirm>=0
+  touch(app,"Log" if not needs_resolve else "Confirm" if trial_ready else "Confirm hit" if app.friendly_confirm>=0 else "Use" if immediate else "Target",Vector2(x+2*(w+8),action_y),Vector2(w,44),func():
+   if not needs_resolve:app.open_battle_log();return
    if app.trial_fight and not app.trial_choice.is_empty():app.confirm_trial_choice();return
    var target: int = app.friendly_confirm;app.friendly_confirm = -1
    if app.game.hero_action(app.selected,target):app.selected = -1;app.roll_feedback = {}
-   app.rebuild(),GOLD,not trial_ready and not immediate and app.friendly_confirm<0,"MobileResolve")
+   app.rebuild(),GOLD,false,"MobileResolve" if needs_resolve else "MobileLog")
   if app.trial_fight and app.selected>=0 and app.game.face(active,app.selected) in app.Model.Equipment.FACES and not trial_ready:
    var reason: String = app.Model.TrialRules.weapon_reason(app.game,app.game.face(active,app.selected))
    if reason!="":
     var note: Label = app.label_at(reason,Vector2(x,die_y-27),14,Color("efba99"),width,false,true)
     note.name = "TrialWeaponRequirement";note.max_lines_visible = 1;note.clip_text = true
-  touch(app,"More",Vector2(x,size.y-70),Vector2(width*.32-4,60),func():app.mobile_more = true;app.rebuild(),MUTED,false,"MobileMore")
-  touch(app,"End turn",Vector2(x+width*.32+4,size.y-70),Vector2(width*.68-4,60),func():app.friendly_confirm = -1;app.game.finish_turn();app.selected = -1;app.rebuild(),GOLD,not app.game.pending.is_empty() or app.game.outcome != "","MobileEndTurn")
+  touch(app,"More",Vector2(x,size.y-56),Vector2(width*.32-4,48),func():app.mobile_more = true;app.rebuild(),MUTED,false,"MobileMore")
+  touch(app,"End turn",Vector2(x+width*.32+4,size.y-56),Vector2(width*.68-4,48),func():app.friendly_confirm = -1;app.game.finish_turn();app.selected = -1;app.rebuild(),GOLD,not app.game.pending.is_empty() or app.game.outcome != "","MobileEndTurn")
  else:
   var current: String = app.game.boss_display_action()
+  touch(app,"Battle log",Vector2(x,size.y-108),Vector2(width,44),app.open_battle_log,MUTED,false,"MobileLog")
   var finished: bool = app.game.boss_visible_index()>=3 and not (app.game.encounter_id == "nugh" and bool(app.game.get("command_active")))
   if finished:app.label_at("Turn complete",Vector2(x,die_y+22),25,GOLD,width,true)
-  else:touch(app,current,Vector2(x,die_y),Vector2(width,82),func():app.mobile_info = app.game.boss_help("Crushing Sweep" if current.begins_with("Crushing Sweep") else current);app.rebuild(),app.BattlePanels.intent_color(current),false,"CurrentEnemyAbility")
-  touch(app,"More",Vector2(x,size.y-70),Vector2(width*.32-4,60),func():app.mobile_more = true;app.rebuild(),MUTED,false,"MobileMore")
-  touch(app,"End enemy turn" if finished else "Next action",Vector2(x+width*.32+4,size.y-70),Vector2(width*.68-4,60),func():app.game.boss_step();app.selected = -1;app.rebuild(),GOLD,not app.game.pending.is_empty() or app.game.outcome != "","MobileEnemyStep")
+  else:touch(app,current,Vector2(x,die_y),Vector2(width,64),func():app.mobile_info = app.game.boss_help("Crushing Sweep" if current.begins_with("Crushing Sweep") else current);app.rebuild(),app.BattlePanels.intent_color(current),false,"CurrentEnemyAbility")
+  touch(app,"More",Vector2(x,size.y-56),Vector2(width*.32-4,48),func():app.mobile_more = true;app.rebuild(),MUTED,false,"MobileMore")
+  touch(app,"End enemy turn" if finished else "Next action",Vector2(x+width*.32+4,size.y-56),Vector2(width*.68-4,48),func():app.game.boss_step();app.selected = -1;app.rebuild(),GOLD,not app.game.pending.is_empty() or app.game.outcome != "","MobileEnemyStep")
 static func more(app) -> void:
  var column: VBoxContainer = app.BattlePanels.panel(app,"Actions","")
  var grid := GridContainer.new();grid.columns = 2;grid.add_theme_constant_override("h_separation",10);grid.add_theme_constant_override("v_separation",10);column.add_child(grid)
@@ -427,7 +445,7 @@ static func options(app) -> void:
    app.balance_values["hero.reroll_anytime"] = value
    if app.page == "battle":app.game.balance["hero.reroll_anytime"] = value
    app.rebuild())
-  app.button("Sandbox Blank movement: "+("On" if app.reward_soul else "Off"),Vector2.ZERO,Vector2(420,68),func():app.set_soul_enabled(not app.reward_soul))
+  app.blank_move_button(Vector2.ZERO,Vector2(420,68))
   app.button("Sound & volume",Vector2.ZERO,Vector2(420,68),func():app.show_soundtrack = true;app.rebuild())
   app.button("Desktop mode",Vector2.ZERO,Vector2(420,68),func():app.show_options = false;app.set_mobile_mode(false))
   app.button("Restart party · main menu",Vector2.ZERO,Vector2(420,68),app.restart_to_menu)

@@ -21,6 +21,21 @@ const TEXT = """[b][color=#d5b87a]v0.4 · Read the fight, test the dice[/color][
 
 [color=#91a0af]Previous updates · v0.3: full-pool two-face choices, causal battle logs, battlefield art and combat effects. v0.2: boss explanations, dice-roll animation, opening rerolls and selectable Tuned / Original balance.[/color]"""
 
+const V41 = """[b]v0.41 · See the roll, feel the hit[/b]
+
+Restored the earlier Nu’gh, worms, mites, cocoon and ordinary creature silhouettes. Wilds return to their Kenney pixel sprites; other licensed boss and Trial sprites remain.
+
+Dice now roll in a compact panel beside / below the board. They settle over 0.8 seconds and hold their actual result for 1.3 seconds. Final faces stay on ability buttons and the last-roll strip; all rolls remain in the battle log.
+
+Combat plays in order: roll, result, attack wind-up and lunge, impact, then Poison / healing. HP and Block change at their visible impact. Worm misses visibly resolve as zero with no Poison. Replay never rerolls dice or changes combat calculations.
+
+Stronger hit recoil, worm jaws and green Poison feedback, with distinct sounds. Poison ticks use green smoke and sound without a text popup.
+
+Battle log is a button opening Summary / Extensive history. Wider desktop controls, phone text sized to the real viewport, clearer fixed combat buttons and one aligned board grid.
+
+Settings now includes Blank → Move 1, OFF by default: spend one rolled Blank for Move 1, once per hero turn, in either mode. Toggling never refills a spent use. Soulcaster keeps Gather / Manifest and adds a separate Move 1 choice while enabled.
+"""
+
 const V40 = """[b]v0.40 · Four equipment slots[/b]
 
 Body sets only Defense, Movement and Skill minimums / maximums. Weapon alone sets minimum / maximum Attack faces.
@@ -35,6 +50,7 @@ Normal play and Trials share these rules, with separate inventories. Existing ow
 """
 
 const SECTIONS = [
+ {"title":"See the roll, feel the hit · v0.41","body":V41},
  {"title":"Four equipment slots · v0.40","body":V40},
  {"title":"Direct combat & animated enemies · v0.39","body":"[b]Tap ability → tap target[/b]\nAttacks, movement, healing and swaps resolve when you tap their map target or destination. Tap Guard and other self effects to use them immediately. No extra generic Confirm step. Required ability choices, Reactions and friendly-fire warnings remain.\n\n[b]Soulcaster in two taps[/b]\nTap a rolled Blank, then Gather or an affordable spell. The compact panel keeps the board visible and shows charges, slots, current HP and creation costs. Help is optional. Spells still cost their charges + 1 HP, cannot activate on their creation turn and must roll later.\n\n[b]Original non-AI pixel animation[/b]\nEnemies, Trial roles, bosses and summons now use original idle/run frames by 0x72 from DungeonTileset II (CC0). The artist explicitly marks the pack as made without generative AI. Different silhouettes identify roles. Source, licence and exact frame selections are included in the repository. Stats, dice and legal footprints keep their rules.\n\nOrdinary creatures no longer stand on a misleading two-cell boss pad. Boss phase/core/guard indicators remain. Options → Fullscreen is retained."},
  {"title":"Fullscreen Settings · v0.38.1","body":"[b]Use the whole screen[/b]\nOptions → Fullscreen works from the main menu, normal battles and Trial Settings in desktop and mobile layouts. The button switches to Exit fullscreen while active. Tap it again to return; desktop browsers also allow Esc.\n\nThe layout adjusts to the available space, and your current game continues. Browsers which do not offer fullscreen show an unavailable button. This presentation update keeps the v0.38 gameplay rules."},

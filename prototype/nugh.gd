@@ -119,7 +119,7 @@ func activate_worm() -> void:
   var side := rng.randi_range(0,5)
   var amount := worm_damage() if side < v("nugh.worm_hit_faces") else 0
   var faces := worm_faces()
-  roll_presentations.append({"actor":unit_name(id),"kind":"Numeric · Worm Bite","faces":[faces],"sides":[side],"results":[str(amount)],"dice":[0]})
+  roll_presentations.append({"actor":unit_name(id)+" → "+unit_name(target),"kind":"Numeric · Worm Bite","faces":[faces],"sides":[side],"results":[str(amount)],"dice":[0]})
   record_event("roll","%s → Worm Bite against %s: d6 side %d [%s] = %d damage. Poison only if HP is lost." % [unit_name(id),unit_name(target),side+1,", ".join(faces),amount],id,target)
   if amount == 0:
    last_boss_result = "%s → %s: rolled 0; bite misses, no Poison." % [unit_name(id),unit_name(target)]

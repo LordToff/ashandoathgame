@@ -9,7 +9,7 @@ static func for_face(g, face: int) -> Dictionary:
  if face<0 or g.active not in range(3) or g.heroes.size()!=3:return result
  var actor: int = g.active;var h: Dictionary = g.heroes[actor]
  if h.dead or h.hp<=0:return result
- if face==0 and g.Soulcaster.equipped(g,actor):return result
+ if face==0 and g.Soulcaster.equipped(g,actor) and not g.balance.get("blank.move_override",false):return result
  if face in MOVEMENT or (face==0 and g.reward and g.soul_mode(actor) not in ["heal","block"]):
   result.mode = "move"
   result.destinations = g.leap_cells(actor) if face==53 else g.soul_cells(actor) if face==0 else g.reachable(actor,g.move_steps(face),face==3)

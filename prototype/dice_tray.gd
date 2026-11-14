@@ -1,12 +1,14 @@
 extends Control
-## Presentation only: every resting face comes from the recorded model result.
+## Compact recorded rolls: board stays visible; results rest before attack playback.
 signal finished
+signal cancelled
 var mobile_mode := false
 var busy := false
 var batches: Array = []
 var elapsed := 0.0
-const DURATION := 1.12
-const SETTLE := 0.82
+const SETTLE := 0.8
+const RESULT_HOLD := 1.3
+const DURATION := SETTLE+RESULT_HOLD
 const FONT = preload("res://prototype/assets/body.ttf")
 const SURFACES = [[4,5,7,6],[1,0,2,3],[0,4,6,2],[5,1,3,7],[0,1,5,4],[6,7,3,2]]
 var box: StyleBoxFlat
@@ -14,56 +16,55 @@ func _ready() -> void:
  set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  mouse_filter = Control.MOUSE_FILTER_STOP;z_index = 90
  box = StyleBoxFlat.new();box.bg_color = Color("14232e");box.border_color = Color("967d52")
- box.set_border_width_all(1);box.set_corner_radius_all(14);box.shadow_color = Color(0,0,0,0.4);box.shadow_size = 24
- hide()
+ box.set_border_width_all(2);box.set_corner_radius_all(10);box.shadow_color = Color(0,0,0,0.28);box.shadow_size = 8;hide()
 func play(incoming: Array) -> void:
  batches.append_array(incoming.duplicate(true))
  if not busy and not batches.is_empty():busy = true;elapsed = 0;show();queue_redraw()
 func _process(delta: float) -> void:
  if not busy:return
  elapsed += delta
- while elapsed >= DURATION and not batches.is_empty():
-  batches.pop_front();elapsed -= DURATION
+ while elapsed>=DURATION and not batches.is_empty():batches.pop_front();elapsed -= DURATION
  if batches.is_empty():finish();return
  queue_redraw()
 func cancel() -> void:
- batches.clear();busy = false;elapsed = 0;hide()
+ batches.clear();busy = false;elapsed = 0;hide();cancelled.emit()
 func finish() -> void:
- cancel();finished.emit()
+ batches.clear();busy = false;elapsed = 0;hide();finished.emit()
+func panel_rect(rows: int = 1, numeric: bool = false) -> Rect2:
+ if not mobile_mode:return Rect2(760,204,640,204 if numeric else 66+rows*62)
+ var size: Vector2 = get_viewport_rect().size
+ var landscape: bool = size.x>size.y
+ var x: float = minf(size.y-98,size.x*.45)+20 if landscape else 12
+ var width: float = size.x-x-12
+ var height: float = 180 if numeric else minf(size.y-142,62+rows*44)
+ return Rect2(x,size.y-height-8,width,height)
+func words(at: Vector2, text: String, width: float, size_px: int, color: Color, max_lines: int = 2) -> void:
+ draw_multiline_string(FONT,at,text,HORIZONTAL_ALIGNMENT_LEFT,width,size_px,max_lines,color,TextServer.BREAK_MANDATORY|TextServer.BREAK_WORD_BOUND|TextServer.BREAK_ADAPTIVE)
 func _draw() -> void:
  if not busy or batches.is_empty():return
- var roll: Dictionary = batches[0]
- var progress := clampf(elapsed/SETTLE,0,1)
- if mobile_mode:draw_mobile(roll,progress);return
- if roll.has("rows"):
-  draw_round(roll.rows,progress)
- else:
-  var rect := Rect2(1116,290,296,390)
-  draw_style_box(box,rect)
-  draw_string(FONT,Vector2(1138,327),str(roll.actor),HORIZONTAL_ALIGNMENT_LEFT,252,16,Color("e9cd98"))
-  draw_string(FONT,Vector2(1138,358),"NUMERIC DIE",HORIZONTAL_ALIGNMENT_LEFT,252,12,Color("99b4c3"))
-  cube(Vector2(1264,457),49,progress,0,str(roll.faces[0][int(roll.sides[0])]),true)
-  if progress >= 1:
-   draw_string(FONT,Vector2(1138,588),"RESULT  /  "+str(roll.results[0]),HORIZONTAL_ALIGNMENT_CENTER,252,24,Color("f6d99f"))
-  draw_string(FONT,Vector2(1138,632),str(roll.kind),HORIZONTAL_ALIGNMENT_CENTER,252,12,Color("b7c5cd"))
+ var roll: Dictionary = batches[0];var progress: float = clampf(elapsed/SETTLE,0,1)
+ if roll.has("rows"):draw_round(roll.rows,progress);return
+ var rect := panel_rect(1,true);draw_style_box(box,rect);var at := rect.position
+ words(at+Vector2(14,26),str(roll.actor),rect.size.x-28,16,Color("e9cd98"))
+ var result: String = str(roll.results[0])
+ cube(at+Vector2(58,105),29,progress,0,str(roll.faces[0][int(roll.sides[0])]),true)
+ words(at+Vector2(114,91),"RESULT  "+result if progress>=1 else "Rolling…",rect.size.x-128,26,Color("f6d99f"))
+ words(at+Vector2(114,123),"Miss · no Poison" if progress>=1 and result=="0" and "Bite" in str(roll.kind) else str(roll.kind).trim_prefix("Numeric · "),rect.size.x-128,13,Color("b7c5cd"))
+ words(at+Vector2(14,rect.size.y-14),("Miss · no attack" if result=="0" and "Bite" in str(roll.kind) else "Result shown before resolution") if progress>=1 else "Rolling…",rect.size.x-28,12,Color("99b4c3"),1)
 func draw_round(rows: Array, progress: float) -> void:
- draw_rect(Rect2(0,0,1440,900),Color(0.02,0.03,0.05,0.58))
- var height := 100.0+rows.size()*143.0
- var top := (900-height)/2
- draw_style_box(box,Rect2(204,top,1032,height))
- draw_string(FONT,Vector2(236,top+40),"DICE IN MOTION" if progress < 1 else "THE DICE HAVE SPOKEN",HORIZONTAL_ALIGNMENT_LEFT,960,18,Color("e9cd98"))
- draw_string(FONT,Vector2(236,top+66),"Recorded results · available dice roll together",HORIZONTAL_ALIGNMENT_LEFT,960,13,Color("99b4c3"))
- for row in range(rows.size()):
-  var roll: Dictionary = rows[row];var y := top+105+row*143
-  draw_string(FONT,Vector2(236,y+32),str(roll.actor),HORIZONTAL_ALIGNMENT_LEFT,180,16,Color("dce3df"))
-  for die in range(roll.sides.size()):
-   var x := 510+die*269
-   var side: int = int(roll.sides[die]);var label: String = str(roll.faces[die][side])
-   cube(Vector2(x,y+26),27,progress,row*3+die,str(side+1),false)
-   if progress >= 1:
-    var text: String = str(roll.results[die]);var fs := 15 if text.length()<24 else 12
-    draw_string(FONT,Vector2(x-116,y+95),text,HORIZONTAL_ALIGNMENT_CENTER,232,fs,Color("f1ddb6"))
-   else:draw_string(FONT,Vector2(x-116,y+95),"DIE "+["I","II","III"][int(roll.dice[die])],HORIZONTAL_ALIGNMENT_CENTER,232,12,Color("99b4c3"))
+ var rect := panel_rect(rows.size());draw_style_box(box,rect);var row_height: float = (rect.size.y-62)/maxi(1,rows.size())
+ words(rect.position+Vector2(14,25),"DICE RESULTS" if progress>=1 else "ROLLING DICE",rect.size.x-28,17,Color("e9cd98"),1)
+ var actor_width: float = minf(128,rect.size.x*.27)
+ var col: float = (rect.size.x-actor_width-22)/3
+ for r in range(rows.size()):
+  var row: Dictionary = rows[r];var y: float = rect.position.y+44+r*row_height
+  words(Vector2(rect.position.x+12,y+16),str(row.actor),actor_width-8,12 if mobile_mode else 14,Color("b7c5cd"))
+  for die in range(row.sides.size()):
+   var x: float = rect.position.x+actor_width+die*col
+   draw_rect(Rect2(x,y, col-5,row_height-3),Color("1d303e"))
+   if progress<1:cube(Vector2(x+(col-5)/2,y+row_height*.45),minf(15,row_height*.23),progress,r*3+die,str(int(row.sides[die])+1),false)
+   else:words(Vector2(x+5,y+15),str(row.results[die]),col-14,12 if mobile_mode else 15,Color("f1ddb6"))
+ words(rect.position+Vector2(14,rect.size.y-11),"Results are also kept on your ability buttons and in the battle log.",rect.size.x-28,11,Color("99b4c3"),1)
 func cube(rest: Vector2, scale_px: float, progress: float, seed_index: int, result: String, numeric: bool) -> void:
  # Cubic deceleration reaches zero angular velocity. The landing has zero vertical
  # velocity too; no transform or position is snapped on the final frame.
@@ -98,26 +99,3 @@ func cube(rest: Vector2, scale_px: float, progress: float, seed_index: int, resu
    if not numeric and face == 0:text = result
    var font_size := int(scale_px*0.6)
    draw_string(FONT,midpoint+Vector2(-scale_px*0.6,font_size*0.32),text,HORIZONTAL_ALIGNMENT_CENTER,scale_px*1.2,font_size,Color("293139"))
-
-func draw_mobile(roll: Dictionary, progress: float) -> void:
- var size := get_viewport_rect().size
- draw_rect(Rect2(Vector2.ZERO,size),Color(0.02,0.03,0.05,0.85))
- var width: float = minf(size.x-24,560)
- if not roll.has("rows"):
-  var at := (size-Vector2(width,360))/2
-  draw_style_box(box,Rect2(at,Vector2(width,360)))
-  draw_string(FONT,at+Vector2(20,36),str(roll.actor)+" · Numeric",HORIZONTAL_ALIGNMENT_LEFT,width-40,22,Color("e9cd98"))
-  cube(at+Vector2(width/2,150),48,progress,0,str(roll.faces[0][int(roll.sides[0])]),true)
-  draw_string(FONT,at+Vector2(20,280),"RESULT: "+str(roll.results[0]) if progress>=1 else "Rolling…",HORIZONTAL_ALIGNMENT_CENTER,width-40,26,Color("e9cd98"))
-  draw_string(FONT,at+Vector2(20,326),str(roll.kind),HORIZONTAL_ALIGNMENT_CENTER,width-40,16,Color("b7c5cd"));return
- var rows: Array = roll.rows;var row_height: float = minf(125,(size.y-100)/rows.size());var height: float = 80+rows.size()*row_height
- var at := (size-Vector2(width,height))/2
- draw_style_box(box,Rect2(at,Vector2(width,height)))
- draw_string(FONT,at+Vector2(16,36),"ROLLING DICE" if progress<1 else "DICE RESULTS",HORIZONTAL_ALIGNMENT_LEFT,width-32,24,Color("e9cd98"))
- for r in range(rows.size()):
-  var entry: Dictionary = rows[r];var y: float = at.y+60+r*row_height
-  draw_string(FONT,Vector2(at.x+16,y),str(entry.actor),HORIZONTAL_ALIGNMENT_LEFT,width-32,18,Color("b7c5cd"))
-  for die in range(entry.sides.size()):
-   var x: float = at.x+(die+0.5)*width/3
-   cube(Vector2(x,y+row_height*0.32),minf(21,row_height*0.2),progress,r*3+die,str(int(entry.sides[die])+1),false)
-   draw_string(FONT,Vector2(x-width/6+4,y+row_height*0.78),str(entry.results[die]) if progress>=1 else "Die "+str(int(entry.dice[die])+1),HORIZONTAL_ALIGNMENT_CENTER,width/3-8,14,Color("e9cd98"))

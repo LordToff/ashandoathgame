@@ -23,7 +23,7 @@ func run():
  await process_frame;await process_frame;app.rebuild();await process_frame
  check(app.mobile_mode and app.dice_tray.mobile_mode,"touch and dice layouts enabled together")
  check(app.game == model and app.expedition.camp == ledger and app.builds == old_builds,"layout switch retains model, rewards and dice")
- check(root.content_scale_size.x == 480 and root.content_scale_size.y > 1000,"portrait fits phone aspect")
+ check(root.content_scale_size == Vector2i(390,844),"portrait fits phone aspect")
  check(find(app.ui,"MobilePlay") != null,"phone start control")
  for hero in range(3):app.gifts[hero] = [34,47];app.builds[hero] = B.bonus_build([34,47])
  app.start_creature_encounter(0);app.dice_tray.cancel();app.rolling_time = 0;app.combat_notices.clear()
@@ -43,7 +43,7 @@ func run():
  app._gui_input(input)
  check(app.game.heroes[0].pos == destination and app.game.heroes[0].used[0],"phone board tap moves and spends one die")
  find(app.ui,"MobileDie1").pressed.emit();await process_frame
- find(app.ui,"MobileResolve").pressed.emit();await process_frame
+ # Guard resolves directly on its ability tap.
  check(app.game.heroes[0].block > 0 and app.game.heroes[0].used[1],"phone Resolve applies actual Guard")
  app.dice_tray.cancel();app.rolling_time = 0;app.combat_notices.clear();app.rebuild()
  find(app.ui,"MobileDetails").pressed.emit();await process_frame

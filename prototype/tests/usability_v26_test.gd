@@ -72,8 +72,8 @@ func run():
  check(scene.ui.get_node_or_null("AcknowledgeCombatNotice") == null,"Poison damage does not open acknowledgement window")
  var count: int = scene.combat_notices.size();scene.rebuild();check(scene.combat_notices.size() == count,"redraw does not duplicate notices")
  check(scene.combat_notices.is_empty(),"Poison never blocks combat")
- scene.game.note("Full log includes this detail");scene.ui.get_node("LogExtensiveTab").pressed.emit()
- check(not scene.compact_log and scene.ui.get_node("SideChronicle").text.contains("Full log includes this detail"),"Extensive tab shows unfiltered details")
+ preload("res://prototype/tests/presentation_helpers.gd").drain(scene);scene.open_battle_log();scene.game.note("Full log includes this detail");scene.rebuild();scene.ui.get_node("LogExtensiveTab").pressed.emit()
+ check(not scene.compact_log and scene.ui.get_node("BattleHistory").text.contains("Full log includes this detail"),"Extensive tab shows unfiltered details")
  scene.game.heroes[0].results = [6,5,0];scene.game.heroes[0].used = [false,true,false];scene.game.heroes[0].reaction = [1];scene.selected = 0;scene.select_combat_die(1)
  var focused: Dictionary = scene.game.heroes[0]
  check(scene.combat_notices.is_empty() and (scene.game.forced_die==1 or (scene.game.forced_die<0 and focused.used[1] and 1 in focused.reaction and B.Catalog.is_reaction(scene.game.face(0,1)))),"Focus shows its new roll or holds its Reaction without an acknowledgement")

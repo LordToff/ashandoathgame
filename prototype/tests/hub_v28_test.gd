@@ -70,7 +70,7 @@ func run():
  var before: Array = app.builds.duplicate(true);app.forge_die = 0;app.forge_side = 4;app.forge_replace(1)
  check(app.builds == before,"invalid Blank/copy edit rejected atomically")
  app.start_creature_encounter(0);app.dice_tray.cancel();app.rolling_time = 0
- app.game.damage(3,99,true);app.game.damage(4,99,true);app.rebuild()
+ app.game.damage(3,99,true);app.game.damage(4,99,true);app.rebuild();preload("res://prototype/tests/presentation_helpers.gd").drain(app)
  check(app.expedition.camp.bank.get("bone_creature",0) >= 2,"direct fight banks normal Essence on victory")
  var gold: int = app.expedition.gold;var bank: int = app.expedition.camp.bank.bone_creature;app.rebuild()
  check(app.expedition.gold == gold and app.expedition.camp.bank.bone_creature == bank,"direct outcome redraw does not duplicate rewards")

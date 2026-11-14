@@ -35,7 +35,7 @@ func setup_clarity(face: int):
 func proof(args):
  var mode: String = str(args[0])
  if mode == "state":
-  var data := {"rolling":app.dice_tray.busy,"bank":app.expedition.camp.bank,"copies":app.expedition.camp.copies,"memories":app.expedition.camp.memories,"active":app.game.active,"page":app.page,"builds":app.builds,"weapons":app.expedition.camp.weapons,"souls":app.expedition.camp.souls,"equipped_souls":app.expedition.camp.equipped_souls}
+  var data := {"rolling":app.dice_tray.busy or app.playback.busy(),"bank":app.expedition.camp.bank,"copies":app.expedition.camp.copies,"memories":app.expedition.camp.memories,"active":app.game.active,"page":app.page,"builds":app.builds,"weapons":app.expedition.camp.weapons,"souls":app.expedition.camp.souls,"equipped_souls":app.expedition.camp.equipped_souls}
   var controls: Array = [];mobile_controls(app.ui,controls);data.controls = controls;data.viewport = [app.get_viewport_rect().size.x,app.get_viewport_rect().size.y];data.mobile = app.mobile_mode;data.board = [app.MobileUI.board_rect(app).position.x,app.MobileUI.board_rect(app).position.y,app.MobileUI.board_rect(app).size.x,app.MobileUI.board_rect(app).size.y];data.debug = app.debug_mode;data.unlocked = app.expedition.camp.unlocked;data.collection = app.show_collection;data.enemy_block = app.game.boss.get("block",0) if app.game.heroes.size()==3 else 0;data.intents = app.game.enemy_intents() if app.game.heroes.size()==3 else [];data.sfx = app.status_sounds;data.effects = app.effects.map(func(f):return f.kind);data.notices = app.combat_notices;data.selected = app.selected;data.pending = app.game.pending;data.feedback_playing = app.feedback_audio.playing;data.feedback_kind = app.feedback_streams.find_key(app.feedback_audio.stream);data.live_builds = app.game.heroes.map(func(h):return h.build);data.results = app.game.heroes.map(func(h):return h.results)
   if app.game.heroes.size() == 3:data.hp = app.game.heroes.map(func(h):return h.hp);data.block = app.game.heroes.map(func(h):return h.block);data.positions = app.game.heroes.map(func(h):return [h.pos.x,h.pos.y]);data.dagger_used = app.game.heroes.map(func(h):return h.get("dagger_used",false));data.used = app.game.heroes.map(func(h):return h.used);data.boss_hp = app.game.boss.hp
   data.trial = {"phase":app.trials.phase,"stage":app.trials.stage,"essence":app.trials.essence,"memories":app.trials.memories,"souls":app.trials.souls,"completed":app.trials.completed_bosses,"builds":app.trials.builds,"hp":app.trials.hp,"weapons":app.trials.weapons,"view":app.trial_view,"fight":app.trial_fight}
@@ -48,6 +48,9 @@ func proof(args):
   data.forecast = app.trial_choice
   data.objective = app.game.objective_summary() if app.game.has_method("objective_summary") else ""
   data.effective = app.game.heroes.map(func(h):return range(3).map(func(die):return app.game.face(app.game.heroes.find(h),die)))
+  data.playback = {"busy":app.playback.busy(),"kind":app.playback.current.get("kind",""),"queue":app.playback.queue.map(func(step):return step.kind),"visible_hp":app.game.heroes.map(func(h):return app.display_unit(app.game.heroes.find(h)).hp),"visible_poison":app.game.heroes.map(func(h):return app.display_unit(app.game.heroes.find(h)).get("poison",0)),"last_roll":app.playback.last_roll,"dice_busy":app.dice_tray.busy,"dice_elapsed":app.dice_tray.elapsed,"settle":app.dice_tray.SETTLE,"hold":app.dice_tray.RESULT_HOLD,"effects":app.effects.map(func(fx):return fx.kind)}
+  data.blank_move = app.blank_move_setting
+  data.art = {"nugh":app.EnemyArt.texture("nugh").atlas.resource_path,"worm":app.EnemyArt.texture("worm").atlas.resource_path}
   data.ui_text = ui_text(app.ui)
   data.equipment_profile = app.camp_battle_profile()
   data.event_count = app.game.event_id;data.rng = str(app.game.rng.state)
@@ -66,7 +69,19 @@ func proof(args):
     var panel: StyleBox = popup.get_theme_stylebox("panel")
     data.popups.append({"control":str(control.name),"x":popup.position.x,"y":popup.position.y,"w":popup.size.x,"h":popup.size.y,"top":panel.get_margin(SIDE_TOP),"bottom":panel.get_margin(SIDE_BOTTOM),"items":range(popup.item_count).map(func(index):return popup.get_item_text(index))})
   JavaScriptBridge.get_interface("window").essenceState = JSON.stringify(data);return
+ if mode=="play41_bite":
+  app.game.activate_worm();app.rebuild();return
  reset_ui()
+ if mode.begins_with("play41_worm"):
+  app.game = app.Nugh.new();app.game.start(app.builds,41,false,true,{"presentation.capture":true});app.page = "battle"
+  app.game.active = 3;app.game.pending = {};app.game.command_active = true;app.game.brood_queue = [4]
+  for h in app.game.heroes:h.hp = 6;h.poison = 0;h.used = [true,true,true];h.reaction = []
+  app.game.heroes[0].pos = Vector2i(4,7);app.game.heroes[1].pos = Vector2i(0,8);app.game.heroes[2].pos = Vector2i(8,8);app.game.unit_data(4).pos = Vector2i(4,6)
+  var chooser := RandomNumberGenerator.new()
+  for seed_value in range(1,80):
+   chooser.seed = seed_value
+   if (chooser.randi_range(0,5)<2)==(mode!="play41_worm_miss"):app.game.rng.seed = seed_value;break
+  app.roll_seen = app.game.roll_presentations.size();app.seen_event = app.game.event_id;app.dice_tray.cancel();app.rolling_time = 0;app.playback.model_id = app.game.get_instance_id();app.playback.clear(app.CombatPlayback.capture(app.game));app.rebuild();return
  if mode.begins_with("art39_"):
   app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trials.selected_boss = app.trials.BOSSES.find(mode.trim_prefix("art39_"));app.trials.start(39);app.trials.stage = 5;app.trials.choose(0);app.start_trial_battle()
   app.game.active = 0;app.game.cursor = app.game.order.find(0);app.game.pending = {};app.game.forced_die = -1;app.roll_seen = app.game.roll_presentations.size();app.seen_event = app.game.event_id;app.dice_tray.cancel();app.rolling_time = 0;app.rebuild();return
