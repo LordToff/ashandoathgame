@@ -138,3 +138,12 @@ Soulcaster Blank selection opens `soulcaster_ui.gd`'s compact board-visible pane
 First-encounter Memories are empty; normal crafted Memories and Trial post-victory Memory rewards provide later passives. Pure Blank-conversion rewards are Memories. Version-40 saves retain converted Memory copies and original repaired Trial dice; check idempotence when changing migration. Normal and Trial collections remain separate.
 
 Run equipment_v40_test.gd, current native regressions, verify_equipment_browser.py and verify_direct_browser.py before publishing. Native tests must use temporary XDG_DATA_HOME directories to isolate saves. Current rules exporter includes the shared equipment definitions; regenerate HTML/Markdown/PDF with tools/export_current_rules.gd and tools/make_current_rules.py.
+
+
+## v0.41 readable combat playback and layout
+
+`combat_playback.gd` replays read-only event snapshots; the model still resolves combat / RNG once. Shipping profiles enable `presentation.capture` before shared rolls. Recorded roll cursors interleave compact dice, a 1.3-second result hold, attack wind-up, HP / Block impact and status feedback. Gate controls, required choices and outcome overlays until replay is idle. Do not consume RNG, reapply damage, or remove zero-duration event cues when changing playback. Dice cancellation clears pending presentation when navigating / testing.
+
+`EnemyArt` restores earlier repository sprites for Nu’gh, worms, mites, cocoon and ordinary creatures; Wilds use retained Kenney selections. Other bosses / Trial roles keep 0x72 art. Camp source_texture shares the same selection. Keep source / licence assets.
+
+Combat log is a button, desktop actions have room, the board has one aligned grid, and phone logical pixels match the CSS viewport. Settings `BlankMoveToggle` is a persisted OFF-by-default override: one rolled Blank → Move 1 per own turn in either mode. Save and restore equipped conversion values without refilling usage. Soulcaster retains Gather / Manifest plus optional Move 1. Use playback_v41_test.gd, the updated regressions and verify_playback_browser.py plus direct / equipment browser checks. Keep temporary per-suite native saves; publish the exact committed shipping export with versioned pack and hashes.

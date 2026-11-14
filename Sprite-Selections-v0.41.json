@@ -1,0 +1,112 @@
+{
+  "version": "0.41",
+  "restored": {
+    "nugh": {
+      "source": "prototype/assets/pixel_nugh.png",
+      "sha256": "d489be6c368897689ee446a274def7f79eb448a2726d1d61bdc343a264ddc673",
+      "frame_size": [
+        32,
+        32
+      ],
+      "frames": 1,
+      "selection": "restored existing repository sprite"
+    },
+    "nugh_phase2": {
+      "source": "prototype/assets/pixel_nugh_phase2.png",
+      "sha256": "cf3ede6705a886e75954206db549bcd043118ae39fc22e3da23bbda5c9453035",
+      "frame_size": [
+        32,
+        32
+      ],
+      "frames": 1,
+      "selection": "restored existing repository sprite"
+    },
+    "worm": {
+      "source": "prototype/assets/pixel_screaming_worm.png",
+      "sha256": "45920abd1c5414f7c7ab753532a8ac7750ff01910274d24ad1299f0390d76d49",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "friendly_worm": {
+      "source": "prototype/assets/pixel_friendly_nugh.png",
+      "sha256": "3330ece27835c8bebfde1fe1cd640f7fa16f6b5373c899ca65b592d410aac5d4",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "mite": {
+      "source": "prototype/assets/pixel_mite.png",
+      "sha256": "d6f2019605e28b560c2d4f06f22dce078320a9bc1a69e715f586f4bbe867dd3a",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "cocoon": {
+      "source": "prototype/assets/pixel_cocoon.png",
+      "sha256": "219d432eb1e3372d35ae46b083f9783c62202d2d3731dc849355d3b838ab5f8d",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "bone_creature": {
+      "source": "prototype/assets/bone_creature.png",
+      "sha256": "e0ec148016f21aa57042eb71b2d62b15991d8855d57a92aa12b431f8b6d5a015",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "support_creature": {
+      "source": "prototype/assets/support_creature.png",
+      "sha256": "a4407f05b96a9ab9f5dcb2a86d463acd3ea2fbc3ee9bab747ae034007ff461f9",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "movement_creature": {
+      "source": "prototype/assets/movement_creature.png",
+      "sha256": "61ba704cec243a2174ef5ab2770f9458bcd0cffde9d97550875838776e1d4b34",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "mire_leech": {
+      "source": "prototype/assets/mire_leech.tres",
+      "sha256": "cf11989e14c2a05215828ffb97289bb63b3844ddd4bef22c8800f920a8a49a72",
+      "selection": "existing Kenney Tiny Dungeon CC0 tile selection"
+    },
+    "glasswing_moth": {
+      "source": "prototype/assets/glasswing_moth.tres",
+      "sha256": "a024ccd2fc5d4c8c02c91cd1f2ba3683ada2a1561ce93554aee03f2ec34c2e1b",
+      "selection": "existing Kenney Tiny Dungeon CC0 tile selection"
+    },
+    "iron_husk": {
+      "source": "prototype/assets/iron_husk.tres",
+      "sha256": "4a13b629b558732e9d4d65849285d89dfd27f678ab185d8811f378ff7ca5dccf",
+      "selection": "existing Kenney Tiny Dungeon CC0 tile selection"
+    }
+  },
+  "other_sprites": "prototype/assets/vendor/dungeon_tileset_ii/SELECTIONS.json",
+  "new_image_generation": false
+}
