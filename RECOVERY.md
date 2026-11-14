@@ -147,3 +147,14 @@ Run equipment_v40_test.gd, current native regressions, verify_equipment_browser.
 `EnemyArt` restores earlier repository sprites for Nu’gh, worms, mites, cocoon and ordinary creatures; Wilds use retained Kenney selections. Other bosses / Trial roles keep 0x72 art. Camp source_texture shares the same selection. Keep source / licence assets.
 
 Combat log is a button, desktop actions have room, the board has one aligned grid, and phone logical pixels match the CSS viewport. Settings `BlankMoveToggle` is a persisted OFF-by-default override: one rolled Blank → Move 1 per own turn in either mode. Save and restore equipped conversion values without refilling usage. Soulcaster retains Gather / Manifest plus optional Move 1. Use playback_v41_test.gd, the updated regressions and verify_playback_browser.py plus direct / equipment browser checks. Keep temporary per-suite native saves; publish the exact committed shipping export with versioned pack and hashes.
+
+
+## v0.42 preparation, instant dice and falls
+
+`trial_preparation.gd` replaces the flat lobby: Class → Soul → Body → Weapon → Memory → Dice for each hero, then party / boss review. `Trials.prepare_step`, `prepared` and selected `hero` persist with optional defaults for old saves. Reopening preparation resumes its place. Only reviewed heroes can begin through the UI; starting kits, physical side repair, ownership, empty first Memories and safe-run compatibility still use the shared model. Wizard callbacks ignore stale next/back steps and cannot edit a run outside the lobby.
+
+`DiceAnimationToggle` in all Settings controls `CombatPlayback.animate_dice`. OFF updates recorded results without emitting roll-drawer steps or waiting. It never skips attacks/status/falls or consumes model RNG. `save_combat_preferences` writes both it and Blank movement together, with separate browser localStorage keys. Switching off an active drawer finishes it rather than cancelling its combat queue.
+
+`CombatPlayback` compares captured states to queue one fall at a real HP/death transition. `death_feedback.gd` supplies the collapse, ash and separate Downed / death streams; zero-HP unprotected hero death is also captured. Objective objects never borrow creature ghost art. All of this is presentation, never another damage/reward operation. The result overlay waits until replay is idle.
+
+`battle_hud.gd` provides drawn frames, health bars, category marks and two bounded intent labels. Boss badges stay clear of the log button; long enemy action titles are bounded. Check 360×640, 390×844, 844×390 and 1440×900 through verify_ux_browser.py and current equipment/direct controls. Use isolated per-suite saves for native tests. Shipping has no fixture hooks; regenerate current rules/PDF, commit source, export that commit, stage a versioned pack plus SHA-256 manifest, and verify GitHub Pages and live hashes.
