@@ -60,8 +60,8 @@ with sync_playwright() as pw:
   tap(name=die+'0');cell(3,3);d=state();assert d['boss_hp']==10 and d['used'][0][0] and d['used'][0][1];assert not any(v['name']=='DaggerPoke' for v in d['controls']);snap('rolled-poke')
   fixture('gear40_oathblade');tap(name=die+'0');cell(3,3);d=state();assert d['boss_hp']==11 and d['enemy_block']==1 and d['used'][0][0]
   tap(name=die+'1');cell(3,3);d=state();assert d['boss_hp']==10 and d['enemy_block']==1 and d['used'][0][1];snap('passive-on-other-attack')
-  fixture('class37_lobby');d=state();assert d['trial']['memories']==['','',''] and d['trial']['max_hp']==[6,6,6];tap(name='TrialSlot_body');assert '0–2' in state()['ui_text'] and 'Attack limits come from your Weapon' in state()['ui_text']
-  tap(name='TrialSlot_weapon');assert 'minimum 2 / maximum 6' in state()['ui_text'];snap('trial-equipment')
+  fixture('class37_lobby');d=state();assert d['trial']['memories']==['','',''] and d['trial']['max_hp']==[6,6,6];tap(name='TrialPrepNext');tap(name='TrialPrepNext');assert '0–2' in state()['ui_text'] and 'Attack limits come from your Weapon' in state()['ui_text']
+  tap(name='TrialPrepNext');assert 'minimum 2 / maximum 6' in state()['ui_text'];snap('trial-equipment')
   fixture('gear40_trial_reward');tap(name='TrialRewardMemory');tap(name='TrialMemoryReward_first_step');d=state();assert d['trial']['stage']==1 and d['trial']['essence']==1 and d['trial']['memories'][0]=='first_step';snap('earned-memory')
   assert not errors,errors
   row={'viewport':[width,height],'result':'passed','browser_errors':errors,'tested':['normal equipment limits and 3-Strike unique Weapon','rolled Poke prerequisite and die spending','Attack passive on weapon and other Attack','Trial Soul HP and empty starting Memories','earned Memory after first encounter']};results.append(row);(out/'checkpoint.json').write_text(json.dumps(results,indent=2));print(json.dumps(row),flush=True);c.close()

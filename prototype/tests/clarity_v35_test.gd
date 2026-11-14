@@ -52,7 +52,9 @@ func run_tests():
  restored.save();var twice = Run.new(true);check(twice.essence==9,"migration refund cannot repeat")
  var app=load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
  app.trials = Run.new(false);app.open_trials();await process_frame;var text := text_content(app.ui)
- for slot in ["Body","Memory","Soul","Weapon"]:check(slot in text,"setup explains each existing equipment slot")
+ for entry in [["Body",2],["Memory",4],["Soul",1],["Weapon",3]]:
+  app.trials.prepare_step = entry[1];app.rebuild();text = text_content(app.ui)
+  check(entry[0] in text,"preparation explains each existing equipment slot in its own step")
  check(not "edge" in text.to_lower() and not "pact" in text.to_lower(),"setup has no extra equipment concepts")
  app.trials.start(35);app.trials.phase = "reward";app.trials.reward_mode = "weapon";app.rebuild();await process_frame;text = text_content(app.ui)
  check("Weapon" in text and "Equip Poison Dagger" in text and not "Attack edge" in text,"reward equips one named Weapon")

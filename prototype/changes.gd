@@ -21,6 +21,17 @@ const TEXT = """[b][color=#d5b87a]v0.4 · Read the fight, test the dice[/color][
 
 [color=#91a0af]Previous updates · v0.3: full-pool two-face choices, causal battle logs, battlefield art and combat effects. v0.2: boss explanations, dice-roll animation, opening rerolls and selectable Tuned / Original balance.[/color]"""
 
+const V42 = """[b]v0.42 · Guided preparation and faster dice[/b]
+
+Trial preparation now walks through Class, Soul, Body, Weapon, Memory and the actual dice for each hero. Back and reload keep your choices. After all three reviews, inspect the party and choose the boss. The first Memory slot still starts empty.
+
+Settings → Dice animation & pause: OFF skips both the drawer and its result hold. Rolls still resolve once; new faces, the last result and full log remain available. This preference works in both modes and saves alongside Blank → Move 1.
+
+Deaths now have a short collapse, ash burst and low sound. Downed heroes have their own cue and marker so they are not confused with slain heroes. The result screen waits until the fall finishes.
+
+The battle HUD uses sharper frames, health bars, colored ability marks and separate lanes for intent names, targets and boss status. Long names stay within their cards; Nu’gh, Warden and Cantor status no longer share the log button’s space.
+"""
+
 const V41 = """[b]v0.41 · See the roll, feel the hit[/b]
 
 Restored the earlier Nu’gh, worms, mites, cocoon and ordinary creature silhouettes. Wilds return to their Kenney pixel sprites; other licensed boss and Trial sprites remain.
@@ -50,6 +61,7 @@ Normal play and Trials share these rules, with separate inventories. Existing ow
 """
 
 const SECTIONS = [
+ {"title":"Guided preparation · v0.42","body":V42},
  {"title":"See the roll, feel the hit · v0.41","body":V41},
  {"title":"Four equipment slots · v0.40","body":V40},
  {"title":"Direct combat & animated enemies · v0.39","body":"[b]Tap ability → tap target[/b]\nAttacks, movement, healing and swaps resolve when you tap their map target or destination. Tap Guard and other self effects to use them immediately. No extra generic Confirm step. Required ability choices, Reactions and friendly-fire warnings remain.\n\n[b]Soulcaster in two taps[/b]\nTap a rolled Blank, then Gather or an affordable spell. The compact panel keeps the board visible and shows charges, slots, current HP and creation costs. Help is optional. Spells still cost their charges + 1 HP, cannot activate on their creation turn and must roll later.\n\n[b]Original non-AI pixel animation[/b]\nEnemies, Trial roles, bosses and summons now use original idle/run frames by 0x72 from DungeonTileset II (CC0). The artist explicitly marks the pack as made without generative AI. Different silhouettes identify roles. Source, licence and exact frame selections are included in the repository. Stats, dice and legal footprints keep their rules.\n\nOrdinary creatures no longer stand on a misleading two-cell boss pad. Boss phase/core/guard indicators remain. Options → Fullscreen is retained."},

@@ -18,6 +18,8 @@ var legacy_builds: Array = []
 var souls: Array = ["","",""]
 var selected_boss := 0
 var hero := 0
+var prepare_step := 0
+var prepared: Array = [false,false,false]
 var stage := 0
 var seed_value := 0
 var essence := 3
@@ -175,7 +177,7 @@ func fail(reason: String) -> void:
  phase = "failed";message = reason;reward_mode = "";save()
 func save() -> void:
  var data := {"equipment_version":40}
- for key in ["phase","classes","memories","weapons","bodies","souls","selected_boss","stage","seed_value","essence","hp","builds","pool","completed_bosses","history","message","current","settled","loadout_weapons","ingredients","crafted","wishlist","last_progress","bound_souls","legacy_builds"]:data[key] = get(key)
+ for key in ["phase","hero","prepare_step","prepared","classes","memories","weapons","bodies","souls","selected_boss","stage","seed_value","essence","hp","builds","pool","completed_bosses","history","message","current","settled","loadout_weapons","ingredients","crafted","wishlist","last_progress","bound_souls","legacy_builds"]:data[key] = get(key)
  var file := FileAccess.open(SAVE,FileAccess.WRITE)
  if file:file.store_string(JSON.stringify(data))
  if OS.has_feature("web"):JavaScriptBridge.eval("try{localStorage.setItem('ash-and-oath-trials',"+JSON.stringify(JSON.stringify(data))+")}catch(e){}",true)
@@ -189,6 +191,9 @@ func load_save() -> void:
  if parser.parse(text)!=OK:return
  var data = parser.data
  if not data is Dictionary:return
+ hero = clampi(int(data.get("hero",0)),0,2);prepare_step = clampi(int(data.get("prepare_step",0)),0,6)
+ if data.get("prepared") is Array and data.prepared.size()==3:prepared = data.prepared.map(func(v):return bool(v))
+ if prepare_step==6 and not prepared.all(func(v):return v):prepare_step = 0
  if data.get("classes") is Array and data.classes.size()==3:
   for id in range(3):classes[id] = str(data.classes[id]) if Classes.valid(str(data.classes[id])) else ""
  if data.get("ingredients") is Dictionary:
@@ -278,6 +283,7 @@ func pin(key: String) -> bool:
 func apply_build(key: String, id: int) -> bool:
  if phase!="lobby" or id not in range(3) or not C.BUILDS.has(key):return false
  var build: Dictionary = C.BUILDS[key]
+ prepared[id] = false;prepare_step = 0;hero = id
  memories[id] = ""
  bodies[id] = build.body if build.body in available("body",id) else "broken"
  loadout_weapons[id] = build.weapon if build.weapon in available("weapon",id) else "dagger"
@@ -307,7 +313,7 @@ func set_class_kit(id: int, key: String) -> void:
  classes[id] = key;memories[id] = kit.memory;bodies[id] = kit.body;loadout_weapons[id] = kit.weapon;souls[id] = ""
 func choose_class(id: int, key: String) -> bool:
  if phase!="lobby" or id not in range(3) or not Classes.valid(key):return false
- set_class_kit(id,key)
+ set_class_kit(id,key);prepared[id] = false
  message = ["Vesper","Rook","Wren"][id]+" is a "+Classes.name_for(key)+". Starting gear and dice reset for this hero; no Essence spent."
  save();return true
 func customized(id: int) -> bool:
@@ -320,7 +326,7 @@ func class_label(id: int) -> String:
 
 func choose_soul(id: int, key: String) -> bool:
  if phase!="lobby" or id not in range(3) or key not in available("soul",id):return false
- souls[id] = key
+ souls[id] = key;prepared[id] = false
  message = ("Soulcaster equipped: starter dice adapt to four Blanks each. 6 maximum HP from Soulcaster. Tap Spellbook for the six spells." if key=="soulcaster" else "Soul equipped; starter dice and maximum HP update automatically.")
  save();return true
 

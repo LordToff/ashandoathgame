@@ -175,7 +175,7 @@ func record_event(kind: String, text: String, source: int = -1, target: int = -1
  event_log.append({"id":event_id,"round":round_no,"kind":kind,"text":text,"source":source,"target":target,"value":value,"action":action_label})
  if balance.get("presentation.capture",false):
   event_log[-1].roll_cursor = roll_presentations.size()
-  if heroes.size()==3 and boss!=null and kind in ["attack","damage","block","block_gain","heal","poison","poison_tick","roll","phase","summon","minion_action","minion_death","move","stun"]:event_log[-1].visual_state = preload("res://prototype/combat_playback.gd").capture(self)
+  if heroes.size()==3 and boss!=null and (kind in ["attack","damage","block","block_gain","heal","poison","poison_tick","roll","phase","summon","minion_action","minion_death","move","stun"] or (kind=="info" and target>=0 and "HP lost." in text)):event_log[-1].visual_state = preload("res://prototype/combat_playback.gd").capture(self)
  log_lines.append("R%02d  %s" % [round_no,text])
 
 func note(text: String) -> void:

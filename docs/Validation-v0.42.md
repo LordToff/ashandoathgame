@@ -1,0 +1,15 @@
+# Validation — Ash & Oath v0.42
+
+14 November 2026 · Godot 4.6.3 · software-rendered Chromium.
+
+**Passed: 2,988 checks across 24 native model/UI suites.** Details are in Validation-v0.42.json. Each suite uses isolated temporary save data. Passing suites have no script errors; native UI runs retain historical exit-time ObjectDB/resource warnings.
+
+The new 86-check UX suite verifies real Action Rerolls with animation ON / OFF, no drawer or pause when OFF, retained results/history, unchanged gameplay RNG, completing an active drawer safely, and preferences saved together without overwriting each other. Seeded enemy deaths and hero Downed / slain transitions queue distinct fall feedback without repeating Soul Link, rewards or damage. The actual preparation buttons walk all three heroes through six steps, preserve choices across save/load, show all 18 physical sides including Weapon projections, retain normal Camp isolation, and begin a legal party with empty Memories. It checks Soulcaster Blank help, Warden movement help, review invalidation after applying a Forge build, fixed intent rows, separate boss badges and Settings in both layouts / modes.
+
+The new browser flow passed at **390×844, 360×640, 844×390 and 1440×900**, with real touch/mouse input. It prepares three heroes, changes Class / Soul / Body / Weapon, checks the Dice and party reviews, uses Back, reloads midway and resumes, then begins the Trial. It verifies instant Numeric / Action Reroll results with animation OFF, preserved RNG during playback, normal and Trial Settings, preference persistence, enemy collapse and distinct Downed / slain hero feedback. Screenshots of the wizard and HUD were inspected. The final Soulcaster Blank help was checked through the same visible Dice review.
+
+Direct combat and equipment browser regressions passed at all four sizes: ability → map target, one-tap Guard, movement, Borrow Shape, compact Soulcaster, spell costs / delays, Harvester / Wraith / Jab / Crack, Weapon Attack limits / projections / passives, rolled Poke, Body category limits, empty starting Memories and later Memory rewards. The guided Body and Weapon steps replace obsolete flat-lobby assertions. No console/page errors occurred in passing browser runs.
+
+The actual shipping export, with **no fixture callbacks**, passed desktop and phone menu / Camp checks. Desktop checks complete the three-hero wizard, review the party, begin the route and inspect real Trial combat / compact shared rolls. The current rulebook is regenerated as HTML / Markdown / PDF; PDF text was read back for the new presentation and preparation chapters. Export excludes tests, tools, docs and downloads.
+
+The public release records exact source commit, versioned pack size and SHA-256 hashes. GitHub Pages deployment and live release hashes are checked after publishing. No physical phone, listening session or Windows rebuild was tested. Equipment rules, RNG, damage, rewards and ownership retain their previous semantics; this update changes presentation, settings and preparation navigation.

@@ -31,7 +31,7 @@ with sync_playwright() as pw:
      left=min(int(i['left']) for i in selected);right=max(int(i['left'])+int(i['width']) for i in selected);top=min(int(i['top']) for i in selected);bottom=max(int(i['top'])+int(i['height']) for i in selected)
      (p.touchscreen.tap if mobile else p.mouse.click)((left+right)/2/scale,(top+bottom)/2/scale);p.wait_for_timeout(500);return
    raise AssertionError((phrase,ocr(file)))
-  assert 'v0.41' in ocr(capture('main-menu'))
+  assert 'v0.42' in ocr(capture('main-menu'))
   tap_words('Camp & Essence Forge');tap_words('Equipment')
   if not mobile:
    p.mouse.click(155,445);p.wait_for_timeout(350)
@@ -39,8 +39,11 @@ with sync_playwright() as pw:
    p.mouse.click(155,347);p.wait_for_timeout(350)
    text=ocr(capture('body'));assert 'Defense' in text and 'Movement' in text and 'Skill' in text,text
    p.mouse.click(1290,62);p.wait_for_timeout(300);p.mouse.click(1090,685);p.wait_for_timeout(500)
-   text=ocr(capture('trial-lobby'));assert 'Skirmisher' in text and '6 HP' in text and 'No Memory' in text,text
-   tap_words('Begin Trial',last=True);tap_words('Fight',last=True);capture('compact-shared-roll');p.wait_for_timeout(3500)
+   text=ocr(capture('trial-lobby'));assert 'Skirmisher' in text and '6 HP' in text and 'Memory starts empty' in text,text
+   for hero in range(3):
+    for step in range(5):tap_words('Next',last=True)
+    tap_words('next hero' if hero<2 else 'Review party',last=True)
+   capture('party-review');tap_words('Begin Trial',last=True);tap_words('Fight',last=True);capture('compact-shared-roll');p.wait_for_timeout(3500)
    text=ocr(capture('trial-combat'));assert 'Battle log' in text and ('End hero turn' in text or 'Resolve' in text),text
   else:
    text=ocr(capture('equipment'));assert 'Broken Body' in text and 'Defense' in text and 'Weapon' in text,text

@@ -49,13 +49,15 @@ func proof(args):
   data.objective = app.game.objective_summary() if app.game.has_method("objective_summary") else ""
   data.effective = app.game.heroes.map(func(h):return range(3).map(func(die):return app.game.face(app.game.heroes.find(h),die)))
   data.playback = {"busy":app.playback.busy(),"kind":app.playback.current.get("kind",""),"queue":app.playback.queue.map(func(step):return step.kind),"visible_hp":app.game.heroes.map(func(h):return app.display_unit(app.game.heroes.find(h)).hp),"visible_poison":app.game.heroes.map(func(h):return app.display_unit(app.game.heroes.find(h)).get("poison",0)),"last_roll":app.playback.last_roll,"dice_busy":app.dice_tray.busy,"dice_elapsed":app.dice_tray.elapsed,"settle":app.dice_tray.SETTLE,"hold":app.dice_tray.RESULT_HOLD,"effects":app.effects.map(func(fx):return fx.kind)}
-  data.blank_move = app.blank_move_setting
+  data.blank_move = app.blank_move_setting;data.dice_animation = app.dice_animation
+  data.trial.prepare_step = app.trials.prepare_step;data.trial.prepared = app.trials.prepared;data.trial.hero = app.trials.hero
+  data.playback.fall_caption = app.DeathFeedback.caption(app)
   data.art = {"nugh":app.EnemyArt.texture("nugh").atlas.resource_path,"worm":app.EnemyArt.texture("worm").atlas.resource_path}
   data.ui_text = ui_text(app.ui)
   data.equipment_profile = app.camp_battle_profile()
   data.event_count = app.game.event_id;data.rng = str(app.game.rng.state)
   data.units = []
-  for id in range(app.game.unit_count()):
+  for id in range(app.game.unit_count() if app.game.heroes.size()==3 else 0):
    var unit: Dictionary = app.game.unit_data(id)
    data.units.append({"id":id,"name":app.game.unit_name(id),"hp":unit.hp,"block":unit.block,"pos":[unit.pos.x,unit.pos.y],"object":unit.get("trial_object",""),"dead":unit.get("dead",false),"friendly":app.game.friendly(id)})
   data.terrain = app.game.trial_state
@@ -101,6 +103,13 @@ func proof(args):
    app.game.heroes[0].pos = Vector2i(2,3);app.game.boss.pos = Vector2i(3,3)
   elif mode=="gear40_trial_reward":
    app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trials.start(40);app.trials.phase = "reward";app.trials.essence = 3;app.page = "trials";app.trial_view = "run"
+ elif mode.begins_with("ux42_fall"):
+  setup_reward(1);app.game.balance["presentation.capture"] = true;app.game.active = 3;app.game.cursor = app.game.order.find(3)
+  app.game.boss_rolls = ["Strike","Brace","Brace"];app.game.boss_index = 0
+  app.game.boss.pos = Vector2i(3,4);app.game.heroes[0].pos = Vector2i(3,5);app.game.heroes[1].pos = Vector2i(0,8);app.game.heroes[2].pos = Vector2i(8,8)
+  for h in app.game.heroes:h.reaction = [];h.block = 0;h.poison = 0
+  app.game.heroes[0].hp = 1;app.game.heroes[0].broken = mode=="ux42_fall_slain";app.game.heroes[0].last_ember_used = true
+  app.roll_seen = app.game.roll_presentations.size();app.seen_event = app.game.event_id;app.playback.model_id = app.game.get_instance_id();app.playback.clear(app.CombatPlayback.capture(app.game))
  elif mode.begins_with("direct39_"):
   app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trials.memories[0] = "";app.trials.bodies[0] = "broken";app.trials.loadout_weapons[0] = "dagger"
   if mode=="direct39_normal":
@@ -115,6 +124,7 @@ func proof(args):
   if app.trial_fight:
    app.game.trial_state.cover = [];app.game.trial_state.crates = [];app.game.trial_state.spikes = [];app.game.trial_state.charges = [];app.game.trial_state.positions = {}
    for id in range(app.game.unit_count()):app.game.trial_state.positions[id] = app.game.unit_data(id).pos
+  if mode=="direct39_fall":app.game.boss.hp = 1
   if mode=="direct39_numeric":app.game.heroes[0].results[0] = 34;app.game.heroes[0].stored_num = 1
   elif mode=="direct39_stitch":app.game.heroes[0].results[0] = 78;app.game.heroes[0].build[0][3] = 78;app.game.heroes[1].hp = 2
   elif mode=="direct39_borrow":app.game.heroes[0].results[0] = 16;app.game.heroes[1].results[0] = 4

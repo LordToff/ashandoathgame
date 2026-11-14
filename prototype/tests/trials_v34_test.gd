@@ -132,7 +132,7 @@ func run_tests():
  app.trials = Run.new(false);var normal_builds: Array = app.builds.duplicate(true);var normal_bank: Dictionary = app.expedition.camp.encode().duplicate(true)
  for size in [Vector2i(360,640),Vector2i(390,844),Vector2i(844,390),Vector2i(1440,900)]:
   root.size = size;app.set_mobile_mode(size.x<1440,false);await process_frame;await process_frame;app.open_trials();await process_frame
-  check(button(app.ui,"TrialSlot_memory")!=null and button(app.ui,"TrialBoss")!=null,"Trial lobby renders on phone and desktop")
+  check(button(app.ui,"TrialPrepNext")!=null and button(app.ui,"TrialPrepClass_skirmisher")!=null,"Trial preparation starts with a class decision on phone and desktop")
  app.trials.start(34);app.choose_trial_route(0);app.dice_tray.cancel();app.rolling_time = 0;app.game.pending = {};app.game.active = 0;app.rebuild();await process_frame
  check(app.trial_fight and app.builds==normal_builds,"Trial uses separate party build")
  app.game.damage(3,999,true)

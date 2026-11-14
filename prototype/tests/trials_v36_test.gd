@@ -153,8 +153,8 @@ func run_tests() -> void:
  var app=load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
  app.trials = T.new(false);var camp_before: Dictionary = app.expedition.camp.encode().duplicate(true)
  for size in [Vector2i(360,640),Vector2i(390,844),Vector2i(844,390),Vector2i(1440,900)]:
-  root.size = size;app.set_mobile_mode(size.x<1440,false);await process_frame;app.open_trials();app.trial_slot = "weapon";app.rebuild();await process_frame
-  check(app.ui.find_child("TrialWeapon",true,false)!=null,"weapon selector is reachable in phone and desktop lobby")
+  root.size = size;app.set_mobile_mode(size.x<1440,false);await process_frame;app.open_trials();app.trials.prepare_step = 3;app.rebuild();await process_frame
+  check(app.ui.find_child("TrialPrepWeapon_spear",true,false)!=null,"weapon selector is reachable in phone and desktop lobby")
   app.trial_view = "craft";app.rebuild();await process_frame
   check(app.ui.find_child("TrialRecipe",true,false)!=null and app.ui.find_child("TrialPin",true,false)!=null,"wishlist/Forge render on every layout")
  app.trials = T.new(false);app.trials.start(36);app.choose_trial_route(1);app.dice_tray.cancel();app.rolling_time = 0;ready(app.game);app.game.heroes[0].rolls[0] = 3;app.game.heroes[0].pos = Vector2i(2,6);app.selected = 0;app.inspect_actor = app.game.active;app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size()

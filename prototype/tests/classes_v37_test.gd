@@ -89,7 +89,7 @@ func run_tests() -> void:
  app.trials = T.new(false);var normal_bank: Dictionary = app.expedition.camp.encode().duplicate(true);var normal_builds: Array = app.builds.duplicate(true)
  for size in [Vector2i(360,640),Vector2i(390,844),Vector2i(844,390),Vector2i(1440,900)]:
   root.size = size;app.set_mobile_mode(size.x<1440,false);await process_frame;app.open_trials();await process_frame
-  check(app.ui.find_child("TrialClassOverview",true,false)!=null,"class card is reachable in every lobby layout")
+  check(app.ui.find_child("TrialPrepClass_skirmisher",true,false)!=null,"class card is reachable in every lobby layout")
   app.trial_view = "classes";app.trial_class_preview = "vanguard";app.trial_class_die = 0;app.rebuild();await process_frame
   var text := text_content(app.ui)
   check("Vanguard" in text and "Stone Body" in text and "No Memory" in text and "Hammer" in text and "Crack" in text,"class page explains gear and shows its weapon face")

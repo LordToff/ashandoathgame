@@ -15,8 +15,8 @@ var box: StyleBoxFlat
 func _ready() -> void:
  set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  mouse_filter = Control.MOUSE_FILTER_STOP;z_index = 90
- box = StyleBoxFlat.new();box.bg_color = Color("14232e");box.border_color = Color("967d52")
- box.set_border_width_all(2);box.set_corner_radius_all(10);box.shadow_color = Color(0,0,0,0.28);box.shadow_size = 8;hide()
+ box = StyleBoxFlat.new();box.bg_color = Color("182022");box.border_color = Color("967d52")
+ box.set_border_width_all(1);box.set_corner_radius_all(1);box.shadow_color = Color(0,0,0,0.28);box.shadow_size = 8;hide()
 func play(incoming: Array) -> void:
  batches.append_array(incoming.duplicate(true))
  if not busy and not batches.is_empty():busy = true;elapsed = 0;show();queue_redraw()

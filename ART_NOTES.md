@@ -1,3 +1,9 @@
+# Interface and effects — v0.42
+
+The new HUD frames, health bars, category marks and ash particles are drawn in code (`battle_hud.gd` / `death_feedback.gd`). Falls reuse each unit’s existing sprite with a brief fade and collapse. The two new feedback sounds are synthesized in code. No new sprite imagery or image-generation service is used; v0.41 sprite selections, original archives and licences remain unchanged.
+
+---
+
 # Current artwork — v0.41
 
 At the user's request, Nu’gh, phase II, hostile and friendly worms, mites, cocoon and the familiar Bone / Support / Movement creatures return to the earlier repository pixel sheets. Wilds return to the existing Kenney Tiny Dungeon CC0 selections. Camp portraits and combat use matching selections through `enemy_art.gd`.

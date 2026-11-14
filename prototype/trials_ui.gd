@@ -36,41 +36,7 @@ static func render(app) -> void:
    act(app,column,"Search deeper · 50% chance",func():run.event(true);app.rebuild(),"TrialCacheRisk",Color("df897f"))
  P.footer(app,["Main menu","Trial Forge","Equipment / help"],[app.go_main,func():app.trial_view = "craft";app.rebuild(),func():app.trial_view = "guide";app.rebuild()])
 static func lobby(app) -> void:
- var run = app.trials;run.ensure_classes();var wide: bool = app.get_viewport_rect().size.x>app.get_viewport_rect().size.y
- var subtitle: String = "%s · %s · %d maximum HP" % [M.NAMES[run.hero],run.class_label(run.hero),run.maximum_hp(run.hero)] if wide else "Choose a class for each hero"
- var column := P.panel(app,"TRIALS",subtitle)
- M.text(column,"Choose a hero → tap a gear slot → Begin Trial. Tap Class to compare the two starting kits.",18,app.MUTED)
- var tabs := M.row(column)
- for id in range(3):act(app,tabs,M.NAMES[id],func():run.hero = id;app.rebuild(),"TrialHero"+str(id),app.COLORS[id] if run.hero==id else app.MUTED)
- var class_key: String = run.classes[run.hero]
- var class_card := act(app,column,"Class · "+run.class_label(run.hero)+" · %d HP\nChange class / see starter dice" % run.maximum_hp(run.hero),func():app.trial_class_preview = class_key;app.trial_class_die = 0;app.trial_view = "classes";app.rebuild(),"TrialClassOverview",app.COLORS[run.hero])
- class_card.add_theme_font_size_override("font_size",20)
- var slots := GridContainer.new();slots.columns = 4 if app.get_viewport_rect().size.x>app.get_viewport_rect().size.y else 2;slots.add_theme_constant_override("h_separation",10);slots.add_theme_constant_override("v_separation",10);column.add_child(slots)
- var labels := {"body":R.BODIES[run.bodies[run.hero]].name,"memory":R.memory_data(run.memories[run.hero]).name,"soul":R.SOULS[run.souls[run.hero]].name if run.souls[run.hero]!="" else "Beginning Soul","weapon":R.WEAPONS[run.loadout_weapons[run.hero]].name}
- for slot in ["body","memory","soul","weapon"]:
-  var pick := act(app,slots,slot.capitalize()+"\n"+labels[slot],func():app.trial_slot = slot;app.rebuild(),"TrialSlot_"+slot,app.GOLD if app.trial_slot==slot else app.MUTED)
-  pick.add_theme_font_size_override("font_size",18);pick.custom_minimum_size.y = 68
- M.text(column,{"body":"BODY · Defense / Movement / Skill minimums and maximums", "memory":"MEMORY · passive modifier; first encounter starts empty", "soul":"SOUL · maximum HP, required Blanks and strong effect", "weapon":"WEAPON · Attack limits, 1–3 Strike replacements and optional Attack passive"}.get(app.trial_slot,""),18,app.GOLD)
- match app.trial_slot:
-  "body":
-   var keys: Array = run.available("body")
-   M.choose(app,column,"Body",keys.map(func(key):return R.BODIES[key].name),keys.find(run.bodies[run.hero]),func(index):run.bodies[run.hero] = keys[index];run.save();app.rebuild(),"TrialBody")
-   M.text(column,R.BODIES[run.bodies[run.hero]].text,20)
-   M.text(column,"Your class includes its starting Body free. Crafting unlocks that Body for other classes.",18,app.MUTED)
-  "memory":
-   M.text(column,"The first encounter starts with this slot empty. After a victory, choose a Memory reward to equip a passive or Blank conversion. Earned Memories are kept in the Trial collection.",21)
-  "soul":
-   var souls: Array = run.available("soul")
-   M.choose(app,column,"Soul",souls.map(func(key):return R.SOULS[key].name if key!="" else "Beginning Soul"),maxi(0,souls.find(run.souls[run.hero])),func(index):run.choose_soul(run.hero,souls[index]);app.rebuild(),"TrialSoul")
-   M.text(column,R.SOULS[run.souls[run.hero]].text if run.souls[run.hero]!="" else R.SOULS.beginning.text,20)
-  "weapon":
-   var keys: Array = run.available("weapon")
-   M.choose(app,column,"Weapon",keys.map(func(key):return R.WEAPONS[key].name),keys.find(run.loadout_weapons[run.hero]),func(index):run.loadout_weapons[run.hero] = keys[index];run.save();app.rebuild(),"TrialWeapon")
-   M.text(column,R.WEAPONS[run.loadout_weapons[run.hero]].text,21)
- if run.souls[run.hero]=="soulcaster":act(app,column,"Soulcaster · spellbook & actual starter dice",func():app.trial_help_topic = "My heroes";app.trial_view = "guide";app.rebuild(),"TrialSoulcasterHelp",Color("c5a5e8"))
- M.choose(app,column,"Final boss",run.BOSS_NAMES,run.selected_boss,func(index):run.selected_boss = index;app.rebuild(),"TrialBoss")
- act(app,column,"Equipment & how to play",func():app.trial_view = "guide";app.rebuild(),"TrialPreview",app.MUTED)
- P.footer(app,["Main menu","Forge / builds","Begin Trial"],[app.go_main,func():app.trial_view = "craft";app.rebuild(),func():run.start();app.trial_view = "run";app.rebuild()])
+ preload("res://prototype/trial_preparation.gd").render(app)
 static func route(app, column: Control) -> void:
  var run = app.trials
  M.text(column,"Battle → Camp / battle → Battle → Cache / elite → Camp / elite → Boss",18,app.MUTED)
@@ -213,11 +179,12 @@ static func ending(app) -> void:
  M.text(column,"Trial Souls collected: %d / 4" % run.completed_bosses.size(),22)
  for line in run.history:M.text(column,str(line),18,app.MUTED)
  M.text(column,"Safe route and reward checkpoints can be resumed. Leaving or reloading during a fight ends that Trial without a victory reward. Your normal Camp collection remains separate.",20)
- P.footer(app,["Main menu","Trial Forge","New Trial"],[app.go_main,func():app.trial_view = "craft";app.rebuild(),func():run.phase = "lobby";run.ensure_classes();run.save();app.rebuild()])
+ P.footer(app,["Main menu","Trial Forge","New Trial"],[app.go_main,func():app.trial_view = "craft";app.rebuild(),func():run.phase = "lobby";run.prepared = [false,false,false];run.prepare_step = 0;run.hero = 0;run.ensure_classes();run.save();app.rebuild()])
 
 static func options(app) -> void:
  var column := P.panel(app,"Trial options","")
  var display: Button = app.fullscreen_button(Vector2.ZERO,Vector2(420,68));display.reparent(column);display.custom_minimum_size = Vector2(0,68);display.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+ var animations: Button = app.dice_animation_button(Vector2.ZERO,Vector2(420,68));animations.reparent(column);animations.custom_minimum_size = Vector2(0,68);animations.size_flags_horizontal = Control.SIZE_EXPAND_FILL
  var movement: Button = app.blank_move_button(Vector2.ZERO,Vector2(420,68));movement.reparent(column);movement.custom_minimum_size = Vector2(0,68);movement.size_flags_horizontal = Control.SIZE_EXPAND_FILL
  M.text(column,"Spend one rolled Blank as Move 1, once per hero turn. Switching does not refill it.",18,app.MUTED)
  act(app,column,"Sound & volume",func():app.show_soundtrack = true;app.rebuild(),"TrialSound")
