@@ -2,9 +2,14 @@ extends RefCounted
 const M = preload("res://prototype/mobile_ui.gd")
 static func card(app, parent: Control, title: String, description: String = "", tint: Color = Color("e6c58c")) -> VBoxContainer:
  var panel := PanelContainer.new();panel.mouse_filter = Control.MOUSE_FILTER_PASS;panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
- var box: StyleBoxFlat = app.Polish.box(Color("192326"),Color(tint,.4),2);box.set_content_margin_all(14);box.shadow_size = 0;panel.add_theme_stylebox_override("panel",box);parent.add_child(panel)
+ var box: StyleBoxFlat = app.Polish.box(Color("151e1b"),Color(tint,.52),2);box.set_content_margin_all(14);box.shadow_size = 8;box.shadow_color = Color(0,0,0,.35);box.border_width_left = 3;panel.add_theme_stylebox_override("panel",box);parent.add_child(panel)
  var content := VBoxContainer.new();content.mouse_filter = Control.MOUSE_FILTER_PASS;content.size_flags_horizontal = Control.SIZE_EXPAND_FILL;content.add_theme_constant_override("separation",10);panel.add_child(content)
- M.text(content,title,23,tint)
+ var heading := HBoxContainer.new();heading.add_theme_constant_override("separation",10);content.add_child(heading)
+ var emblem := preload("res://prototype/menu_emblem.gd").new();emblem.name = "MenuEmblem";emblem.custom_minimum_size = Vector2(38,38);emblem.tint = tint
+ emblem.kind = "trial" if "Trial" in title else "camp" if "raft" in title or "Camp" in title else "soul" if "Soul" in title or "Memory" in title else "oath"
+ heading.add_child(emblem)
+ var label: Label = M.text(heading,title,23,tint);label.add_theme_font_override("font",app.TITLE)
+
  if description!="":M.text(content,description,18)
  return content
 static func grid(app, parent: Control, wide_columns: int = 2) -> GridContainer:

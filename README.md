@@ -1,9 +1,11 @@
-# Ash & Oath v0.43 — playable prototype
+# Ash & Oath v0.44 — playable prototype
 
 **Canonical source:** [LordToff/ashandoathgame](https://github.com/LordToff/ashandoathgame), branch `main`.
 **Recovery and publishing:** [docs/RECOVERY.md](docs/RECOVERY.md). The browser package is on `gh-pages`.
 
-[**Play Ash & Oath v0.43 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.43)
+[**Play Ash & Oath v0.44 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.44)
+
+v0.44 puts **Test chamber** directly on the main menu, restores its tools on mobile, adds a searchable picker for all 73 normal / earned ability entries, and gives menus an ash-and-brass style with chamber artwork and emblems. [Changes](docs/Changes-v0.44.md).
 
 v0.43 simplifies navigation in normal play and Trials: suggested normal parties, one Camp task at a time, explicit equipment previews, stepwise victory rewards, and searchable context Help for equipment, abilities, supplies and the separate Essence balances. Desktop and phone share fixed Back / Next controls. [Changes](docs/Changes-v0.43.md).
 

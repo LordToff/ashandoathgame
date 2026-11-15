@@ -10,9 +10,9 @@ static func make() -> Theme:
  var t := Theme.new();t.default_font = BODY;t.default_font_size = 15
  var gold := Color("e6c58c");var text := Color("e6e6e3")
  for type in ["Button","OptionButton","MenuButton"]:
-  t.set_stylebox("normal",type,box(Color("1b2935"),Color("43515b")))
-  t.set_stylebox("hover",type,box(Color("2b3d49"),gold))
-  t.set_stylebox("pressed",type,box(Color("354a54"),gold))
+  t.set_stylebox("normal",type,box(Color("1c2723"),Color("625d47")))
+  t.set_stylebox("hover",type,box(Color("303a30"),gold))
+  t.set_stylebox("pressed",type,box(Color("403c2b"),gold))
   t.set_stylebox("disabled",type,box(Color("141e28"),Color("303b46")))
   var focus := box(Color(0,0,0,0),gold);focus.set_border_width_all(2);focus.shadow_size = 0
   t.set_stylebox("focus",type,focus);t.set_color("font_color",type,text);t.set_color("font_hover_color",type,Color.WHITE)
@@ -21,8 +21,8 @@ static func make() -> Theme:
   t.set_stylebox("normal",type,box(Color("101c27"),Color("52616a")))
   t.set_stylebox("focus",type,box(Color("172532"),gold));t.set_color("font_color",type,text)
   t.set_color("font_placeholder_color",type,Color("a1acb5"));t.set_color("caret_color",type,gold);t.set_color("selection_color",type,Color("43586b"))
- t.set_stylebox("panel","PopupMenu",box(Color("182631"),Color("a98d5e")))
- t.set_stylebox("hover","PopupMenu",box(Color("354a54"),gold,3));t.set_color("font_color","PopupMenu",text)
+ t.set_stylebox("panel","PopupMenu",box(Color("1c2620"),Color("a98d5e")))
+ t.set_stylebox("hover","PopupMenu",box(Color("403c2b"),gold,3));t.set_color("font_color","PopupMenu",text)
  t.set_constant("v_separation","PopupMenu",8)
  t.set_stylebox("panel","TooltipPanel",box(Color("192630"),Color("a98d5e")))
  t.set_color("font_color","TooltipLabel",text);t.set_font_size("font_size","TooltipLabel",14)
@@ -36,3 +36,15 @@ static func make() -> Theme:
  t.set_stylebox("selected","ItemList",box(Color("324553"),gold))
  t.set_stylebox("panel","ItemList",box(Color("111d28"),Color("42515b")))
  return t
+
+static func menu_button(button: Button, accent: Color) -> void:
+ var active: bool = button.text in ["Test chamber","Prepare my party","Prepare a Trial party","Continue Trial"] or button.text.begins_with("Next:") or button.text.begins_with("Begin Trial")
+ for state in ["normal","hover","pressed","disabled"]:
+  var fill := Color("1c2723") if not active else Color("343023")
+  var line := Color(accent,.55 if active else .3)
+  if state=="hover":fill = fill.lightened(.09);line = accent
+  elif state=="pressed":fill = Color("3c3829");line = accent
+  elif state=="disabled":fill = Color("131a17");line = Color("354039")
+  var surface := box(fill,line,2);surface.border_width_left = 3 if active else 2;surface.border_width_bottom = 2
+  surface.shadow_size = 3;surface.shadow_color = Color(0,0,0,.38)
+  button.add_theme_stylebox_override(state,surface)

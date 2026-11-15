@@ -305,6 +305,7 @@ static func battle(app) -> void:
 static func more(app) -> void:
  var column: VBoxContainer = app.BattlePanels.panel(app,"Actions","")
  var grid := GridContainer.new();grid.columns = 2;grid.add_theme_constant_override("h_separation",10);grid.add_theme_constant_override("v_separation",10);column.add_child(grid)
+ if app.lab:btn(app,grid,"Test tools",func():app.mobile_more = false;app.show_lab_tools = true;app.rebuild(),GOLD).name = "MobileLabTools"
  if app.trial_fight and app.Model.Soulcaster.equipped(app.game,app.game.active):btn(app,grid,"Soulcaster spellbook",func():app.mobile_more = false;app.show_soulcaster_help = true;app.rebuild(),GOLD)
  if app.trial_fight and app.game.active in range(3) and app.game.heroes[app.game.active].get("omen_ready",false):btn(app,grid,"Save with Omen",func():app.mobile_more = false;app.Model.Soulcaster.open_omen(app.game);app.rebuild(),GOLD)
  if app.trial_fight:btn(app,grid,"Equipment & arena help",func():app.mobile_more = false;app.show_trial_guide = true;app.rebuild(),GOLD)

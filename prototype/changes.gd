@@ -21,6 +21,16 @@ const TEXT = """[b][color=#d5b87a]v0.4 · Read the fight, test the dice[/color][
 
 [color=#91a0af]Previous updates · v0.3: full-pool two-face choices, causal battle logs, battlefield art and combat effects. v0.2: boss explanations, dice-roll animation, opening rerolls and selectable Tuned / Original balance.[/color]"""
 
+const V44 = """[b]v0.44 · Test chamber and ash-and-brass menus[/b]
+
+[b]Test chamber is on the main menu.[/b] Its fixed button opens the ability picker directly on desktop and phone. Search by ability name or effect, select a normal or earned face, choose a Numeric result and try it on the map. The chamber includes all 73 normal / earned face entries without spending unlocks or materials.
+
+[b]Practice tools work on mobile.[/b] During a test, use Test tools on desktop, or More → Test tools on phone. Reset the scenario, roll again, trigger an enemy hit, advance a turn, combine abilities or copy the log. Practices never grant encounter rewards or edit your prepared party.
+
+[b]A warmer dark-fantasy interface.[/b] Menus use chamber artwork, an oath seal, brass rules and frames, category accents, drawn emblems and serif card headings. Main actions have stronger borders. Text, touch targets and fixed navigation keep their space.
+
+Gameplay rules, prices and owned rewards keep their existing behavior."""
+
 const V43 = """[b]v0.43 · Clearer menus in both modes[/b]
 
 [b]A clearer way into the game.[/b] Normal adventure and Trials explain their routes and separate rewards. Normal party preparation offers legal suggested abilities, with readable help and optional customization. Boss choice keeps advanced settings out of the way until requested.
@@ -73,6 +83,7 @@ Normal play and Trials share these rules, with separate inventories. Existing ow
 """
 
 const SECTIONS = [
+ {"title":"Test chamber & menu style · v0.44","body":V44},
  {"title":"Clearer menus · v0.43","body":V43},
  {"title":"Guided preparation · v0.42","body":V42},
  {"title":"See the roll, feel the hit · v0.41","body":V41},

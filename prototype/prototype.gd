@@ -218,6 +218,7 @@ var dice_hero := 0
 var dice_inspected := Vector2i(0,0)
 var show_turn := false
 var lab := false
+var lab_search := ""
 var lab_face := 1
 var lab_numeric := -1
 var movement_tracks: Dictionary = {}
@@ -379,6 +380,7 @@ func button(text: String, p: Vector2, sz: Vector2, fn: Callable, accent: Color =
  b.add_theme_color_override("font_hover_color",Color("fff2d5"))
  b.add_theme_color_override("font_color",accent); b.add_theme_color_override("font_disabled_color",Color("83909d"))
  if page=="battle":BattleHUD.skin_button(self,b,accent)
+ else:Polish.menu_button(b,accent)
  b.pressed.connect(func():
   if not b.is_inside_tree():return
   if b.get_meta("debug_consumed",false):b.remove_meta("debug_consumed");return
@@ -394,6 +396,8 @@ func rebuild() -> void:
  for c in ui.get_children(): ui.remove_child(c); c.queue_free()
  if show_player_guide:PlayerGuide.render(self);queue_redraw();return
  if show_soulcaster_help:SoulcasterUI.guide(self);queue_redraw();return
+ if lab and show_lab_setup:lab_setup_ui();queue_redraw();return
+ if lab and show_lab_tools:lab_tools_ui();queue_redraw();return
  if page=="normal":
   NavigationUI.normal(self)
   if mobile_mode:
@@ -431,7 +435,7 @@ func rebuild() -> void:
   button("Battle log",Vector2(398,112),Vector2(126,26),open_battle_log,MUTED).name = "BattleLogButton"
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.43",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.44",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -608,15 +612,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(536,118),11,Color("d7b3eb"),202).name = "NughBroodStatus"
- var goal := "v0.43 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.44 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.43 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.43 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.44 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.44 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.43 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.44 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · Counterattack" if game.guard_broken else "BULWARK %d · Guard / evade" % game.v("warden.armor"),Vector2(536,112),Vector2(202,28),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.43 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.44 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · %s" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(536,112),Vector2(202,28),func():show_turn = true;rebuild(),Color("8cdae4"))
   MobileUI.fit_button(meter,Vector2(202,28),11);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -1393,7 +1397,11 @@ func attack_nudge(id: int) -> Vector2:
  return Vector2.ZERO
 
 
+func open_test_chamber() -> void:
+ start_lab();show_lab_tools = true;rebuild()
+
 func start_lab() -> void:
+ show_lab_tools = false;show_lab_setup = false;mobile_more = false
  training = false
  lab = true; draft_modal = false; show_help = false; show_changes = false; inspect_action = ""; show_history = false; show_dice = false; show_turn = false
  reset_lab()
@@ -1412,31 +1420,15 @@ func reset_lab() -> void:
  rebuild()
 
 func lab_ui() -> void:
- button("Lab tools",Vector2(760,847),Vector2(158 if training else 328,43),func():show_lab_tools = true;rebuild(),Color("82c8b9"))
+ button("Test tools",Vector2(760,847),Vector2(158 if training else 328,43),func():show_lab_tools = true;rebuild(),Color("82c8b9")).name = "LabTools"
  if training:button("Next lesson →" if training_step < LESSON_FACES.size()-1 else "Play preset →",Vector2(930,847),Vector2(158,43),next_lesson,GOLD,not lesson_done())
 
 func lab_tools_ui() -> void:
- overlay()
- label_at("ABILITY LAB TOOLS",Vector2(399,253),26,GOLD,600,true)
- label_at("Vesper: %d/%d HP · %d Block" % [game.heroes[0].hp,game.heroes[0].max_hp,game.heroes[0].block],Vector2(399,293),15,MUTED,570)
- var picker := OptionButton.new();picker.name = "LabAbilities";picker.position = Vector2(399,333);picker.size = Vector2(575,39)
- for id in range(60):picker.add_item(Catalog.display_name(id),id)
- picker.select(lab_face);picker.item_selected.connect(func(index):training = false;lab_face = index;reset_lab());ui.add_child(picker)
- var num := OptionButton.new();num.position = Vector2(399,390);num.size = Vector2(275,39)
- for title in ["Numeric: random","Numeric: force 0","Numeric: force 1","Numeric: force 2"]:num.add_item(title)
- num.select(lab_numeric+1);num.item_selected.connect(func(index):lab_numeric = index-1;reset_lab());ui.add_child(num)
- button("Reset test",Vector2(689,390),Vector2(285,39),reset_lab)
- button("Boss hits",Vector2(399,446),Vector2(275,39),func():show_lab_tools = false;Lab.attack(game,lab_face);selected = -1;rebuild(),Color("ed9986"),not game.pending.is_empty() or game.outcome != "")
- button("Next turn",Vector2(689,446),Vector2(285,39),func():show_lab_tools = false;Lab.next_turn(game,lab_numeric);selected = -1;rebuild(),GOLD,not game.pending.is_empty() or game.outcome != "")
- button("Roll chosen face again",Vector2(399,502),Vector2(275,39),func():show_lab_tools = false;Lab.roll_test_face(game,lab_face,lab_numeric);selected = -1;rebuild(),Color("82c8b9"))
- button("Combine faces",Vector2(689,502),Vector2(285,39),func():show_lab_tools = false;show_lab_setup = true;rebuild(),MUTED)
- button("Copy test log",Vector2(399,570),Vector2(275,43),func():DisplayServer.clipboard_set("Ash & Oath v0.43 · "+Catalog.name_for(lab_face)+"\n"+"\n".join(game.log_lines)),MUTED)
- button("Back to battle",Vector2(689,570),Vector2(285,43),func():show_lab_tools = false;rebuild())
- button("Phase II active" if game.phase_two else "Test boss phase II",Vector2(399,632),Vector2(575,39),test_boss_phase_two,Color("e9a36a"),game.phase_two or not game.pending.is_empty() or game.outcome != "" or game.v("boss.phase.percent") == 0)
+ preload("res://prototype/test_chamber_ui.gd").render(self)
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.43",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.44",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1604,14 +1596,7 @@ func next_lesson() -> void:
   training = false;lab = false;open_setup()
 
 func lab_setup_ui() -> void:
- var shade := ColorRect.new();shade.color = Color("101923");shade.size = Vector2(1440,900);ui.add_child(shade)
- label_at("LAB · COMBINE TWO ABILITIES",Vector2(160,180),30,GOLD,1100,true)
- label_at("Die I is your selected test face. Choose the result for Die II, then reset the fixture.\nThese overrides are for testing combinations; normal builds are preserved.",Vector2(165,250),18,MUTED,1100,false,true)
- var picker := OptionButton.new();picker.position = Vector2(165,355);picker.size = Vector2(800,48)
- for id in range(Model.FACES.size()):picker.add_item(Catalog.display_name(id),id)
- picker.select(lab_support);picker.item_selected.connect(func(index):lab_support = index);ui.add_child(picker)
- button("Apply and reset test",Vector2(165,460),Vector2(400,50),func(): show_lab_setup = false;reset_lab())
- button("Back",Vector2(585,460),Vector2(380,50),func():show_lab_setup = false;rebuild(),MUTED)
+ preload("res://prototype/test_chamber_ui.gd").combinations(self)
 
 
 func soul_toggle(at: Vector2, in_lab: bool, width: float = 0) -> void:
@@ -2256,7 +2241,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.43",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.44",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2596,6 +2581,7 @@ func abandon_encounter() -> void:
  rolling_time = 0;combat_notices.clear();effects.clear()
 
 func go_main() -> void:
+ show_lab_tools = false;show_lab_setup = false
  show_player_guide = false;normal_flow = false
  show_soulcaster_help = false
  friendly_confirm = -1;info_return_collection = false;show_collection = false;mobile_more = false;debug_hold.clear()

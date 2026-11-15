@@ -27,28 +27,28 @@ static func create(id: int, forced_numeric: int = -1, profile: Dictionary = {}, 
  g.event_log.clear(); g.log_lines.clear(); g.event_id = 0
  g.record_event("turn","ABILITY LAB: " + Battle.FACES[id] + ". Vesper is active. This is an isolated test; normal builds are preserved.",0)
  g.record_event("info",guide(id),0)
- g.record_event("info",Catalog.text(id) if id >= 9 else "Select Die I, then use its highlighted board target or Resolve button. Invalid targets do not spend the die.",0)
+ g.record_event("info",Catalog.text(id) if id >= 9 else "Select the first ability, then use its highlighted board target or Resolve button. Invalid targets do not spend the die.",0)
  g.record_event("info","Numeric die: 2, 2, 1, 1, 1, 0 by default; Short Shot caps at 2. Numeric selector forces only the next roll. Reset to repeat.",0)
  return g
 
 static func guide(id: int) -> String:
- if id == 59:return "Select Die I, click an adjacent empty tile. End turn for an automatic activation; roll again to Command. Kill the worm to test resummoning."
- if Catalog.is_reaction(id): return "Stored reaction: press Boss hits. Respond in the window; compare HP / Block and the log. Reset to repeat."
+ if id == 59:return "Select the first ability, then tap an adjacent empty tile. End turn for an automatic activation; roll again to Command. Kill the worm to test resummoning."
+ if Catalog.is_reaction(id): return "Choose Enemy attacks, then use or hold the Reaction. Compare HP / Block and the log; Reset restores the test."
  if id in [0,56]: return "This face is intentionally inert. Blank is not a failure; Red Tile is also locked against rerolls."
- if id in [2,3,53,54,57]: return "Select Die I, then a highlighted empty cell." + (" Bone may also Resolve to stay and gain Block." if id == 54 else "")
- if id in [1,34,35,36,37,38,39,40,41]: return "Select Die I, then click the boss. Try force 0 / 1 / 2 and reset. Cleave has no second enemy in this encounter."
+ if id in [2,3,53,54,57]: return "Select the first ability, then a highlighted empty cell." + (" Bone may also Resolve to stay and gain Block." if id == 54 else "")
+ if id in [1,34,35,36,37,38,39,40,41]: return "Tap the first ability, then the boss. Force a Numeric result to compare damage."
  if id == 58: return "Select Die I and click a standing ally within 3. Positions swap; both gain 1 Block. Dead / Downed allies are ineligible."
- if id in [7,12,15,19,55]: return "Select Die I, then an injured ally. First Aid / Recovery may target self. Blessing then asks for a Blank slot."
- if id == 8: return "Select Die I, click the adjacent ally, then pick a legal push direction beneath the action panel."
- if id == 6: return "Select Focus (Die I), then click Die II to reroll it. The new face must resolve next."
- if id in [11,16,23,26,30,32]: return "Select Die I and Resolve. Follow the face-choice window, then resolve the forced face. Other dice supply valid sources."
- if id in [25,31,49]: return "Resolve Die I, then Next turn to test maintain / release. Boss hits tests damage breaking a Channel."
+ if id in [7,12,15,19,55]: return "Select the first ability, then an injured ally. First Aid / Recovery may target self. Blessing then asks for a Blank slot."
+ if id == 8: return "Select the first ability, then tap the adjacent ally, then pick a legal push direction beneath the action panel."
+ if id == 6: return "Select Focus, then tap the second ability to reroll it. The new face must resolve next."
+ if id in [11,16,23,26,30,32]: return "Tap the first ability. Follow the face-choice window, then resolve the forced face. Other dice supply valid sources."
+ if id in [25,31,49]: return "Use the first ability, then Advance a turn to test maintain / release. Enemy attacks tests damage breaking a Channel."
  if id == 13: return "When-rolled ability: the log explains the full reroll bank. Spend a reroll; reset starts a fresh test."
- if id == 24: return "Resolve Die I: it contains Strike / Numeric Strike and attacks random adjacent units twice, including allies."
- if id == 18: return "Resolve Die I and bind a boss face. Next turn advances a round to test whether that face is suppressed."
- if id in [9,10,14,17,20,21,27,29]: return "Resolve Die I, then use Numeric Strike (Die II) on the boss. Next turn tests duration and Debt repayment."
- if id == 22: return "Other non-Blank dice are already spent. Resolve Die I; boss loses 1 unavoidable HP."
- return "Select Die I and Resolve. Compare Block / statuses with the log. Boss hits tests defenses; Next turn tests expiry."
+ if id == 24: return "Use the first ability: it contains Strike / Numeric Strike and attacks random adjacent units twice, including allies."
+ if id == 18: return "Use the first ability and bind a boss face. Advance a turn advances a round to test whether that face is suppressed."
+ if id in [9,10,14,17,20,21,27,29]: return "Use the first ability, then use Strike Numeric (the second ability) on the boss. Advance a turn tests duration and Debt repayment."
+ if id == 22: return "Other non-Blank dice are already spent. Use the first ability; boss loses 1 unavoidable HP."
+ return "Tap the first ability. Compare Block / statuses with the log. Enemy attacks tests defenses; Advance a turn tests expiry."
 
 static func attack(g, id: int) -> void:
  if not g.pending.is_empty() or g.outcome != "": return

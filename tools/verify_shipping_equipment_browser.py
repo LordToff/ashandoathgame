@@ -31,7 +31,7 @@ with sync_playwright() as pw:
      left=min(int(i['left']) for i in selected);right=max(int(i['left'])+int(i['width']) for i in selected);top=min(int(i['top']) for i in selected);bottom=max(int(i['top'])+int(i['height']) for i in selected)
      (p.touchscreen.tap if mobile else p.mouse.click)((left+right)/2/scale,(top+bottom)/2/scale);p.wait_for_timeout(500);return
    raise AssertionError((phrase,ocr(file)))
-  assert 'v0.43' in ocr(capture('main-menu'))
+  assert 'v0.44' in ocr(capture('main-menu'))
   def scroll_down():
    if not mobile:p.mouse.move(width*.7,height*.55);p.mouse.wheel(0,340);p.wait_for_timeout(300);return
    session=c.new_cdp_session(p);sx=width*.8;sy=height*.68
@@ -44,6 +44,12 @@ with sync_playwright() as pw:
     try:tap_words(phrase,last=True);return
     except AssertionError:scroll_down()
    raise AssertionError(('Not reachable',phrase,ocr(capture('missing'))))
+  tap_words('chamber',last=True);text=ocr(capture('test-chamber'));assert 'Ability to test' in text,text
+  tap_words('Try ability',last=True);capture('practice-map')
+  if mobile:tap_words('More');tap_words('Test tools')
+  else:tap_words('Test tools')
+  text=ocr(capture('practice-tools'));assert 'Ability to test' in text,text
+  tap_words('Main menu')
   tap_words('Camp');capture('camp-home');find_and_tap('Open equip gear');text=ocr(capture('equipment'));assert 'Weapon' in text and ('Attack' in text or 'Dagger' in text),text
   tap_words('Body');text=ocr(capture('body'));assert 'Defense' in text and 'Movement' in text and 'Skill' in text,text
   tap_words('Soul');text=ocr(capture('soul'));assert 'HP' in text and 'Blank' in text,text
@@ -53,6 +59,6 @@ with sync_playwright() as pw:
   tap_words('Next: choose');text=ocr(capture('boss-choice'));assert 'Hollow' in text,text
   tap_words('Next: road');text=ocr(capture('road-event'));assert 'road event' in text.lower(),text
   assert not errors,errors
-  rows.append({'viewport':[width,height],'result':'passed','no_test_hooks':True,'browser_errors':errors,'tested':['main modes','Camp task navigation','Body/Soul/Weapon explanations','context Help and return','normal suggested party','boss and required road event']});c.close()
+  rows.append({'viewport':[width,height],'result':'passed','no_test_hooks':True,'browser_errors':errors,'tested':['visible main-menu test chamber','practice map and reopening tools','main modes','Camp task navigation','Body/Soul/Weapon explanations','context Help and return','normal suggested party','boss and required road event']});c.close()
  b.close()
 (out/'results.json').write_text(json.dumps(rows,indent=2));print(json.dumps(rows))

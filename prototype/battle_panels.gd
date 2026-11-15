@@ -2,8 +2,8 @@ extends RefCounted
 const M = preload("res://prototype/mobile_ui.gd")
 static func panel(app, title: String, subtitle: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
- var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;app.ui.add_child(shade)
- var title_size: int = 24 if app.mobile_mode else 30
+ var shade := preload("res://prototype/menu_art.gd").new();shade.name = "MenuBackdrop";shade.main_menu = app.page=="main" and not app.show_player_guide;shade.size = size;shade.footer_top = size.y-86;app.ui.add_child(shade)
+ var title_size: int = (32 if app.mobile_mode else 42) if app.page=="main" and not app.show_player_guide else (24 if app.mobile_mode else 30)
  var title_width: float = size.x-148
  var heading: Label = app.label_at(title,Vector2(16,10),title_size,app.GOLD,title_width,true,true);heading.name = "MenuTitle";heading.max_lines_visible = 2;heading.clip_text = true
  var flags: int = TextServer.BREAK_MANDATORY|TextServer.BREAK_WORD_BOUND|TextServer.BREAK_ADAPTIVE
@@ -17,7 +17,8 @@ static func panel(app, title: String, subtitle: String) -> VBoxContainer:
  var subtitle_height: float = minf(sub.get_theme_font("font").get_multiline_string_size(caption,HORIZONTAL_ALIGNMENT_LEFT,size.x-36,16,-1,flags).y,sub.get_theme_font("font").get_height(16)*3)
  sub.size.y = subtitle_height
  var width: float = minf(1180,size.x-24)
- var top: float = subtitle_y+subtitle_height+12
+ var top: float = subtitle_y+subtitle_height+18
+ shade.header_end = top-4;shade.queue_redraw()
  if not app.show_player_guide:
   var help: Button = app.button("? Help",Vector2(size.x-120,12),Vector2(108,40),app.open_player_guide,app.MUTED);help.name = "ContextHelp";M.fit_button(help,Vector2(108,40),16)
  var scroll := ScrollContainer.new();scroll.name = "BattlePanelScroll";scroll.position = Vector2((size.x-width)/2,top);scroll.size = Vector2(width,size.y-top-86);scroll.scroll_deadzone = 14;scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED;app.ui.add_child(scroll)
