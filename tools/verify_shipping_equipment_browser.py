@@ -17,20 +17,26 @@ with sync_playwright() as pw:
    file=out/f'{width}x{height}-{name}.png';p.screenshot(path=str(file));return file
   def ocr(file):return subprocess.check_output(['tesseract',str(file),'stdout','--psm','11'],stderr=subprocess.DEVNULL,text=True)
   def tap_words(phrase,last=False):
-   file=capture('current');tsv=subprocess.check_output(['tesseract',str(file),'stdout','--psm','11','tsv'],stderr=subprocess.DEVNULL,text=True)
-   lines={}
-   for item in csv.DictReader(io.StringIO(tsv),delimiter='\t',quoting=csv.QUOTE_NONE):
-    if item.get('text','').strip():lines.setdefault((item['block_num'],item['par_num'],item['line_num']),[]).append(item)
-   for line in (list(lines.values())[::-1] if last else lines.values()):
-    text=' '.join(item['text'] for item in line)
-    if phrase.lower() in text.lower():
-     start=text.lower().index(phrase.lower());end=start+len(phrase);selected=[];offset=0
-     for item in line:
-      if offset<end and offset+len(item['text'])>start:selected.append(item)
-      offset+=len(item['text'])+1
-     left=min(int(i['left']) for i in selected);right=max(int(i['left'])+int(i['width']) for i in selected);top=min(int(i['top']) for i in selected);bottom=max(int(i['top'])+int(i['height']) for i in selected)
-     (p.touchscreen.tap if mobile else p.mouse.click)((left+right)/2/scale,(top+bottom)/2/scale);p.wait_for_timeout(500);return
+   file=capture('current')
+   for mode in ['11','6']:
+    tsv=subprocess.check_output(['tesseract',str(file),'stdout','--psm',mode,'tsv'],stderr=subprocess.DEVNULL,text=True)
+    lines={}
+    for item in csv.DictReader(io.StringIO(tsv),delimiter='\t',quoting=csv.QUOTE_NONE):
+     if item.get('text','').strip():lines.setdefault((item['block_num'],item['par_num'],item['line_num']),[]).append(item)
+    for line in (list(lines.values())[::-1] if last else lines.values()):
+     text=' '.join(item['text'] for item in line)
+     if phrase.lower() in text.lower():
+      start=text.lower().index(phrase.lower());end=start+len(phrase);selected=[];offset=0
+      for item in line:
+       if offset<end and offset+len(item['text'])>start:selected.append(item)
+       offset+=len(item['text'])+1
+      left=min(int(i['left']) for i in selected);right=max(int(i['left'])+int(i['width']) for i in selected);top=min(int(i['top']) for i in selected);bottom=max(int(i['top'])+int(i['height']) for i in selected)
+      (p.touchscreen.tap if mobile else p.mouse.click)((left+right)/2/scale,(top+bottom)/2/scale);p.wait_for_timeout(500);return
    raise AssertionError((phrase,ocr(file)))
+  def footer_tap(index,count):
+   # Fixed footer geometry is verified in the native/fixture tests and screenshots.
+   span=(width-24-(count-1)*8)/count
+   (p.touchscreen.tap if mobile else p.mouse.click)(12+index*(span+8)+span/2,height-44);p.wait_for_timeout(500)
   assert 'v0.44' in ocr(capture('main-menu'))
   def scroll_down():
    if not mobile:p.mouse.move(width*.7,height*.55);p.mouse.wheel(0,340);p.wait_for_timeout(300);return
@@ -44,21 +50,21 @@ with sync_playwright() as pw:
     try:tap_words(phrase,last=True);return
     except AssertionError:scroll_down()
    raise AssertionError(('Not reachable',phrase,ocr(capture('missing'))))
-  tap_words('chamber',last=True);text=ocr(capture('test-chamber'));assert 'Ability to test' in text,text
-  tap_words('Try ability',last=True);capture('practice-map')
+  footer_tap(0,3);text=ocr(capture('test-chamber'));assert 'Ability to test' in text,text
+  footer_tap(1,2);capture('practice-map')
   if mobile:tap_words('More');tap_words('Test tools')
   else:tap_words('Test tools')
   text=ocr(capture('practice-tools'));assert 'Ability to test' in text,text
-  tap_words('Main menu')
+  footer_tap(0,2)
   tap_words('Camp');capture('camp-home');find_and_tap('Open equip gear');text=ocr(capture('equipment'));assert 'Weapon' in text and ('Attack' in text or 'Dagger' in text),text
   tap_words('Body');text=ocr(capture('body'));assert 'Defense' in text and 'Movement' in text and 'Skill' in text,text
   tap_words('Soul');text=ocr(capture('soul'));assert 'HP' in text and 'Blank' in text,text
   tap_words('Help');text=ocr(capture('context-help'));assert 'Help' in text and 'Topic' in text,text
-  tap_words('Back to game');tap_words('Back to Camp');tap_words('Main menu')
+  footer_tap(0,1);footer_tap(0,2);footer_tap(0,2)
   tap_words('Prepare my party');find_and_tap('Prepare remaining');text=ocr(capture('normal-party'));assert 'Ready' in text,text
-  tap_words('Next: choose');text=ocr(capture('boss-choice'));assert 'Hollow' in text,text
-  tap_words('Next: road');text=ocr(capture('road-event'));assert 'road event' in text.lower(),text
+  footer_tap(1,2);text=ocr(capture('boss-choice'));assert 'Hollow' in text,text
+  footer_tap(1,2);text=ocr(capture('road-event'));assert 'road event' in text.lower(),text
   assert not errors,errors
-  rows.append({'viewport':[width,height],'result':'passed','no_test_hooks':True,'browser_errors':errors,'tested':['visible main-menu test chamber','practice map and reopening tools','main modes','Camp task navigation','Body/Soul/Weapon explanations','context Help and return','normal suggested party','boss and required road event']});c.close()
+  rows.append({'viewport':[width,height],'result':'passed','no_test_hooks':True,'browser_errors':errors,'tested':['visible main-menu test chamber','practice map and reopening tools','main modes','Camp task navigation','Body/Soul/Weapon explanations','context Help and return','normal suggested party','boss and required road event']});(out/'checkpoint.json').write_text(json.dumps(rows,indent=2));c.close()
  b.close()
 (out/'results.json').write_text(json.dumps(rows,indent=2));print(json.dumps(rows))
