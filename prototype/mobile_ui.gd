@@ -19,7 +19,7 @@ static func row(parent: Control) -> HBoxContainer:
  var line := HBoxContainer.new();line.add_theme_constant_override("separation",10);parent.add_child(line);return line
 static func choose(app, parent: Control, caption: String, values: Array, index: int, action: Callable, node_name: String = "") -> OptionButton:
  text(parent,caption,18,GOLD)
- var pick := OptionButton.new();pick.mouse_filter = Control.MOUSE_FILTER_PASS;pick.custom_minimum_size = Vector2(0,68);pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+ var pick := OptionButton.new();pick.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE;pick.fit_to_longest_item = false;pick.clip_text = true;pick.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;pick.mouse_filter = Control.MOUSE_FILTER_PASS;pick.custom_minimum_size = Vector2(0,68);pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
  if node_name != "":pick.name = node_name
  pick.add_theme_font_size_override("font_size",22)
  for value in values:pick.add_item(str(value))
@@ -35,13 +35,8 @@ static func footer(app, labels: Array, actions: Array, disabled: Array = []) -> 
   var button: Button = app.button(str(labels[i]),Vector2(12+i*(width+8),size.y-76),Vector2(width,64),actions[i],GOLD,bool(disabled[i]) if i < disabled.size() else false)
   fit_button(button,Vector2(width,64),18)
 static func screen(app, heading: String, key: String) -> VBoxContainer:
- var size: Vector2 = app.get_viewport_rect().size
- var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
- app.label_at(heading,Vector2(16,12),32,GOLD,size.x-32,true,true)
- app.label_at("ASH & OATH · MOBILE · v0.42",Vector2(18,58),15,MUTED,size.x-36)
- var width: float = minf(720,size.x-24)
- var scroll := ScrollContainer.new();scroll.name = "MobileScroll";scroll.position = Vector2((size.x-width)/2,92);scroll.size = Vector2(width,size.y-180);scroll.follow_focus = true;scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
- var column := VBoxContainer.new();column.name = "MobileContent";column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",14);scroll.add_child(column)
+ var column: VBoxContainer = app.BattlePanels.panel(app,heading,"Normal adventure · advanced dice editing")
+ var scroll: ScrollContainer = app.ui.get_node("BattlePanelScroll");scroll.name = "MobileScroll";scroll.follow_focus = true
  scroll.get_v_scroll_bar().value_changed.connect(func(value):app.mobile_scrolls[key] = int(value))
  scroll.set_deferred("scroll_vertical",int(app.mobile_scrolls.get(key,0)))
  return column
@@ -99,25 +94,12 @@ static func render(app) -> void:
  if app.mobile_info != "":info(app)
 
 static func main_menu(app) -> void:
- var column := screen(app,"ASH & OATH","main")
- text(column,"Play on your phone",30,GOLD)
- text(column,"Tap a die, then tap its target. Menus scroll, and Details explains each ability without hovering.")
- btn(app,column,"Build your party",func():app.open_forge(app.gifts.any(func(list):return list.size() != 2))).name = "MobilePlay"
- btn(app,column,"Camp & Essence Forge",func():app.camp_tab = 0;app.open_camp()).name = "MobileCamp"
- btn(app,column,"Fight creatures",func():app.camp_tab = 3;app.open_camp()).name = "MobileCreatures"
- btn(app,column,"How to play",func():app.show_help = true;app.rebuild(),MUTED)
- btn(app,column,"What changed",func():app.show_changes = true;app.rebuild(),MUTED)
- btn(app,column,"Options",app.open_settings,MUTED)
- btn(app,column,"Desktop mode",func():app.set_mobile_mode(false),MUTED).name = "MobileDesktopMode"
- text(column,"Mobile mode saves on this device. Earned rewards use the same local save.",18)
- btn(app,column,"Trials · experimental expeditions",app.open_trials).name = "MobileTrials"
- footer(app,["Camp","Trials"],[app.open_camp,app.open_trials])
-
+ app.NavigationUI.main(app)
 static func draft(app) -> void:
  var column := screen(app,"Choose bonus faces","draft-"+str(app.build_hero)+app.draft_category)
  heroes(app,column,false)
  text(column,"%s · %d / 2 chosen" % [NAMES[app.build_hero],app.gifts[app.build_hero].size()],25,GOLD)
- text(column,"Tap two different designs. They fit onto your dice automatically; you can edit individual sides afterwards.",20)
+ text(column,"Choose two bonus abilities for this hero. They are added to the starting dice automatically. The suggested pairs in party preparation are the quickest way to begin.",20)
  var categories := ["All","Attack","Defense","Movement","Skill"]
  choose(app,column,"Show designs",categories,categories.find(app.draft_category),func(index):app.draft_category = categories[index];app.rebuild())
  for id in app.gifts[app.build_hero]:
@@ -150,21 +132,7 @@ static func forge(app) -> void:
  footer(app,["Menu","Camp","Boss review"],[app.go_main,app.open_camp,app.open_setup])
 
 static func camp(app) -> void:
- var column := screen(app,"Camp","camp-"+str(app.camp_tab)+app.camp_type+str(app.camp_hero))
- touch(app,"Collection",Vector2(app.get_viewport_rect().size.x-160,6),Vector2(148,48),func():app.show_collection = true;app.rebuild(),MUTED,false,"MobileCollection")
- var tabs := GridContainer.new();tabs.columns = 2;tabs.add_theme_constant_override("h_separation",10);tabs.add_theme_constant_override("v_separation",10);column.add_child(tabs)
- for i in range(4):btn(app,tabs,["Essence Forge","Refit dice","Equipment","Creatures"][i],func():app.camp_tab = i;app.rebuild(),GOLD if app.camp_tab == i else MUTED)
- text(column,app.camp_message,20,GOLD)
- match app.camp_tab:
-  0:crafting(app,column)
-  1:refit(app,column)
-  2:equipment(app,column)
-  3:
-   for index in range(W.GROUPS.size()):
-    var group: Dictionary = W.GROUPS[index]
-    picture(column,app.CampUI.source_texture(app,group.enemy));text(column,group.title,25,GOLD);text(column,group.description)
-    text(column,group.reward,20,Color("9acfc0"));btn(app,column,"Fight this group",func():app.start_creature_encounter(index)).name = "MobileFight"+str(index)
- footer(app,["Menu","Party","Boss review"],[app.go_main,func():app.open_forge(false),app.open_setup])
+ app.CampMenu.render(app)
 static func crafting(app, column: Control) -> void:
  var types: Array = Camp.SPECIES
  choose(app,column,"Essence source",types.map(func(type):return E.type_name(type)+" · %d Essence" % int(app.expedition.camp.bank.get(type,0))),types.find(app.camp_type),func(index):app.camp_type = types[index];app.camp_recipe = app.expedition.camp.recipes_for(app.camp_type)[0];app.rebuild())
@@ -217,39 +185,9 @@ static func equipment(app, column: Control) -> void:
  btn(app,column,"Souls & Memories",func():app.show_collection = true;app.rebuild(),GOLD)
 
 static func setup(app) -> void:
- var column := screen(app,"Boss & rules","setup")
- var keys := ["hollow","nugh","cantor","bugh"];var names := ["The Hollow","Nu’gh · Worm Summoner","Veyl · Brass Cantor","Bu’gh · Iron Warden"]
- for i in range(4):btn(app,column,("Selected · " if app.encounter == keys[i] else "Choose · ")+names[i],func():app.encounter = keys[i];app.rebuild(),GOLD if app.encounter == keys[i] else MUTED)
- choose(app,column,"Numbers",["Tuned","Original"],0 if app.balanced else 1,func(index):app.balanced = index == 0;app.rebuild())
- choose(app,column,"Sandbox Blank movement",["Use equipped Memories","Override · Move 1","Override · Move 2"],int(app.balance_number("soul.move")) if app.reward_soul else 0,func(index):
-  app.reward_soul = index > 0
-  if index > 0:app.balance_values["soul.move"] = index
-  app.rebuild())
- text(column,"An event must be resolved before the boss. Your party starts each encounter with fresh HP and its prepared dice.")
- var error: String = app.party_build_error();text(column,error,20,Color("efa898"))
- footer(app,["Party","Camp","Begin expedition"],[func():app.open_forge(true),app.open_camp,app.start_expedition],[false,false,error != ""])
+ app.NavigationUI.setup(app)
 static func events(app) -> void:
- var column := screen(app,"The Ash Road","events-"+app.expedition.stage)
- text(column,app.expedition.inventory(),20,Color("9acfc0"))
- if app.expedition.stage == "idle":
-  text(column,"Roll one event before the boss. Read its costs, chances and rewards before choosing.")
-  for i in range(6):text(column,"%d · %s" % [i+1,app.Expedition.TITLES[i]],20)
-  btn(app,column,"Roll event · d6",func():app.expedition.roll();app.rebuild()).name = "MobileRollEvent"
- else:
-  text(column,"%d · %s" % [app.expedition.selected,app.Expedition.TITLES[app.expedition.selected-1]],26,GOLD)
-  text(column,app.Expedition.DETAILS[app.expedition.selected-1] if app.expedition.stage == "choice" else app.expedition.summary)
-  if app.expedition.stage == "choice":
-   var choices: Array = [["Take 1 Salve","Take 1 Reroll Seal"],["Leave safely","Offer 2 Gold · d6"],["Directions · gain 1 Gold","Help · spend 1 Salve"],["Withdraw safely","Fight 2 Bone Creatures"],["Leave safely","Fight mixed creature group"],["Take 1 Gold","Search deeper · d6"]][app.expedition.selected-1]
-   for option in range(2):
-    var locked: bool = option == 1 and ((app.expedition.selected == 2 and app.expedition.gold < 2) or (app.expedition.selected == 3 and app.expedition.salves < 1))
-    btn(app,column,choices[option],func():app.event_choice(option),GOLD,locked).name = "MobileEventChoice"+str(option)
-  else:
-   btn(app,column,"Enter selected boss",app.enter_boss).name = "MobileEnterBoss"
-   btn(app,column,"New sortie · new event",func():app.expedition.next_sortie();app.rebuild(),MUTED)
- choose(app,column,"Fragment Soul recipient",NAMES,app.event_soul_hero,func(index):app.event_soul_hero = index;app.rebuild())
- btn(app,column,"Spend 3 Fragments · bind Soul",func():app.expedition.unlock_soul(app.event_soul_hero);app.rebuild(),GOLD,app.expedition.fragments < 3 or app.expedition.soul)
- footer(app,["Menu","Camp","Boss review"],[app.go_main,app.open_camp,app.open_setup])
-
+ app.NavigationUI.events(app)
 static func board_rect(app) -> Rect2:
  var size: Vector2 = app.get_viewport_rect().size
  if size.x>size.y:
@@ -374,7 +312,7 @@ static func more(app) -> void:
  btn(app,grid,"Weapon details",func():app.mobile_info = app.Model.Equipment.WEAPONS[app.Model.TrialRules.weapon(app.game,app.game.active)].text;app.rebuild(),GOLD)
  btn(app,grid,"Skip face",func():app.game.decline(app.selected);app.friendly_confirm = -1;app.selected = -1;app.mobile_more = false;app.rebuild(),MUTED,app.selected<0)
  for item in [["Log","show_history"],["Enemies","show_enemy_cards"],["Supplies","show_supplies"],["Menu","show_menu"]]:
-  btn(app,grid,item[0],func():app.mobile_more = false;app.set(item[1],true);app.rebuild(),MUTED)
+  btn(app,grid,item[0],func():app.mobile_more = false;app.set(item[1],true);app.player_guide_topic = app.PlayerGuide.context(app) if item[1]=="show_player_guide" else app.player_guide_topic;app.rebuild(),MUTED)
  footer(app,["Back"],[func():app.mobile_more = false;app.rebuild()])
 static func shove(app) -> void:
  var column: VBoxContainer = app.BattlePanels.panel(app,"Push","")
@@ -433,8 +371,8 @@ static func menu(app) -> void:
  modal(app,func():
   app.label_at("Game menu",Vector2.ZERO,28,GOLD)
   app.button("Return to battle",Vector2.ZERO,Vector2(400,68),func():app.show_menu = false;app.rebuild())
-  for item in [["Enemy intents","show_intents"],["Enemy cards","show_enemy_cards"],["Full battle log","show_history"],["View dice","show_dice"],["Supplies","show_supplies"],["Rules","show_help"],["Sound & volume","show_soundtrack"],["Options","show_options"]]:
-   app.button(item[0],Vector2.ZERO,Vector2(400,68),func():app.show_menu = false;app.set(item[1],true);app.rebuild())
+  for item in [["Enemy intents","show_intents"],["Enemy cards","show_enemy_cards"],["Full battle log","show_history"],["View dice","show_dice"],["Supplies","show_supplies"],["Help / glossary","show_player_guide"],["Sound & volume","show_soundtrack"],["Options","show_options"]]:
+   app.button(item[0],Vector2.ZERO,Vector2(400,68),func():app.show_menu = false;app.set(item[1],true);app.player_guide_topic = app.PlayerGuide.context(app) if item[1]=="show_player_guide" else app.player_guide_topic;app.rebuild())
   app.button("Main menu · leave encounter",Vector2.ZERO,Vector2(400,68),app.go_main))
 static func options(app) -> void:
  if app.trial_fight:app.TrialUI.options(app);return

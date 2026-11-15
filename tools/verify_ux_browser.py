@@ -55,7 +55,7 @@ with sync_playwright() as pw:
   # Reopening Trials after reload restores the exact current preparation step.
   p.reload();p.wait_for_function('typeof window.essenceProof==="function"');p.wait_for_timeout(1200)
   assert state()['trial']['prepare_step']==2 and state()['trial']['souls'][0]=='soulcaster';normal=state()
-  tap(text='Trials' if mobile else 'Trials · experimental expeditions');tap(name='TrialPrepBack');assert state()['trial']['prepare_step']==1 and state()['trial']['souls'][0]=='soulcaster';tap(name='TrialPrepNext')
+  tap(name='MobileTrials' if mobile else 'MainTrials');tap(name='TrialPrepBack');assert state()['trial']['prepare_step']==1 and state()['trial']['souls'][0]=='soulcaster';tap(name='TrialPrepNext')
   tap(name='TrialPrepBody_broken');tap(name='TrialPrepNext');tap(name='TrialPrepWeapon_spear');snap('prepare-weapon');tap(name='TrialPrepNext');assert state()['trial']['memories']==['','',''];tap(name='TrialPrepNext')
   faces=[v['text'] for v in state()['controls'] if v['name'].startswith('TrialPrepDie')];assert len(faces)==18 and 'Jab' in faces and 'Crack' not in faces;snap('prepare-dice');tap(name='TrialPrepDie0Side2');assert 'Gather' in state()['info'];tap(text='Back');tap(name='TrialPrepNext')
   for hero in [1,2]:

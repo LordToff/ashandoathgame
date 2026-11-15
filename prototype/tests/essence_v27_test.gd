@@ -166,11 +166,14 @@ func run():
  check(g.friendly_evasive_react(false) and g.heroes[1].hp == 5 and g.heroes[1].reaction == [0],"holding Evasive against friendly fire preserves the face and takes normal damage")
  var app = load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
  app.expedition.camp = E.new();app.expedition.camp.bank.bone_creature = 10;app.open_camp()
- check(app.page == "camp" and app.ui.get_node_or_null("Craft_bone_growth") != null,"Camp Forge renders with real crafting control")
- app.ui.get_node("Craft_bone_growth").pressed.emit()
- check(app.expedition.camp.owned(60) == 1 and app.ui.get_node("CampRecipeDetails").text.contains("Move 1"),"craft reveals effect")
+ check(app.page == "camp" and app.ui.find_child("Recipe_bone_growth",true,false) != null,"Camp Forge renders with real crafting control")
+ app.camp_recipe = "bone_growth";app.rebuild()
+ for control in app.ui.get_children():
+  if control is Button and control.text=="Craft · 1 Essence":control.pressed.emit()
+ await process_frame;await process_frame
+ check(app.expedition.camp.owned(60) == 1 and app.expedition.camp.reward_effect("bone_growth").contains("Move 1"),"craft reveals effect")
  app.camp_tab = 1;app.rebuild()
- check(app.ui.has_node("CampSlot0_0"),"dedicated refit tab exposes die slots")
+ check(app.ui.find_child("CampSlot0_0",true,false)!=null,"dedicated refit tab exposes die slots")
  app.camp_place(60,0,2,1)
  check(app.builds[0][2][1] == 60,"owned face refits into legal starter slot")
  var before_build: Array = app.builds[1].duplicate(true);app.camp_place(60,1,2,1)

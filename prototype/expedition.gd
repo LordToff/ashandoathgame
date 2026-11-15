@@ -6,7 +6,7 @@ const SAVE = "user://ash-expedition-v25.json"
 const TITLES = ["Abandoned Supplies", "Ash Shrine", "Stranded Traveller", "Scavenger Ambush", "Infested Ruins", "Buried Reliquary"]
 const DETAILS = [
  "No cost or risk. Take 1 Salve or 1 Reroll Seal. Salve: restore 2 HP to one standing hero during their turn, once per turn. Seal: restore 1 Action Reroll below its bank cap. Neither spends an Action Die.",
- "Leave safely, or offer 2 Gold (paid now). Roll d6: 3–6 grants 1 Soul Fragment; 1–2 loses the offering. Collect 3 fragments, then spend them here to unlock the existing Soul: at most one rolled Blank per hero turn becomes Move 2. No free movement.",
+ "Leave safely, or offer 2 Gold (paid now). Roll d6: 3–6 grants 1 Soul Fragment; 1–2 loses the offering. Collect 3 fragments, then spend them here to bind and equip Ash Road Soul on one hero: 6 HP, minimum 3 Blanks per die, Last Ember once per encounter. Check that hero’s dice after equipping; this does not grant free movement.",
  "Choose freely: give up 1 Salve to help and earn 3 Gold + 1 Reroll Seal; or take the traveller’s directions for 1 Gold. No hidden injury roll.",
  "Fight two Bone Creatures: each 3 HP, one cell. Provisional AI: Scuttle 2 / Bite 1 / Guard 1. Defeat BOTH for 3 Gold + 1 Salve and bank 1 Bone Creature Essence per harvested individual. No boss, phase, fire or Soul. Withdraw now safely for no reward; defeat gives nothing.",
  "Optional mixed group: Support Creature (2 HP, Mend 1 / Bite 1 / Guard 1 / Scuttle 2) and two Movement Creatures (3 HP each, Scuttle 3 / Bite 1 / Guard 1). AI and composition are provisional. Defeat ALL THREE for 5 Gold + 1 Soul Fragment + 1 Reroll Seal, plus each harvested creature’s own Essence. No boss or phase. Leave safely now; defeat gives nothing.",

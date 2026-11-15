@@ -26,23 +26,7 @@ static func art(app, texture: Texture2D, rect: Rect2) -> void:
  image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;image.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(image)
 
 static func render(app) -> void:
- app.chamber_background()
- app.label_at("CAMP",Vector2(48,30),36,app.GOLD,1080,true)
- app.label_at("Rest. Refit. Choose your next fight.",Vector2(50,86),18,app.MUTED,1000)
- app.button("Collection",Vector2(1010,40),Vector2(182,44),func():app.show_collection = true;app.rebuild(),app.GOLD)
- app.button("Main menu",Vector2(1210,40),Vector2(182,44),app.go_main,app.MUTED).name = "CampMainMenu"
- var tabs := ["Essence Forge","Refit dice","Equipment","Creature encounters"]
- for i in range(tabs.size()):
-  app.button(tabs[i],Vector2(48+i*340,136),Vector2(324,48),func():app.camp_tab = i;app.rebuild(),app.GOLD if app.camp_tab == i else app.MUTED).name = "CampTab"+str(i)
- match app.camp_tab:
-  0:crafting(app)
-  1:refit(app)
-  2:inheritance(app)
-  3:creatures(app)
- app.setup_panel(Rect2(48,762,1344,54))
- detail(app,app.camp_message,Rect2(66,775,1308,32),15).name = "CampFeedback"
- app.button("← Party & starter dice",Vector2(48,831),Vector2(300,44),func():app.open_forge(false),app.MUTED)
- app.button("Boss expedition →",Vector2(1092,831),Vector2(300,44),app.open_setup).name = "CampBossExpedition"
+ app.CampMenu.render(app)
 
 static func crafting(app) -> void:
  app.setup_panel(Rect2(48,210,266,534))

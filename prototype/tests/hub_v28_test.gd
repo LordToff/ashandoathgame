@@ -36,14 +36,16 @@ func run():
  check(g.hero_action(0,3) and g.resonance==resonance+g.v("cantor.attack_charge"),"rolled Poke charges Veyl as an Attack")
  var app = load("res://prototype/prototype.tscn").instantiate();root.add_child(app)
  await process_frame
- check(app.page == "main" and app.ui.has_node("MainPlay") and app.ui.has_node("MainCreatures"),"main menu on launch")
- app.ui.get_node("MainCreatures").pressed.emit()
- check(app.page == "camp" and app.camp_tab == 3 and app.ui.has_node("FightCreature2"),"main menu reaches all creature groups")
+ check(app.page == "main" and app.ui.find_child("MainPlay",true,false)!=null and app.ui.find_child("MainCreatures",true,false)!=null,"main menu on launch")
+ app.ui.find_child("MainCreatures",true,false).pressed.emit();await process_frame;await process_frame
+ check(app.page == "camp" and app.camp_tab == 3 and app.ui.find_child("FightCreature2",true,false)!=null,"main menu reaches all creature groups")
  app.start_creature_encounter(2)
- check(app.page == "forge" and app.queued_creature == 2,"incomplete party routed to bonus selection")
+ check(app.page == "normal" and app.queued_creature == 2,"incomplete party routed to guided preparation")
  for hero in range(3):
   app.build_hero = hero;app.choose_gift(34);app.choose_gift(47)
  app.finish_party_selection()
+ check(app.page=="normal","custom bonuses return to party overview")
+ app.start_creature_encounter(app.queued_creature)
  check(app.page == "battle" and app.creature_fight and app.game.essence_type(3) == "movement_creature","party preparation returns to chosen fight")
  app.dice_tray.cancel();app.rolling_time = 0
  app.go_main();check(app.page == "main" and not app.creature_fight,"main menu abandons without banking")
@@ -56,16 +58,20 @@ func run():
  app.expedition.camp.unlocked.memory_first_step = true;app.expedition.camp.equip_memory(0,"memory_first_step")
  scoped = app.camp_battle_profile()
  check(scoped["soul.eligible.0"] and not scoped["soul.eligible.1"],"First Step Memory conversion is specific to its equipped hero")
- for tab in range(4):
-  app.camp_tab = tab;app.rebuild();check(app.ui.has_node("CampTab"+str(tab)),"Camp tab renders")
- app.camp_tab = 2;app.rebuild()
- for slot in ["body","weapon","soul","memory"]:check(app.ui.has_node("Equipment_"+slot),"equipment slot "+slot)
- app.ui.get_node("Equipment_weapon").item_selected.emit(1)
- check(app.expedition.camp.weapons[app.camp_hero] == "spear","UI equips Spear on a legal build")
- app.ui.get_node("Equipment_weapon").item_selected.emit(0)
+ app.camp_tab = -1;app.rebuild()
+ for tab in range(4):check(app.ui.find_child("CampTab"+str(tab),true,false)!=null,"Camp home exposes each task")
+ for slot in ["body","weapon","soul","memory"]:
+  app.camp_tab = 2;app.equipment_slot = slot;app.rebuild()
+  check(app.ui.find_child("Equipment_"+slot,true,false)!=null,"selected equipment slot "+slot)
+  if slot=="soul":check(app.ui.find_child("EquipmentSelectedSprite",true,false)!=null,"selected Soul sprite renders")
+ app.equipment_slot = "weapon";app.rebuild()
+ app.ui.find_child("Equipment_weapon",true,false).item_selected.emit(1);await process_frame;await process_frame
+ check(app.expedition.camp.weapons[app.camp_hero]=="dagger","picker previews without equipping")
+ app.ui.find_child("CampEquipApply",true,false).pressed.emit();await process_frame;await process_frame
+ check(app.expedition.camp.weapons[app.camp_hero] == "spear","explicit UI action equips Spear on a legal build")
+ app.ui.find_child("Equipment_weapon",true,false).item_selected.emit(0);await process_frame;await process_frame
+ app.ui.find_child("CampEquipApply",true,false).pressed.emit();await process_frame;await process_frame
  check(app.expedition.camp.weapons[app.camp_hero] == "dagger","UI restores Dagger")
- check(app.ui.get_node("EquipmentSprite_beginning").size == Vector2(132,134),"sprite stays within its equipment cell")
- check(app.ui.has_node("EquipmentSprite_beginning") and app.ui.has_node("EquipmentSprite_memory_loss"),"soul and Memory sprite regions render")
  app.open_forge(false);check(app.ui.has_node("ForgeFacePicker") and app.ui.has_node("ForgeDie2Side5"),"roomy forge editor renders all dice")
  var before: Array = app.builds.duplicate(true);app.forge_die = 0;app.forge_side = 4;app.forge_replace(1)
  check(app.builds == before,"invalid Blank/copy edit rejected atomically")

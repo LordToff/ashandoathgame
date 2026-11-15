@@ -16,8 +16,8 @@ func _initialize():call_deferred("run")
 func run():
  var app = load("res://prototype/prototype.tscn").instantiate();root.add_child(app)
  await process_frame
- app.set_mobile_mode(false,false);app.rebuild()
- check(app.ui.has_node("MainMobileMode"),"desktop main menu exposes phone mode")
+ app.set_mobile_mode(false,false);app.menu_more = true;app.rebuild()
+ check(app.ui.find_child("MainMobileMode",true,false)!=null,"desktop main menu exposes phone mode")
  var model = app.game;var ledger = app.expedition.camp;var old_builds: Array = app.builds.duplicate(true)
  root.size = Vector2i(390,844);app.set_mobile_mode(true,false)
  await process_frame;await process_frame;app.rebuild();await process_frame
@@ -59,13 +59,13 @@ func run():
  check(choices.size() == 18,"all installed-slot choices survive phone reflow")
  var slot = choices.filter(func(choice):return not choice.disabled)[0];slot.pressed.emit();await process_frame
  check(app.game.pending.is_empty() and app.game.heroes[0].build[0][0] == 0,"mandatory choice calls original mutation once")
- app.open_camp();app.camp_tab = 2;app.rebuild();await process_frame
+ app.open_camp();app.camp_tab = 2;app.equipment_slot = "soul";app.rebuild();await process_frame
  check(find(app.ui,"MobileSoulPicker") != null,"equipment available by touch")
  root.size = Vector2i(844,390);app.refresh_mobile_layout();await process_frame;await process_frame
  app.page = "battle";app.rebuild();await process_frame
  board = UI.board_rect(app)
  var controls = find(app.ui,"MobileDie0")
  check(board.end.x < controls.position.x and board.end.y <= root.content_scale_size.y,"landscape places controls beside board")
- app.set_mobile_mode(false,false);app.rebuild();await process_frame
+ app.set_mobile_mode(false,false);app.menu_more = true;app.rebuild();await process_frame
  check(root.content_scale_size == Vector2i(1440,900) and app.game.heroes[0].pos == destination,"return to desktop preserves combat")
  print("MOBILE v0.31: %d checks, %d failures" % [checks,failures]);app.queue_free();await process_frame;quit(1 if failures else 0)

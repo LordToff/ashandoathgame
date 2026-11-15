@@ -3,11 +3,24 @@ const M = preload("res://prototype/mobile_ui.gd")
 static func panel(app, title: String, subtitle: String) -> VBoxContainer:
  var size: Vector2 = app.get_viewport_rect().size
  var shade := ColorRect.new();shade.color = Color("101923");shade.size = size;app.ui.add_child(shade)
- app.label_at(title,Vector2(16,12),26 if app.mobile_mode else 30,app.GOLD,size.x-32,true,true)
- app.label_at(subtitle,Vector2(18,54),17,app.MUTED,size.x-36,false,true)
+ var title_size: int = 24 if app.mobile_mode else 30
+ var title_width: float = size.x-148
+ var heading: Label = app.label_at(title,Vector2(16,10),title_size,app.GOLD,title_width,true,true);heading.name = "MenuTitle";heading.max_lines_visible = 2;heading.clip_text = true
+ var flags: int = TextServer.BREAK_MANDATORY|TextServer.BREAK_WORD_BOUND|TextServer.BREAK_ADAPTIVE
+ var title_height: float = minf(heading.get_theme_font("font").get_multiline_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,title_width,title_size,-1,flags).y,heading.get_theme_font("font").get_height(title_size)*2)
+ heading.size.y = title_height
+ var caption: String = subtitle
+ if app.page=="trials" and not app.show_player_guide:caption = "Trials · "+subtitle
+ elif app.page in ["normal","setup","events","camp"] and not app.show_player_guide:caption = "Normal adventure · "+subtitle
+ var subtitle_y: float = 18+title_height
+ var sub: Label = app.label_at(caption,Vector2(18,subtitle_y),16,app.MUTED,size.x-36,false,true);sub.name = "MenuSubtitle";sub.max_lines_visible = 3
+ var subtitle_height: float = minf(sub.get_theme_font("font").get_multiline_string_size(caption,HORIZONTAL_ALIGNMENT_LEFT,size.x-36,16,-1,flags).y,sub.get_theme_font("font").get_height(16)*3)
+ sub.size.y = subtitle_height
  var width: float = minf(1180,size.x-24)
- var top: float = 72 if subtitle == "" else 92
- var scroll := ScrollContainer.new();scroll.name = "BattlePanelScroll";scroll.position = Vector2((size.x-width)/2,top);scroll.size = Vector2(width,size.y-top-86);scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
+ var top: float = subtitle_y+subtitle_height+12
+ if not app.show_player_guide:
+  var help: Button = app.button("? Help",Vector2(size.x-120,12),Vector2(108,40),app.open_player_guide,app.MUTED);help.name = "ContextHelp";M.fit_button(help,Vector2(108,40),16)
+ var scroll := ScrollContainer.new();scroll.name = "BattlePanelScroll";scroll.position = Vector2((size.x-width)/2,top);scroll.size = Vector2(width,size.y-top-86);scroll.scroll_deadzone = 14;scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.custom_minimum_size.x = width-16;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",12);scroll.add_child(column);return column
 static func button(app, parent: Control, caption: String, action: Callable, tint: Color, disabled: bool = false) -> Button:
  var pick: Button = M.btn(app,parent,caption,action,tint,disabled)

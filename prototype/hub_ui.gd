@@ -3,33 +3,13 @@ const C = preload("res://prototype/camp_ui.gd")
 const NAMES = ["Vesper","Rook","Wren"]
 
 static func main_menu(app) -> void:
- app.chamber_background()
- var shade := ColorRect.new();shade.color = Color(0.025,0.045,0.065,0.82);shade.size = Vector2(1440,900);shade.mouse_filter = Control.MOUSE_FILTER_IGNORE;app.ui.add_child(shade)
- app.label_at("THREE HEROES. ONE OATH.",Vector2(80,115),14,app.GOLD,780)
- app.label_at("ASH & OATH",Vector2(72,164),80,Color("f0e6cf"),1000,true)
- C.detail(app,"Shape your dice. Face the creatures of the Ash Road.\nBring what you earn back to the fire.",Rect2(80,285,680,90),22)
- app.button("Build your party  →",Vector2(80,420),Vector2(480,62),func():app.open_forge(app.gifts.any(func(list):return list.size() != 2)),app.GOLD).name = "MainPlay"
- app.button("Camp & Essence Forge",Vector2(80,501),Vector2(480,54),func():app.camp_tab = 0;app.open_camp(),Color("9acfc0")).name = "MainCamp"
- app.button("Fight creatures",Vector2(80,572),Vector2(480,54),func():app.camp_tab = 3;app.open_camp(),Color("9acfc0")).name = "MainCreatures"
- app.button("Guided practice",Vector2(80,667),Vector2(232,48),app.start_training,app.MUTED)
- app.button("Options",Vector2(328,667),Vector2(232,48),app.open_settings,app.MUTED)
- app.button("Rules",Vector2(80,733),Vector2(232,46),func():app.show_help = true;app.rebuild(),app.MUTED)
- app.button("What changed",Vector2(328,733),Vector2(232,46),func():app.show_changes = true;app.rebuild(),app.MUTED)
- app.setup_panel(Rect2(850,132,510,620),Color("665c48"))
- app.label_at("THE FIRE STILL BURNS",Vector2(884,169),14,app.GOLD,438)
- for hero in range(3):
-  app.portrait_at(hero,Vector2(892+hero*140,235),Vector2(118,118))
-  app.label_at(NAMES[hero],Vector2(892+hero*140,375),20,app.COLORS[hero],132,true)
- C.detail(app,"A tactical dice-building adventure",Rect2(884,457,438,44),23)
- C.detail(app,"Three heroes, four bosses, and creature groups you can choose directly. Earn Essence, discover reward designs, then refit your party at Camp.",Rect2(884,525,438,113),18)
- app.button("Trials · experimental expeditions",Vector2(884,656),Vector2(438,58),app.open_trials,app.GOLD).name = "MainTrials"
- app.button("Mobile mode · play on a phone",Vector2(80,793),Vector2(480,40),func():app.set_mobile_mode(true),Color("9acfc0")).name = "MainMobileMode"
- app.label_at("PLAYABLE PROTOTYPE  /  v0.42",Vector2(80,838),12,app.MUTED,650)
+ app.NavigationUI.main(app)
 
 static func forge(app) -> void:
  app.chamber_background()
  app.label_at("THE DICE FORGE",Vector2(48,30),36,app.GOLD,1100,true)
  app.label_at("Select a square. Read its ability. Choose its replacement.",Vector2(50,87),18,app.MUTED,1100)
+ app.button("? Help",Vector2(1034,40),Vector2(158,44),func():app.open_player_guide("Equipment"),app.MUTED).name = "ContextHelp"
  app.button("Main menu",Vector2(1210,40),Vector2(182,44),app.go_main,app.MUTED)
  for hero in range(3):
   app.button(NAMES[hero],Vector2(48+hero*310,136),Vector2(292,48),func():app.build_hero = hero;app.rebuild(),app.COLORS[hero] if app.build_hero == hero else app.MUTED)

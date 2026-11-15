@@ -84,8 +84,8 @@ func profile() -> Dictionary:
   result["soul.eligible."+str(id)] = true;result["soul.mode."+str(id)] = "heal" if souls[id]=="hearth" else "move";result["soul.distance."+str(id)] = 2 if souls[id]=="wind" else 1;result["soul.allowance."+str(id)] = 1;result["weapon.dagger."+str(id)] = weapons[id] not in ["spear","hammer"]
  for key in pool:result["earned."+key] = int(pool[key])
  return Equipment.configure(result,bodies,souls.map(func(s):return Equipment.soul_key(str(s))),weapons,memories)
-func validate(candidate: Array, extra_face: int = -1) -> String:
- var checked_profile := profile()
+func validate(candidate: Array, extra_face: int = -1, profile_override: Dictionary = {}) -> String:
+ var checked_profile: Dictionary = profile() if profile_override.is_empty() else profile_override.duplicate(true)
  if extra_face>=60:checked_profile["earned."+str(extra_face)] = int(pool.get(str(extra_face),0))+1
  for id in range(3):
   var error: String = B.validate(candidate[id],range(9,60),Equipment.scoped(checked_profile,id))
@@ -130,12 +130,18 @@ func add_face(face: int, die: int, side: int) -> bool:
  builds[hero][die][side] = face
  if face>=60:pool[str(face)] = int(pool.get(str(face),0))+1
  essence -= 2;message = "Installed "+B.FACES[face]+" for this Trial.";advance();return true
+func weapon_reward_error(key: String) -> String:
+ if phase!="reward":return "Choose this after a victory."
+ if essence<2:return "Need 2 Run Essence."
+ if not R.WEAPONS.has(key):return "Choose a listed Weapon."
+ if weapons[hero]==key:return "Already equipped on this hero."
+ var preview := profile();preview["equipment.weapons"] = weapons.duplicate();preview["equipment.weapons"][hero] = key
+ preview["trial.weapons"] = preview["equipment.weapons"].duplicate()
+ return validate(builds,-1,preview)
 func equip_weapon(key: String) -> bool:
- if phase!="reward" or essence<2 or not R.WEAPONS.has(key) or weapons[hero]==key:return false
- var old: String = weapons[hero];weapons[hero] = key
- var error := validate(builds)
- if error!="":weapons[hero] = old;message = error;return false
- essence -= 2;message = R.WEAPONS[key].name+" equipped in "+["Vesper","Rook","Wren"][hero]+"’s Weapon slot.";advance();return true
+ var error := weapon_reward_error(key)
+ if error!="":message = error;return false
+ weapons[hero] = key;essence -= 2;message = R.WEAPONS[key].name+" equipped in "+["Vesper","Rook","Wren"][hero]+"’s Weapon slot.";advance();return true
 func maximum_hp(id: int) -> int:return int(R.SOULS.get(souls[id],R.SOULS.beginning).hp)
 func reward_faces(id: int) -> Array:return Classes.CLASSES[classes[id]].rewards.duplicate() if Classes.valid(classes[id]) else STARTER_FACES[id]
 func starting_builds() -> Array:

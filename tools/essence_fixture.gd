@@ -9,7 +9,7 @@ func _ready():
  await get_tree().process_frame
  callback = JavaScriptBridge.create_callback(proof);JavaScriptBridge.get_interface("window").essenceProof = callback
 func mobile_controls(node: Node, list: Array):
- if node is Control and (node is BaseButton or node is ScrollContainer):
+ if node is Control and (node is BaseButton or node is ScrollContainer or node is LineEdit or str(node.name) in ["MenuTitle","MenuSubtitle"]):
   var rect: Rect2 = node.get_global_rect()
   var clip := Rect2(Vector2.ZERO,app.get_viewport_rect().size)
   var ancestor: Node = node.get_parent()
@@ -19,6 +19,7 @@ func mobile_controls(node: Node, list: Array):
   list.append({"clip":[clip.position.x,clip.position.y,clip.size.x,clip.size.y],"name":str(node.name),"text":node.text if node is Button else "", "x":rect.position.x,"y":rect.position.y,"w":rect.size.x,"h":rect.size.y,"disabled":node.disabled if node is BaseButton else false})
  for child in node.get_children():mobile_controls(child,list)
 func reset_ui():
+ app.show_player_guide = false;app.player_guide_search = "";app.trial_reward_context = "";app.trial_reward_step = 0;app.normal_flow = false;app.menu_more = false;app.camp_after_craft = "";app.camp_gear_context = ""
  app.show_soulcaster_help = false;app.trial_replacement = Vector2i(-1,-1)
  app.trial_choice.clear()
  app.trial_fight = false;app.show_trial_guide = false;app.trial_view = "run"
@@ -53,6 +54,7 @@ func proof(args):
   data.trial.prepare_step = app.trials.prepare_step;data.trial.prepared = app.trials.prepared;data.trial.hero = app.trials.hero
   data.playback.fall_caption = app.DeathFeedback.caption(app)
   data.art = {"nugh":app.EnemyArt.texture("nugh").atlas.resource_path,"worm":app.EnemyArt.texture("worm").atlas.resource_path}
+  data.guide = app.show_player_guide;data.guide_search = app.player_guide_search;data.camp_tab = app.camp_tab;data.equipment_slot = app.equipment_slot;data.candidate = app.camp_gear_candidate;data.trial.reward_step = app.trial_reward_step;data.trial.reward_mode = app.trials.reward_mode;data.gifts = app.gifts
   data.ui_text = ui_text(app.ui)
   data.equipment_profile = app.camp_battle_profile()
   data.event_count = app.game.event_id;data.rng = str(app.game.rng.state)
@@ -71,6 +73,15 @@ func proof(args):
     var panel: StyleBox = popup.get_theme_stylebox("panel")
     data.popups.append({"control":str(control.name),"x":popup.position.x,"y":popup.position.y,"w":popup.size.x,"h":popup.size.y,"top":panel.get_margin(SIDE_TOP),"bottom":panel.get_margin(SIDE_BOTTOM),"items":range(popup.item_count).map(func(index):return popup.get_item_text(index))})
   JavaScriptBridge.get_interface("window").essenceState = JSON.stringify(data);return
+ if mode.begins_with("menu43_"):
+  app.expedition.camp = E.new();app.camp_hero = 0
+  if mode=="menu43_main":
+   app.gifts = [[],[],[]];app.go_main()
+  elif mode=="menu43_craft":
+   app.camp_type = "bone_creature";app.camp_recipe = "bone_growth";app.expedition.camp.bank.bone_creature = 3;app.camp_tab = 0;app.open_camp()
+  elif mode=="menu43_reward":
+   app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trials.start(43);app.trials.phase = "reward";app.trials.essence = 5;app.page = "trials";app.trial_view = "run";app.rebuild()
+  return
  if mode=="play41_bite":
   app.game.activate_worm();app.rebuild();return
  reset_ui()

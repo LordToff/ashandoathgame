@@ -158,3 +158,10 @@ Combat log is a button, desktop actions have room, the board has one aligned gri
 `CombatPlayback` compares captured states to queue one fall at a real HP/death transition. `death_feedback.gd` supplies the collapse, ash and separate Downed / death streams; zero-HP unprotected hero death is also captured. Objective objects never borrow creature ghost art. All of this is presentation, never another damage/reward operation. The result overlay waits until replay is idle.
 
 `battle_hud.gd` provides drawn frames, health bars, category marks and two bounded intent labels. Boss badges stay clear of the log button; long enemy action titles are bounded. Check 360×640, 390×844, 844×390 and 1440×900 through verify_ux_browser.py and current equipment/direct controls. Use isolated per-suite saves for native tests. Shipping has no fixture hooks; regenerate current rules/PDF, commit source, export that commit, stage a versioned pack plus SHA-256 manifest, and verify GitHub Pages and live hashes.
+
+
+## v0.43 shared menus
+
+`navigation_ui.gd` owns Main menu, normal party preparation, boss choice and road-event presentation. `camp_menu.gd` separates craft / install / gear / creatures, and `trial_rewards_ui.gd` stages recipient, type, preview and side selection. `player_guide.gd` supplies searchable context help. Menu helpers use wrapping cards, bounded selectors and fixed footers through BattlePanels. Gear and reward previews must be read-only; applying remains explicit and model-validated. Normal suggestions use each hero’s scoped equipment and retain already-ready dice / owned copies. Trials keep their own collection and balances. New UI state belongs to the app, with no new game currencies or equipment slots.
+
+Run menus_v43_test.gd, current regression suites, verify_menus_browser.py, the equipment/direct browser checks and the actual no-hook shipping verifier. The fixture changes are only in tools/essence_fixture.gd and must never ship. Test 360×640, 390×844, 844×390 and 1440×900. Check title height and horizontal clipping as well as button reachability. New publication is v0.43 with exact source / pack provenance; Windows artifacts remain unchanged.

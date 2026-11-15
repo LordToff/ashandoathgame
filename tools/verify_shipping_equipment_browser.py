@@ -31,23 +31,28 @@ with sync_playwright() as pw:
      left=min(int(i['left']) for i in selected);right=max(int(i['left'])+int(i['width']) for i in selected);top=min(int(i['top']) for i in selected);bottom=max(int(i['top'])+int(i['height']) for i in selected)
      (p.touchscreen.tap if mobile else p.mouse.click)((left+right)/2/scale,(top+bottom)/2/scale);p.wait_for_timeout(500);return
    raise AssertionError((phrase,ocr(file)))
-  assert 'v0.42' in ocr(capture('main-menu'))
-  tap_words('Camp & Essence Forge');tap_words('Equipment')
-  if not mobile:
-   p.mouse.click(155,445);p.wait_for_timeout(350)
-   text=ocr(capture('weapon'));assert 'minimum 2' in text and 'maximum 5' in text and 'Poke' in text,text
-   p.mouse.click(155,347);p.wait_for_timeout(350)
-   text=ocr(capture('body'));assert 'Defense' in text and 'Movement' in text and 'Skill' in text,text
-   p.mouse.click(1290,62);p.wait_for_timeout(300);p.mouse.click(1090,685);p.wait_for_timeout(500)
-   text=ocr(capture('trial-lobby'));assert 'Skirmisher' in text and '6 HP' in text and 'Memory starts empty' in text,text
-   for hero in range(3):
-    for step in range(5):tap_words('Next',last=True)
-    tap_words('next hero' if hero<2 else 'Review party',last=True)
-   capture('party-review');tap_words('Begin Trial',last=True);tap_words('Fight',last=True);capture('compact-shared-roll');p.wait_for_timeout(3500)
-   text=ocr(capture('trial-combat'));assert 'Battle log' in text and ('End hero turn' in text or 'Resolve' in text),text
-  else:
-   text=ocr(capture('equipment'));assert 'Broken Body' in text and 'Defense' in text and 'Weapon' in text,text
+  assert 'v0.43' in ocr(capture('main-menu'))
+  def scroll_down():
+   if not mobile:p.mouse.move(width*.7,height*.55);p.mouse.wheel(0,340);p.wait_for_timeout(300);return
+   session=c.new_cdp_session(p);sx=width*.8;sy=height*.68
+   session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':sx,'y':sy}]})
+   for i in range(1,9):
+    session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':sx,'y':sy-160*i/8}]});p.wait_for_timeout(45)
+   p.wait_for_timeout(200);session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':sx,'y':sy-160}]});p.wait_for_timeout(150);session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});p.wait_for_timeout(400)
+  def find_and_tap(phrase):
+   for attempt in range(10):
+    try:tap_words(phrase,last=True);return
+    except AssertionError:scroll_down()
+   raise AssertionError(('Not reachable',phrase,ocr(capture('missing'))))
+  tap_words('Camp');capture('camp-home');find_and_tap('Open equip gear');text=ocr(capture('equipment'));assert 'Weapon' in text and ('Attack' in text or 'Dagger' in text),text
+  tap_words('Body');text=ocr(capture('body'));assert 'Defense' in text and 'Movement' in text and 'Skill' in text,text
+  tap_words('Soul');text=ocr(capture('soul'));assert 'HP' in text and 'Blank' in text,text
+  tap_words('Help');text=ocr(capture('context-help'));assert 'Help' in text and 'Topic' in text,text
+  tap_words('Back to game');tap_words('Back to Camp');tap_words('Main menu')
+  tap_words('Prepare my party');find_and_tap('Prepare remaining');text=ocr(capture('normal-party'));assert 'Ready' in text,text
+  tap_words('Next: choose');text=ocr(capture('boss-choice'));assert 'Hollow' in text,text
+  tap_words('Next: road');text=ocr(capture('road-event'));assert 'road event' in text.lower(),text
   assert not errors,errors
-  rows.append({'viewport':[width,height],'result':'passed','no_test_hooks':True,'browser_errors':errors});c.close()
+  rows.append({'viewport':[width,height],'result':'passed','no_test_hooks':True,'browser_errors':errors,'tested':['main modes','Camp task navigation','Body/Soul/Weapon explanations','context Help and return','normal suggested party','boss and required road event']});c.close()
  b.close()
 (out/'results.json').write_text(json.dumps(rows,indent=2));print(json.dumps(rows))

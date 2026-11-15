@@ -1,9 +1,11 @@
-# Ash & Oath v0.42 — playable prototype
+# Ash & Oath v0.43 — playable prototype
 
 **Canonical source:** [LordToff/ashandoathgame](https://github.com/LordToff/ashandoathgame), branch `main`.
 **Recovery and publishing:** [docs/RECOVERY.md](docs/RECOVERY.md). The browser package is on `gh-pages`.
 
-[**Play Ash & Oath v0.42 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.42)
+[**Play Ash & Oath v0.43 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.43)
+
+v0.43 simplifies navigation in normal play and Trials: suggested normal parties, one Camp task at a time, explicit equipment previews, stepwise victory rewards, and searchable context Help for equipment, abilities, supplies and the separate Essence balances. Desktop and phone share fixed Back / Next controls. [Changes](docs/Changes-v0.43.md).
 
 v0.42 adds guided, saved preparation for each Trial hero, an option to skip dice animation and its pause, distinct death / Downed feedback, and a new battle HUD with health bars and separate intent / status lanes. [Changes](docs/Changes-v0.42.md).
 

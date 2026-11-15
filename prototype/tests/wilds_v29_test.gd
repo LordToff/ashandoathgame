@@ -81,13 +81,16 @@ func run():
  var app = load("res://prototype/prototype.tscn").instantiate();root.add_child(app);await process_frame
  app.expedition.camp = E.new()
  app.camp_tab = 3;app.creature_page = 1;app.open_camp()
- for i in range(3,6):check(app.ui.has_node("FightCreature"+str(i)),"new encounter card "+str(i))
+ for i in range(3,6):check(app.ui.find_child("FightCreature"+str(i),true,false)!=null,"new encounter card "+str(i))
  app.camp_tab = 0;app.essence_page = 1;app.camp_type = "mire_leech";app.camp_recipe = "mire_soul";app.expedition.camp.bank.mire_leech = 3;app.camp_hero = 1;app.rebuild()
- check(not app.ui.has_node("SoulRecipient1") and not app.ui.get_node("Craft_mire_soul").disabled,"Soul recipient and affordable binding UI")
- app.ui.get_node("Craft_mire_soul").pressed.emit();check(app.expedition.camp.unlocked.has("mire_soul") and app.expedition.camp.bank.mire_leech == 0,"real binding control grants paid recipient Soul")
+ check(app.ui.find_child("Recipe_mire_soul",true,false)!=null and app.CampMenu.craft_block(app,"mire_soul")=="","Affordable Memory crafting UI")
+ for control in app.ui.get_children():
+  if control is Button and control.text=="Craft · 3 Essence":control.pressed.emit()
+ await process_frame;await process_frame
+ check(app.expedition.camp.unlocked.has("mire_soul") and app.expedition.camp.bank.mire_leech == 0,"real binding control grants paid recipient Soul")
  app.expedition.camp.equip_memory(1,"mire_soul");var profile: Dictionary = app.camp_battle_profile()
  check(profile["soul.mode.1"] == "heal" and not profile["soul.eligible.0"],"new Soul affects only equipped hero")
- app.camp_tab = 2;app.soul_gallery_page = 1;app.rebuild();check(app.ui.has_node("EquipmentSprite_mire"),"new Soul art renders")
+ app.camp_tab = 2;app.equipment_slot = "memory";app.rebuild();check(app.ui.find_child("EquipmentSelectedSprite",true,false)!=null,"equipped Memory art renders")
  app.gifts = [[34,47],[34,47],[34,47]];app.builds = [B.bonus_build([34,47]),B.bonus_build([34,47]),B.bonus_build([34,47])]
  for i in range(3,6):
   app.start_creature_encounter(i);app.dice_tray.cancel();app.rolling_time = 0

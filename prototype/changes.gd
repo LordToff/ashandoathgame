@@ -21,6 +21,18 @@ const TEXT = """[b][color=#d5b87a]v0.4 · Read the fight, test the dice[/color][
 
 [color=#91a0af]Previous updates · v0.3: full-pool two-face choices, causal battle logs, battlefield art and combat effects. v0.2: boss explanations, dice-roll animation, opening rerolls and selectable Tuned / Original balance.[/color]"""
 
+const V43 = """[b]v0.43 · Clearer menus in both modes[/b]
+
+[b]A clearer way into the game.[/b] Normal adventure and Trials explain their routes and separate rewards. Normal party preparation offers legal suggested abilities, with readable help and optional customization. Boss choice keeps advanced settings out of the way until requested.
+
+[b]Camp has one task at a time.[/b] Craft upgrades, Install abilities, Equip gear or Fight creatures. Recipes show actual costs and missing materials; after crafting, a button takes you to the next step. Browsing gear and choosing a die side are previews; apply changes explicitly. If gear needs different dice, the menu offers a clearly labelled starter rebuild while keeping owned rewards.
+
+[b]Victory rewards step by step.[/b] Choose a hero, choose the reward type, inspect the reward and apply it. Memory rewards no longer show an unrelated dice grid. Back and Help spend no currency.
+
+[b]Help where you need it.[/b] Search the glossary for Body, Soul, Memory, Weapon, Blanks, Poison, Salves, Essence and other terms. Each shared menu has Help and a fixed footer on desktop and mobile. Explanations distinguish normal materials, temporary Run Essence and permanent Trial Forge ingredients.
+
+Combat inputs, equipment limits, dice results, prices and earned ownership keep their existing rules."""
+
 const V42 = """[b]v0.42 · Guided preparation and faster dice[/b]
 
 Trial preparation now walks through Class, Soul, Body, Weapon, Memory and the actual dice for each hero. Back and reload keep your choices. After all three reviews, inspect the party and choose the boss. The first Memory slot still starts empty.
@@ -61,6 +73,7 @@ Normal play and Trials share these rules, with separate inventories. Existing ow
 """
 
 const SECTIONS = [
+ {"title":"Clearer menus · v0.43","body":V43},
  {"title":"Guided preparation · v0.42","body":V42},
  {"title":"See the roll, feel the hit · v0.41","body":V41},
  {"title":"Four equipment slots · v0.40","body":V40},

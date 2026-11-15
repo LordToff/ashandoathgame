@@ -14,9 +14,10 @@ static func render(app) -> void:
  if app.trial_view=="craft":crafting(app);return
  if app.trial_view=="builds":build_ideas(app);return
  if run.phase=="lobby":lobby(app);return
+ if run.phase=="reward":preload("res://prototype/trial_rewards_ui.gd").render(app);return
  if run.phase in ["failed","complete"]:ending(app);return
  var title: String = "Boss gate" if run.stage==5 else "Stop %d / 5" % [run.stage+1]
- var column := P.panel(app,"TRIALS · "+title,"%d Run Essence · HP carries between fights" % run.essence)
+ var column := P.panel(app,"TRIALS · "+title,"%d Run Essence for victory upgrades · HP carries between fights" % run.essence)
  if run.message!="":M.text(column,run.message,20,app.GOLD)
  if run.wishlist!="":act(app,column,"Wishlist · "+run.wishlist_progress(),func():app.trial_view = "craft";app.rebuild(),"TrialPinned",Color("9acdb6"))
  var party := M.row(column)
@@ -39,7 +40,7 @@ static func lobby(app) -> void:
  preload("res://prototype/trial_preparation.gd").render(app)
 static func route(app, column: Control) -> void:
  var run = app.trials
- M.text(column,"Battle → Camp / battle → Battle → Cache / elite → Camp / elite → Boss",18,app.MUTED)
+ M.text(column,"Next: choose one stop below. Every route leads toward your selected boss. Read the goal and reward before entering.",20,app.GOLD)
  var choices: Array = run.options()
  for index in range(choices.size()):
   var choice: Dictionary = choices[index]
@@ -66,48 +67,8 @@ static func route(app, column: Control) -> void:
    M.text(column,run.BOSS_NAMES[run.selected_boss],28,app.GOLD)
    M.text(column,"Victory unlocks "+R.SOULS[choice.boss].name+" for future Trials.\n"+R.SOULS[choice.boss].text,21)
    act(app,column,"Enter the final arena",func():app.choose_trial_route(index),"TrialRoute"+str(index))
-static func reward(app, column: Control) -> void:
- var run = app.trials
- M.text(column,"Choose one reward",27,app.GOLD)
- var tabs := M.row(column)
- for id in range(3):act(app,tabs,M.NAMES[id],func():run.hero = id;run.reward_face = run.reward_faces(id)[0];app.trial_replacement = Vector2i(-1,-1);app.rebuild(),"TrialRewardHero"+str(id),app.COLORS[id] if id==run.hero else app.MUTED)
- var actions := GridContainer.new();actions.columns = 3 if app.get_viewport_rect().size.x>app.get_viewport_rect().size.y else 2;actions.add_theme_constant_override("h_separation",8);actions.add_theme_constant_override("v_separation",8);column.add_child(actions)
- act(app,actions,"New face · 2",func():run.reward_mode = "face";run.reward_face = run.reward_faces(run.hero)[0];app.rebuild(),"TrialRewardFace",app.GOLD,run.essence<2)
- act(app,actions,"Weapon · 2",func():run.reward_mode = "weapon";app.rebuild(),"TrialRewardWeapon",app.GOLD,run.essence<2)
- act(app,actions,"Memory · 2",func():run.reward_mode = "memory";app.rebuild(),"TrialRewardMemory",app.GOLD,run.essence<2)
- if run.reward_mode=="":M.text(column,"Choose a new dice ability, equip a Weapon, or take +2 Run Essence. One reward per victory.",21)
- else:
-  if run.reward_mode=="face":
-   var faces: Array = run.reward_faces(run.hero)
-   M.choose(app,column,"New ability",faces.map(func(face):return app.Catalog.name_for(face)),maxi(0,faces.find(run.reward_face)),func(index):run.reward_face = faces[index];app.trial_replacement = Vector2i(-1,-1);app.rebuild(),"TrialRewardChoice")
-   M.text(column,app.AbilityCopy.new().face(run.reward_face),20)
-   M.text(column,"Choose a side to replace. Keep your Soul’s required Blanks, Body category ranges, Weapon Attack bounds and owned copies. The new physical face belongs to this Trial.",18,app.MUTED)
-  elif run.reward_mode=="memory":
-   for key in run.available("memory"):
-    if key=="":continue
-    M.text(column,R.memory_data(key).text,19)
-    act(app,column,"Equip "+R.memory_data(key).name,func():run.equip_memory_reward(key);app.rebuild(),"TrialMemoryReward_"+key,app.GOLD,run.essence<2)
-  else:
-   var weapons: Array = ["venom","heavy","spear","hammer"]
-   M.choose(app,column,"Weapon",weapons.map(func(key):return R.WEAPONS[key].name),maxi(0,weapons.find(run.reward_weapon)),func(index):run.reward_weapon = weapons[index];app.rebuild(),"TrialWeaponChoice")
-   M.text(column,R.WEAPONS[run.reward_weapon].text,21)
-   M.text(column,"Replaces this hero’s Weapon. Spear / Hammer replace one Strike side with Jab / Crack; physical dice limits stay the same.",19,app.MUTED)
-   act(app,column,"Equip "+R.WEAPONS[run.reward_weapon].name,func():run.equip_weapon(run.reward_weapon);app.rebuild(),"TrialEquipWeapon",app.GOLD,run.weapons[run.hero]==run.reward_weapon)
-   P.footer(app,["Main menu","Take +2 Run Essence"],[app.go_main,func():run.bank_reward();app.rebuild()]);return
-  var dice := M.row(column)
-  for die in range(3):act(app,dice,"Die "+str(die+1),func():app.trial_die = die;app.rebuild(),"TrialDie"+str(die),app.GOLD if die==app.trial_die else app.MUTED)
-  var grid := GridContainer.new();grid.columns = 2;grid.add_theme_constant_override("h_separation",10);grid.add_theme_constant_override("v_separation",10);column.add_child(grid)
-  for side in range(6):
-   var face: int = run.builds[run.hero][app.trial_die][side]
-   var error: String = run.replacement_error(run.reward_face,app.trial_die,side)
-   var caption: String = app.Catalog.name_for(run.display_face(run.hero,face,app.trial_die,side))+(" · unavailable" if error!="" else " → "+app.Catalog.name_for(run.reward_face))
-   act(app,grid,caption,func():
-    app.trial_replacement = Vector2i(app.trial_die,side)
-    run.message = error if error!="" else "Replace "+app.Catalog.name_for(face)+" with "+app.Catalog.name_for(run.reward_face)+" for 2 Run Essence. This run only."
-    app.rebuild(),"TrialSlot"+str(side),app.MUTED if error!="" else app.color_for_face(face))
- var chosen: Vector2i = app.trial_replacement
- var can_buy: bool = run.reward_mode=="face" and run.replacement_error(run.reward_face,chosen.x,chosen.y)==""
- P.footer(app,["Main menu","Take +2 Run Essence","Buy · 2"],[app.go_main,func():app.trial_replacement = Vector2i(-1,-1);run.bank_reward();app.rebuild(),func():run.add_face(run.reward_face,chosen.x,chosen.y);app.trial_replacement = Vector2i(-1,-1);app.rebuild()],[false,false,not can_buy])
+static func reward(app, _column: Control) -> void:
+ preload("res://prototype/trial_rewards_ui.gd").render(app)
 static func guide(app) -> void:
  var run = app.trials;var column := P.panel(app,"Trials · help", "Pick a topic for a short explanation")
  var topics := ["How to play","My heroes","Rewards & resources","Arena","Boss Souls","Soulcaster"]
@@ -170,7 +131,7 @@ static func outcome(app) -> void:
  M.text(column,run.message,26,app.GOLD)
  if run.last_progress!="":M.text(column,run.last_progress,22,Color("9acdb6"))
  M.text(column,"%d Run Essence · %d HP remaining across the party" % [run.essence,int(run.hp.reduce(func(a,b):return int(a)+int(b),0))],21)
- if run.phase=="reward":M.text(column,"Choose a dice ability, a Weapon, or +2 Run Essence before the next stop.",21)
+ if run.phase=="reward":M.text(column,"Next choose who receives one upgrade, or take +2 Run Essence instead.",21)
  if int(app.game.trial_state.get("escaped",0))>0:M.text(column,"Escaped thieves kept %d Essence." % int(app.game.trial_state.escaped),20)
  P.footer(app,["Battle log","Continue"],[func():app.show_history = true;app.rebuild(),app.continue_trial])
 static func ending(app) -> void:
@@ -203,7 +164,7 @@ static func menu(app) -> void:
  P.footer(app,["Return to battle","Main menu · leave Trial"],[func():app.show_menu = false;app.rebuild(),app.go_main])
 
 static func crafting(app) -> void:
- var run = app.trials;var column := P.panel(app,"Trial Forge", "This collection stays in Trials")
+ var run = app.trials;var column := P.panel(app,"Trial Forge", "Permanent unlocks · spends saved Forge materials, not Run Essence")
  M.text(column,"Your class already includes its starting gear free. Craft Body designs to use them with the other class. Craft equipment with permanent Forge materials from Trial victories. Crafted pieces stay available for future Trials. Equip them in the lobby before beginning a new run. Fight rewards still use carried Run Essence.",20)
  if run.wishlist!="":M.text(column,"PINNED · "+run.wishlist_progress(),22,Color("9acdb6"))
  var keys: Array = C.RECIPES.keys()

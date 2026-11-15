@@ -57,7 +57,7 @@ func run_tests():
   check(entry[0] in text,"preparation explains each existing equipment slot in its own step")
  check(not "edge" in text.to_lower() and not "pact" in text.to_lower(),"setup has no extra equipment concepts")
  app.trials.start(35);app.trials.phase = "reward";app.trials.reward_mode = "weapon";app.rebuild();await process_frame;text = text_content(app.ui)
- check("Weapon" in text and "Equip Poison Dagger" in text and not "Attack edge" in text,"reward equips one named Weapon")
+ check("Weapon" in text and "Poison Dagger" in text and app.ui.find_child("TrialEquipWeapon",true,false)!=null and not "Attack edge" in text,"reward equips one named Weapon")
  app.game = fresh();app.page = "battle";app.seen_event = app.game.event_id;app.roll_seen = app.game.roll_presentations.size();app.dice_tray.cancel();app.rolling_time = 0;app.combat_notices.clear()
  app.game.heroes[0].rerolls = 1;var serial: int = app.game.roll_serial;app.perform_reroll(0)
  check(app.combat_notices.is_empty() and app.game.roll_serial>serial and app.game.heroes[0].rerolls==0,"Action Reroll animates the real roll without a text prompt")
