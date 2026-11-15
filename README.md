@@ -1,10 +1,10 @@
-# Ash & Oath v0.43
+# Ash & Oath v0.44
 
-[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.43)
+[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.44)
 
-Clearer menus in normal play and Trials: suggested normal party builds, Camp tasks, equipment previews, stepwise victory rewards and searchable context Help. Fixed Back / Next controls work on desktop and phone.
+Test chamber is directly on the main menu, with searchable normal / earned abilities and shared phone / desktop practice tools. Ash-and-brass menus reuse chamber artwork, drawn emblems and a hearth scene with the existing hero sprites.
 
-[Current rules](current-rules.html) · [Rulebook PDF](AshAndOath-Current-Rules-v0.43.pdf) · [Changes](Changes-v0.43.md) · [Validation](Validation-v0.43.md)
+[Current rules](current-rules.html) · [Rulebook PDF](AshAndOath-Current-Rules-v0.44.pdf) · [Changes](Changes-v0.44.md) · [Validation](Validation-v0.44.md)
 
 [Source repository](https://github.com/LordToff/ashandoathgame) · [Recovery and publishing](RECOVERY.md). SOURCE_COMMIT.txt and BUILD.json identify the tested source and release files.
 
