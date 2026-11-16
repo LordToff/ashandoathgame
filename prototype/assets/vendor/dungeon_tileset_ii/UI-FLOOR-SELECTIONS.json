@@ -1,0 +1,14 @@
+{
+  "floor_1.png": {
+    "archive_path": "0x72_DungeonTilesetII_v1.7/frames/floor_1.png",
+    "sha256": "c3bb5fc5345452ec79a332ac9113c9cdf78b0473238b734bf5f4cc0839fb2e3e"
+  },
+  "floor_2.png": {
+    "archive_path": "0x72_DungeonTilesetII_v1.7/frames/floor_2.png",
+    "sha256": "a1825b4bff905026d6fe7f814874e2d59d1bfe6384024634db9af079ca64cc68"
+  },
+  "floor_3.png": {
+    "archive_path": "0x72_DungeonTilesetII_v1.7/frames/floor_3.png",
+    "sha256": "2722a440e4fc3d9af1dffead6e061aa22d0c61c591baa6f3ed2742de26e465ce"
+  }
+}

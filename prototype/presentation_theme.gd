@@ -1,8 +1,8 @@
 extends RefCounted
 const BODY = preload("res://prototype/assets/body.ttf")
 static func box(bg: Color, border: Color, radius: int = 5) -> StyleBoxFlat:
- var s := StyleBoxFlat.new();s.bg_color = bg;s.border_color = border
- s.set_border_width_all(1);s.set_corner_radius_all(radius);s.corner_detail = 4
+ var s := StyleBoxFlat.new();s.bg_color = bg.lerp(Color("0b0b10"),.78);s.border_color = border.darkened(.3)
+ s.set_border_width_all(1);s.set_corner_radius_all(0);s.corner_detail = 4
  s.shadow_color = Color(0,0,0,.22);s.shadow_size = 5;s.shadow_offset = Vector2(0,3)
  s.content_margin_left = 14;s.content_margin_right = 14;s.content_margin_top = 7;s.content_margin_bottom = 7
  return s
@@ -35,16 +35,9 @@ static func make() -> Theme:
  t.set_color("default_color","RichTextLabel",text);t.set_constant("line_separation","RichTextLabel",4)
  t.set_stylebox("selected","ItemList",box(Color("324553"),gold))
  t.set_stylebox("panel","ItemList",box(Color("111d28"),Color("42515b")))
+ preload("res://prototype/game_skin.gd").apply_theme(t)
  return t
 
 static func menu_button(button: Button, accent: Color) -> void:
- var active: bool = button.text in ["Test chamber","Prepare my party","Prepare a Trial party","Continue Trial"] or button.text.begins_with("Next:") or button.text.begins_with("Begin Trial")
- for state in ["normal","hover","pressed","disabled"]:
-  var fill := Color("1c2723") if not active else Color("343023")
-  var line := Color(accent,.55 if active else .3)
-  if state=="hover":fill = fill.lightened(.09);line = accent
-  elif state=="pressed":fill = Color("3c3829");line = accent
-  elif state=="disabled":fill = Color("131a17");line = Color("354039")
-  var surface := box(fill,line,2);surface.border_width_left = 3 if active else 2;surface.border_width_bottom = 2
-  surface.shadow_size = 3;surface.shadow_color = Color(0,0,0,.38)
-  button.add_theme_stylebox_override(state,surface)
+ var primary: bool = button.text in ["Test chamber","Prepare my party","Prepare a Trial party","Continue Trial"] or button.text.begins_with("Next:") or button.text.begins_with("Begin Trial")
+ preload("res://prototype/game_skin.gd").button(button,accent,primary)

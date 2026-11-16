@@ -1,0 +1,1 @@
+Pirata One by Rodrigo Fuenzalida and Nicolas Massi, SIL Open Font License. Original files: https://github.com/google/fonts/tree/main/ofl/pirataone . Used for large gothic headings only; ability names and body text keep the readable body font. Original font and OFL notice are unchanged.

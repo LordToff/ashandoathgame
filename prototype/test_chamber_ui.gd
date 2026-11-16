@@ -34,7 +34,7 @@ static func fill_abilities(app, picker: OptionButton, query: String) -> void:
  picker.clear();var wanted: String = query.strip_edges().to_lower()
  for id in range(app.Essence.FACE_COUNT):
   if wanted!="" and not wanted in (app.Catalog.display_name(id)+" "+app.Catalog.text(id)).to_lower():continue
-  picker.add_item(app.Catalog.display_name(id),id)
+  picker.add_icon_item(app.AbilityGlyphs.small_texture(id),app.Catalog.display_name(id),id);picker.get_popup().set_item_icon_max_width(picker.item_count-1,20)
  picker.disabled = picker.item_count==0
  if picker.disabled:picker.add_item("No match — try another word",-1)
  else:picker.select(maxi(0,picker.get_item_index(app.lab_face)))

@@ -22,7 +22,10 @@ static func choose(app, parent: Control, caption: String, values: Array, index: 
  var pick := OptionButton.new();pick.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE;pick.fit_to_longest_item = false;pick.clip_text = true;pick.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;pick.mouse_filter = Control.MOUSE_FILTER_PASS;pick.custom_minimum_size = Vector2(0,68);pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
  if node_name != "":pick.name = node_name
  pick.add_theme_font_size_override("font_size",22)
- for value in values:pick.add_item(str(value))
+ for value in values:
+  pick.add_item(str(value))
+  var face: int = app.AbilityGlyphs.face_for_text(str(value))
+  if face>=0:pick.set_item_icon(pick.item_count-1,app.AbilityGlyphs.small_texture(face));pick.get_popup().set_item_icon_max_width(pick.item_count-1,20)
  pick.select(maxi(0,index));pick.item_selected.connect(action,Object.CONNECT_DEFERRED);parent.add_child(pick)
  pick.get_popup().add_theme_font_size_override("font_size",22);pick.get_popup().add_theme_constant_override("v_separation",16);return pick
 static func picture(parent: Control, texture: Texture2D) -> void:
@@ -206,8 +209,8 @@ static func fit_button(pick: Button, dimensions: Vector2, preferred: int = 20) -
  for state in ["normal","hover","pressed","disabled"]:padding = padding.max(pick.get_theme_stylebox(state).get_minimum_size())
  var size: int = preferred
  while size>12:
-  var measured: Vector2 = font.get_multiline_string_size(pick.text,HORIZONTAL_ALIGNMENT_LEFT,maxf(24,dimensions.x-padding.x-4),size,-1,TextServer.BREAK_MANDATORY|TextServer.BREAK_WORD_BOUND|TextServer.BREAK_ADAPTIVE)
-  if measured.y<=dimensions.y-padding.y-2 and measured.x<=dimensions.x-padding.x-4:break
+  var measured: Vector2 = font.get_multiline_string_size(pick.text,HORIZONTAL_ALIGNMENT_LEFT,maxf(24,dimensions.x-padding.x-(pick.icon.get_width()+6 if pick.icon!=null else 0)-4),size,-1,TextServer.BREAK_MANDATORY|TextServer.BREAK_WORD_BOUND|TextServer.BREAK_ADAPTIVE)
+  if measured.y<=dimensions.y-padding.y-2 and measured.x<=dimensions.x-padding.x-(pick.icon.get_width()+6 if pick.icon!=null else 0)-4:break
   size -= 1
  pick.add_theme_font_size_override("font_size",size);pick.custom_minimum_size = Vector2.ZERO;pick.size = dimensions
 static func board_point(app, at: Vector2) -> Vector2:
@@ -247,7 +250,7 @@ static func battle(app) -> void:
   var forecast: Dictionary = app.game.enemy_intent(entry.source,entry.action,entry.slot)
   var b: Button = app.BattleHUD.intent(app,entry.action,forecast.target_text,Vector2(enemy_x+i*(w+8),56 if landscape else 126),Vector2(w,40),func():app.intent_focus = Vector2i(entry.source,entry.slot);app.show_intents = true;app.rebuild(),app.BattlePanels.intent_color(entry.action))
   b.name = "EnemyIntent"+str(i)
-  if active == 3 and i == app.game.boss_visible_index():b.add_theme_stylebox_override("normal",app.style(Color("303c4b"),GOLD))
+  if active == 3 and i == app.game.boss_visible_index():b.add_theme_stylebox_override("normal",preload("res://prototype/game_skin.gd").surface("intent_active",Color(.98,.88,.73)))
  if app.BattleHUD.latest(app)!="":
   var result: Label = app.label_at(app.BattleHUD.latest(app),Vector2(x,106) if landscape else Vector2(12,174),13,Color("edcd94"),width)
   result.name = "LastRollResult";result.max_lines_visible = 1;result.tooltip_text = app.BattleHUD.latest(app)
@@ -267,7 +270,7 @@ static func battle(app) -> void:
     if app.Model.Soulcaster.held(app.game,active,die):b.text = "Saved · "+app.Catalog.name_for(face)
     elif h.used[die] and die not in h.reaction and (h.channel.is_empty() or h.channel.die != die):app.mark_spent(b)
     elif app.selected == die:b.add_theme_stylebox_override("normal",app.style(Color("293747"),app.color_for_face(face),1))
-    app.BattleHUD.category_mark(b,app.color_for_face(face),h.used[die] and die not in h.reaction)
+    app.BattleHUD.category_mark(b,app.color_for_face(face),h.used[die] and die not in h.reaction and not app.Model.Soulcaster.held(app.game,active,die) and (h.channel.is_empty() or h.channel.die!=die),face,app.selected==die,app.game.forced_die>=0 and app.game.forced_die!=die)
   var action_y: float = size.y-108;var w: float = (width-16)/3
   touch(app,"Cancel" if app.trial_fight and not app.trial_choice.is_empty() else "Details",Vector2(x,action_y),Vector2(w,44),func():
    if app.trial_fight and not app.trial_choice.is_empty():app.trial_choice.clear();app.rebuild()

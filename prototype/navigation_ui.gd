@@ -28,9 +28,10 @@ static func main(app) -> void:
  if app.menu_more:
   H.action(app,column,"Guided practice — learn a turn",app.start_training,"MenuPractice",app.MUTED)
   H.action(app,column,"Detailed rules reference",func():app.show_help = true;app.rebuild(),"MenuRulebook",app.MUTED)
+  H.action(app,column,"Art credits",func():app.show_art_credits = true;app.rebuild(),"MenuArtCredits",app.MUTED)
   H.action(app,column,"Patch notes",func():app.show_changes = true;app.rebuild(),"MenuChanges",app.MUTED)
   H.action(app,column,"Desktop layout" if app.mobile_mode else "Phone layout",func():app.set_mobile_mode(not app.mobile_mode),"MobileDesktopMode" if app.mobile_mode else "MainMobileMode",app.MUTED)
- M.text(column,"v0.44 · Saves and preferences stay on this browser/device.",13,app.MUTED)
+ M.text(column,"v0.45 · Saves and preferences stay on this browser/device.",13,app.MUTED)
  P.footer(app,["Test chamber","Settings","Less" if app.menu_more else "More"],[app.open_test_chamber,app.open_settings,func():app.menu_more = not app.menu_more;app.rebuild()])
  for node in app.ui.get_children():
   if node is Button and node.text=="Test chamber":node.name = "MobileLab" if app.mobile_mode else "MainLab";node.tooltip_text = "Try abilities against practice targets. Open Lab tools to choose abilities, force Numeric results and reset."

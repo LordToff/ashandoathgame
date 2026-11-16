@@ -64,7 +64,7 @@ const Nugh = preload("res://prototype/nugh.gd")
 const NUGH_SPRITE = preload("res://prototype/assets/pixel_nugh.png")
 const NUGH_PHASE = preload("res://prototype/assets/pixel_nugh_phase2.png")
 const WORM_SPRITE = preload("res://prototype/assets/pixel_screaming_worm.png")
-const DIE_Y = 205
+const DIE_Y = 318
 const DIE_STEP = 98
 const HubUI = preload("res://prototype/hub_ui.gd")
 var camp_tab := 0
@@ -97,7 +97,7 @@ var encounter := "hollow"
 const Model = preload("res://prototype/battle.gd")
 const FaceLoadout = preload("res://prototype/face_loadout.gd")
 const Preset = preload("res://prototype/preset.gd")
-const TITLE = preload("res://prototype/assets/title.ttf")
+const TITLE = preload("res://prototype/assets/vendor/pirata_one/PirataOne-Regular.ttf")
 const Polish = preload("res://prototype/presentation_theme.gd")
 const Score = preload("res://prototype/soundtrack.gd")
 const CHAMBER = preload("res://prototype/assets/pixel_chamber.png")
@@ -108,7 +108,7 @@ const PORTRAITS = preload("res://prototype/assets/pixel_portraits.png")
 const SPRITES = preload("res://prototype/assets/pixel_units.png")
 const BOSS_PHASE_TWO = preload("res://prototype/assets/pixel_boss_phase2.png")
 const BODY = preload("res://prototype/assets/body.ttf")
-const GOLD = Color("e6c58c")
+const GOLD = Color("e3ddd3")
 const INK = Color("10151e")
 const MUTED = Color("a8b4bf")
 const COLORS = [Color("69c7bd"),Color("c5a5e8"),Color("edbd79")]
@@ -151,6 +151,7 @@ var show_lab_tools := false
 var reward_soul := false
 var blank_move_setting := false
 var dice_animation := true
+var show_art_credits := false
 var show_player_guide := false
 var player_guide_topic := "Start here"
 var player_guide_search := ""
@@ -169,6 +170,7 @@ var music: AudioStreamPlayer
 var muted := false
 var t := 0.0
 var balanced := true
+const AbilityGlyphs = preload("res://prototype/ability_symbols.gd")
 const DeathFeedback = preload("res://prototype/death_feedback.gd")
 const MenuHelpers = preload("res://prototype/menu_helpers.gd")
 const PlayerGuide = preload("res://prototype/player_guide.gd")
@@ -385,6 +387,9 @@ func button(text: String, p: Vector2, sz: Vector2, fn: Callable, accent: Color =
   if not b.is_inside_tree():return
   if b.get_meta("debug_consumed",false):b.remove_meta("debug_consumed");return
   fn.call(),CONNECT_DEFERRED if mobile_mode else 0)
+ AbilityGlyphs.decorate(b,text)
+ if AbilityGlyphs.face_for_text(text)>=0:b.add_theme_color_override("font_color",accent)
+ var engraving := preload("res://prototype/gothic_edges.gd").new();b.add_child(engraving)
  ui.add_child(b); return b
 
 func panel(rect: Rect2, color: Color = Color("161d28"), border: Color = Color("303a48")) -> void:
@@ -394,6 +399,7 @@ func rebuild() -> void:
  sync_presentation()
  if not trial_choice.is_empty() and trial_choice.get("stamp",[])!=trial_choice_stamp():trial_choice.clear()
  for c in ui.get_children(): ui.remove_child(c); c.queue_free()
+ if show_art_credits:art_credits_ui();queue_redraw();return
  if show_player_guide:PlayerGuide.render(self);queue_redraw();return
  if show_soulcaster_help:SoulcasterUI.guide(self);queue_redraw();return
  if lab and show_lab_setup:lab_setup_ui();queue_redraw();return
@@ -435,7 +441,7 @@ func rebuild() -> void:
   button("Battle log",Vector2(398,112),Vector2(126,26),open_battle_log,MUTED).name = "BattleLogButton"
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.44",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.45",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -495,6 +501,9 @@ func begin() -> void:
  hint = "Select a rolled die, then a highlighted cell or unit. Boss dice are public."
  rebuild()
 
+func die_card_rect(die: int) -> Rect2:
+ return Rect2(760+die*220,DIE_Y,208,138)
+
 func battle_ui() -> void:
  if inspect_actor != game.active:
   inspect_actor = game.active;combat_inspected = -1;inspect_action = "";show_active_effects = false;roll_feedback = {};selected = game.forced_die
@@ -528,6 +537,7 @@ func battle_ui() -> void:
  for i in range(3):BattleHUD.hero_card(self,i,Vector2(24+i*244,60),Vector2(232,48))
  if game.active < 3:
   var h: Dictionary = game.heroes[game.active]
+  BattleHUD.active_hero(self,Rect2(760,202,640,103))
   for d in range(3):
    var f: int = game.face(game.active,d)
    var state: String = "OMEN SAVED" if Model.Soulcaster.held(game,game.active,d) else "CHANNEL HELD" if not h.channel.is_empty() and h.channel.die == d else ("REACTION HELD" if d in h.reaction else ("SPENT" if h.used[d] else ("RESOLVE NEXT" if game.forced_die == d else "READY")))
@@ -537,11 +547,12 @@ func battle_ui() -> void:
    if selected >= 0 and game.face(game.active,selected) == 6 and d != selected and game.focus_reason(selected,d) == "":state = "FOCUS TARGET"
    if game.reroll_face_reason(f) != "":kind += " · NO REROLL"
    var text: String = name_text+("\nHeld" if d in h.reaction or Model.Soulcaster.held(game,game.active,d) else "")
-   var die_button := button(text,Vector2(760,DIE_Y+d*DIE_STEP),Vector2(548,88),func():select_combat_die(d),color_for_face(f),not game.pending.is_empty() or game.outcome != "" or h.dead or h.hp <= 0)
+   var die_rect: Rect2 = die_card_rect(d)
+   var die_button := button(text,die_rect.position,die_rect.size,func():select_combat_die(d),color_for_face(f),not game.pending.is_empty() or game.outcome != "" or h.dead or h.hp <= 0)
    die_button.name = "BattleDie%d" % d
-   MobileUI.fit_button(die_button,Vector2(548,88),22);die_button.tooltip_text = face_help(f)
-   var detail_button := button("Info",Vector2(1320,DIE_Y+d*DIE_STEP),Vector2(80,88),func():mobile_info = face_help(f);rebuild(),MUTED)
-   detail_button.name = "BattleDetails%d" % d;MobileUI.fit_button(detail_button,Vector2(80,88),16)
+   MobileUI.fit_button(die_button,die_rect.size,22);die_button.tooltip_text = face_help(f)
+   var detail_button := button("Info",Vector2(760+d*220,457),Vector2(208,36),func():mobile_info = face_help(f);rebuild(),MUTED)
+   detail_button.name = "BattleDetails%d" % d;MobileUI.fit_button(detail_button,Vector2(208,36),16)
    var cannot_focus: bool = selected >= 0 and game.face(game.active,selected) == 6 and d != selected and game.focus_reason(selected,d) != ""
    var waiting: bool = game.forced_die >= 0 and game.forced_die != d
    if h.used[d] or waiting or cannot_focus:
@@ -552,7 +563,7 @@ func battle_ui() -> void:
    if state == "FOCUS TARGET":die_button.add_theme_stylebox_override("normal",style(Color("243b3c"),Color("82c8b9")))
    if selected == d and not h.used[d]:
     var chosen := style(Color("2b3d48"),GOLD if game.forced_die == d else color_for_face(f));chosen.set_border_width_all(2);die_button.add_theme_stylebox_override("normal",chosen)
-   BattleHUD.category_mark(die_button,color_for_face(f),h.used[d] and d not in h.reaction)
+   BattleHUD.category_mark(die_button,color_for_face(f),h.used[d] and d not in h.reaction and not Model.Soulcaster.held(game,game.active,d) and (h.channel.is_empty() or h.channel.die!=d),f,selected==d,waiting or cannot_focus)
    if game.forced_die == d:die_button.tooltip_text = ""
 
   var instruction: String = "Choose a die, then its target. You can end your turn with dice left." if selected < 0 else hint
@@ -612,15 +623,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(536,118),11,Color("d7b3eb"),202).name = "NughBroodStatus"
- var goal := "v0.44 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.45 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.44 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.44 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.45 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.45 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.44 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.45 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · Counterattack" if game.guard_broken else "BULWARK %d · Guard / evade" % game.v("warden.armor"),Vector2(536,112),Vector2(202,28),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.44 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.45 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · %s" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(536,112),Vector2(202,28),func():show_turn = true;rebuild(),Color("8cdae4"))
   MobileUI.fit_button(meter,Vector2(202,28),11);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -843,6 +854,7 @@ func _gui_input(event: InputEvent) -> void:
 func _unhandled_key_input(event: InputEvent) -> void:
  if not combat_notices.is_empty():return
  if event.is_action_pressed("ui_cancel"):
+  if show_art_credits:show_art_credits = false;rebuild();return
   if show_player_guide:show_player_guide = false;rebuild();return
   if is_instance_valid(balance_editor):balance_editor.queue_free();balance_editor = null
   choosing_poke = false;mobile_info = "";show_intents = false;show_trial_guide = false
@@ -850,14 +862,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _draw() -> void:
  if mobile_mode:
-  draw_rect(get_viewport_rect(),Color("101718"))
+  preload("res://prototype/game_skin.gd").mat(self,get_viewport_rect().size)
   if page == "battle":
    var rect: Rect2 = MobileUI.board_rect(self)
    var zoom: float = rect.size.x/MobileUI.SOURCE_RECT.size.x
    draw_set_transform(rect.position-MobileUI.SOURCE_RECT.position*zoom,0,Vector2.ONE*zoom)
    draw_board();draw_effects();draw_set_transform(Vector2.ZERO)
   return
- if page=="battle":draw_rect(Rect2(0,0,1440,900),Color("101718"))
+ if page=="battle":preload("res://prototype/game_skin.gd").mat(self,Vector2(1440,900))
  else:draw_texture_rect(CHAMBER,Rect2(0,0,1440,900),false)
  draw_line(Vector2(24,76),Vector2(1408,76),Color("303846"))
  if page in ["main","normal","forge","setup","events","camp","trials"]:return
@@ -879,7 +891,7 @@ func _draw() -> void:
   draw_set_transform(Vector2.ZERO)
 
 func draw_board() -> void:
- draw_rect(Rect2(24,128,716,716),Color("111c25"))
+ preload("res://prototype/game_skin.gd").panel(self,Rect2(24,128,716,716),Color("a88a63"))
  draw_rect(Rect2(ORIGIN-Vector2.ONE*2,Vector2.ONE*(CELL*9+4)),Color("536777"),false,2)
  var preview: Dictionary = ability_preview()
  var highlights: Array = preview.tiles
@@ -897,7 +909,9 @@ func draw_board() -> void:
    if c in game.fire_tiles:col = Color("8c4b2c")
    if game.encounter_id == "bugh" and c in game.sweep_tiles:col = Color("a57636")
    var floor_color: Color = Color("283232") if (x+y)%2==0 else Color("232c2d")
-   draw_rect(Rect2(p,Vector2.ONE*CELL),floor_color)
+   var tile: Texture2D = preload("res://prototype/game_skin.gd").FLOORS[(x*7+y*11)%3]
+   draw_texture_rect(tile,Rect2(p,Vector2.ONE*CELL),false,Color(.75,.73,.70))
+   draw_rect(Rect2(p,Vector2.ONE*CELL),Color(floor_color,.72))
    if c in game.cells(3) or c in highlights or c in game.brand_cells or c in game.fire_tiles or (game.encounter_id=="bugh" and c in game.sweep_tiles):draw_rect(Rect2(p,Vector2.ONE*CELL),Color(col,0.52))
    draw_rect(Rect2(p,Vector2.ONE*CELL),Color("465354"),false,1)
    if game.encounter_id == "bugh" and c in game.sweep_tiles:
@@ -1115,7 +1129,7 @@ func draw_effects() -> void:
   if fx.kind=="fall":DeathFeedback.draw(self,fx);continue
   if fx.kind == "focus":
    if game.active == fx.source:
-    var rect := Rect2(756,DIE_Y-4+fx.die*DIE_STEP,336,96)
+    var rect: Rect2 = die_card_rect(fx.die).grow(4)
     draw_rect(rect,Color(GOLD,minf(1.0,fx.life)),false,3)
    continue
   if fx.kind in ["boss_attack","impact"]:
@@ -1261,7 +1275,9 @@ func draft_ui() -> void:
   for color_name in ["font_color","font_hover_color","font_pressed_color","font_focus_color","font_disabled_color","font_hover_pressed_color"]:card.add_theme_color_override(color_name,Color(0,0,0,0))
   var hovered = card_style.duplicate();hovered.bg_color = Color("2b414b");hovered.border_color = color_for_face(id);card.add_theme_stylebox_override("hover",hovered)
   var pressed = hovered.duplicate();pressed.bg_color = Color("354c54");card.add_theme_stylebox_override("pressed",pressed);card.tooltip_text = ""
-  var card_title := Label.new();card_title.name = "CardTitle";card_title.text = Catalog.name_for(id);card_title.position = Vector2(16,12);card_title.size = Vector2(254,24);card_title.clip_text = true;card_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;card_title.add_theme_font_size_override("font_size",15);card_title.add_theme_color_override("font_color",Color("eee8dc"));card_title.mouse_filter = Control.MOUSE_FILTER_IGNORE;card_title.size = Vector2(254,24);card.add_child(card_title)
+  card.icon = null
+  var symbol := TextureRect.new();symbol.texture = AbilityGlyphs.texture(id);symbol.position = Vector2(16,12);symbol.size = Vector2(20,20);symbol.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE;card.add_child(symbol)
+  var card_title := Label.new();card_title.name = "CardTitle";card_title.text = Catalog.name_for(id);card_title.position = Vector2(44,12);card_title.size = Vector2(226,24);card_title.clip_text = true;card_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;card_title.add_theme_font_size_override("font_size",15);card_title.add_theme_color_override("font_color",Color("eee8dc"));card_title.mouse_filter = Control.MOUSE_FILTER_IGNORE;card_title.size = Vector2(226,24);card.add_child(card_title)
   var category_label := Label.new();category_label.text = Catalog.classification(id);category_label.position = Vector2(16,39);category_label.add_theme_font_size_override("font_size",11);category_label.add_theme_color_override("font_color",color_for_face(id));category_label.mouse_filter = Control.MOUSE_FILTER_IGNORE;card.add_child(category_label)
   var summary := RichTextLabel.new();var short_text := short_face_help(id).split("\n")[0];summary.text = "Equipped · click again to remove" if chosen else (short_text.left(62)+"…" if short_text.length()>62 else short_text);summary.position = Vector2(16,59);summary.scroll_active = false;summary.add_theme_font_size_override("normal_font_size",12);summary.add_theme_color_override("default_color",GOLD if chosen else MUTED);summary.mouse_filter = Control.MOUSE_FILTER_IGNORE;summary.size = Vector2(254,43);card.add_child(summary)
   if chosen:
@@ -1428,7 +1444,7 @@ func lab_tools_ui() -> void:
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.44",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.45",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1608,7 +1624,7 @@ func soul_toggle(at: Vector2, in_lab: bool, width: float = 0) -> void:
   return
  var toggle := CheckButton.new();toggle.name = "TestSoulToggle"
  var override_on: bool = game.reward if in_lab and (lab or training) else reward_soul
- toggle.text = ("Test Soul: " if lab or training else "Sandbox override: ")+"Blank → Move %d · " % balance_number("soul.move") + ("ON" if override_on else "OFF")
+ toggle.text = ("Test Blanks: " if lab or training else "Blank movement: ")+"Blank → Move %d · " % balance_number("soul.move") + ("ON" if override_on else "OFF")
  toggle.position = at;toggle.size = Vector2(width if width > 0 else (380 if in_lab else 430),30 if in_lab else 44)
  toggle.add_theme_font_size_override("font_size",14)
  toggle.button_pressed = override_on
@@ -1802,17 +1818,12 @@ func inspection_at(at: Vector2) -> String:
  if Rect2(760,780,328,48).has_point(at):return "effects"
  if game.active < 3:
   for die in range(3):
-   if Rect2(760,DIE_Y+die*DIE_STEP,328,88).has_point(at):return "hero:"+str(die)
+   if die_card_rect(die).has_point(at):return "hero:"+str(die)
  return ""
 func apply_hover_inspection() -> void:
- if not lab and not training:
-  combat_inspected = -1;inspect_action = "";show_active_effects = false;return
- combat_inspected = -1;inspect_action = "";show_active_effects = false;detailed_ability = false
- var key := inspection_at_mouse()
- if key.begins_with("hero:"):combat_inspected = game.face(game.active,int(key.get_slice(":",1)))
- elif key.begins_with("boss:"):inspect_action = game.boss_rolls[int(key.get_slice(":",1))]
- elif key == "phase":inspect_action = "__phase__"
- elif key == "effects":show_active_effects = true
+ # Each card has an explicit Info control; hover tooltips never cover the hand.
+ combat_inspected = -1;inspect_action = "";show_active_effects = false
+
 func combat_details_ui() -> void:
  var backing := Panel.new();backing.name = "CombatAbilityWindow";backing.position = Vector2(1112,151);backing.size = Vector2(304,687);backing.add_theme_stylebox_override("panel",style(Color("192936"),GOLD));ui.add_child(backing)
  var phase: bool = inspect_action == "__phase__"
@@ -1991,7 +2002,7 @@ func combat_reroll_ui() -> void:
  var caption := "Choose a die to reroll" if choosing_reroll or selected < 0 else "Reroll selected die"
  if window != "":caption = "REROLL UNAVAILABLE\n"+window
  elif choosing_reroll:caption = "REROLL: CLICK A DIE\nReady dice or held Reactions"
- else:caption += " · %d charge(s)\n%s" % [h.rerolls,"Any time this turn" if game.v("hero.reroll_anytime") else "Opening only"]
+ else:caption = ("Reroll this die" if selected>=0 else "Reroll a die")+" · %d left" % h.rerolls+ ("" if game.v("hero.reroll_anytime") else " · opening only")
  var b := button(caption,Vector2(760,612),Vector2(640,58),func():
   if selected >= 0 and game.reroll_reason(selected) == "":perform_reroll(selected)
   else:choosing_reroll = true;selected = -1;hint = "Click a ready die or held Reaction to reroll it.";rebuild(),GOLD,window != "")
@@ -2241,7 +2252,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.44",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.45",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2581,6 +2592,7 @@ func abandon_encounter() -> void:
  rolling_time = 0;combat_notices.clear();effects.clear()
 
 func go_main() -> void:
+ show_art_credits = false
  show_lab_tools = false;show_lab_setup = false
  show_player_guide = false;normal_flow = false
  show_soulcaster_help = false
@@ -2923,3 +2935,12 @@ func open_player_guide(topic: String = "") -> void:
 func open_normal() -> void:
  if page=="battle":abandon_encounter()
  normal_flow = true;show_menu = false;show_options = false;draft_modal = false;page = "normal";rebuild()
+
+func art_credits_ui() -> void:
+ var column: VBoxContainer = BattlePanels.panel(self,"Art credits","Original artwork and openly licensed symbols used by Ash & Oath.")
+ MobileUI.text(column,"Icons made by Lorc, Delapouite, DarkZaitzev, Felbrigg, Sbed, Skoll and Willdabeast — Game-icons.net.",22,GOLD)
+ MobileUI.text(column,"Creative Commons Attribution 3.0. Original 2020 SVGs are unchanged; the game scales and tints their display. Every ability, including spells and weapon attacks, has a distinct selected symbol.",18,MUTED)
+ MenuHelpers.action(self,column,"Game-icons.net — artists and source",func():OS.shell_open("https://game-icons.net"),"IconCreditsSource")
+ MenuHelpers.action(self,column,"CC BY 3.0 licence",func():OS.shell_open("https://creativecommons.org/licenses/by/3.0/"),"IconCreditsLicense")
+ MobileUI.text(column,"Gothic headings: Pirata One by Rodrigo Fuenzalida and Nicolas Massi, SIL Open Font License. The Hollow: skeletal warrior by roctavian (2016), Dungeon Crawl tile artwork, Public Domain / CC0. Other existing sprite sources and licence notices remain in the repository.",18,MUTED)
+ BattlePanels.footer(self,["Back to game"],[func():show_art_credits = false;rebuild()])

@@ -5,14 +5,15 @@ static func panel(app, title: String, subtitle: String) -> VBoxContainer:
  var shade := preload("res://prototype/menu_art.gd").new();shade.name = "MenuBackdrop";shade.main_menu = app.page=="main" and not app.show_player_guide;shade.size = size;shade.footer_top = size.y-86;app.ui.add_child(shade)
  var title_size: int = (32 if app.mobile_mode else 42) if app.page=="main" and not app.show_player_guide else (24 if app.mobile_mode else 30)
  var title_width: float = size.x-148
- var heading: Label = app.label_at(title,Vector2(16,10),title_size,app.GOLD,title_width,true,true);heading.name = "MenuTitle";heading.max_lines_visible = 2;heading.clip_text = true
+ var heading: Label = app.label_at(title,Vector2(25,10),title_size,app.GOLD,title_width,true,true);heading.name = "MenuTitle";heading.max_lines_visible = 2;heading.clip_text = true
  var flags: int = TextServer.BREAK_MANDATORY|TextServer.BREAK_WORD_BOUND|TextServer.BREAK_ADAPTIVE
  var title_height: float = minf(heading.get_theme_font("font").get_multiline_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,title_width,title_size,-1,flags).y,heading.get_theme_font("font").get_height(title_size)*2)
  heading.size.y = title_height
  var caption: String = subtitle
  if app.page=="trials" and not app.show_player_guide:caption = "Trials · "+subtitle
  elif app.page in ["normal","setup","events","camp"] and not app.show_player_guide:caption = "Normal adventure · "+subtitle
- var subtitle_y: float = 18+title_height
+ shade.ribbon_height = title_height+18
+ var subtitle_y: float = 24+title_height
  var sub: Label = app.label_at(caption,Vector2(18,subtitle_y),16,app.MUTED,size.x-36,false,true);sub.name = "MenuSubtitle";sub.max_lines_visible = 3
  var subtitle_height: float = minf(sub.get_theme_font("font").get_multiline_string_size(caption,HORIZONTAL_ALIGNMENT_LEFT,size.x-36,16,-1,flags).y,sub.get_theme_font("font").get_height(16)*3)
  sub.size.y = subtitle_height
@@ -113,7 +114,7 @@ static func engrave(app) -> void:
  var faces: Array = notice.get("faces",[])
  for side in range(faces.size()):
   var face: int = faces[side]
-  var b := button(app,grid,"Side %d\n%s" % [side+1,app.Catalog.name_for(face)],func():pass,app.color_for_face(face));b.custom_minimum_size.y = 90
+  var b := button(app,grid,"Side %d\n%s" % [side+1,app.Catalog.name_for(face)],func():pass,app.color_for_face(face));b.custom_minimum_size.y = 90;b.icon = app.AbilityGlyphs.small_texture(face)
  footer(app,["Continue"],[func():app.combat_notices.pop_front();app.rebuild()])
 
 static func collection(app) -> void:

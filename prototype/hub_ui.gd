@@ -37,7 +37,8 @@ static func forge(app) -> void:
  ids.append_array(app.gifts[app.build_hero])
  for id in ids:
   var shown: int = app.camp_display_face(app.build_hero,app.forge_die,app.forge_side)
-  picker.add_item(app.Catalog.display_name(shown)+" · replaces Strike" if id==1 and app.Model.Equipment.FACES.has(shown) else app.Catalog.display_name(id),id)
+  picker.add_icon_item(app.AbilityGlyphs.small_texture(shown if id==1 and app.Model.Equipment.FACES.has(shown) else id),app.Catalog.display_name(shown)+" · replaces Strike" if id==1 and app.Model.Equipment.FACES.has(shown) else app.Catalog.display_name(id),id)
+  picker.get_popup().set_item_icon_max_width(picker.item_count-1,20)
  picker.select(picker.get_item_index(face));picker.get_popup().min_size = Vector2i(460,0)
  picker.item_selected.connect(func(index):app.forge_replace(picker.get_item_id(index)));app.ui.add_child(picker)
  C.detail(app,app.face_help(app.camp_display_face(app.build_hero,app.forge_die,app.forge_side)),Rect2(1014,410,350,152)).name = "ForgeAbilityDetails"

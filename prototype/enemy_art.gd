@@ -1,5 +1,6 @@
 extends RefCounted
 ## Original pixel frames by 0x72, CC0. See vendor/dungeon_tileset_ii/SOURCE.md.
+const HOLLOW = preload("res://prototype/assets/vendor/crawl_roctavian/skeletal_warrior.png")
 const STILLS = {
  "bone_creature":preload("res://prototype/assets/enemies/bone_creature.tres"),
  "support_creature":preload("res://prototype/assets/enemies/support_creature.tres"),
@@ -12,7 +13,7 @@ const STILLS = {
  "ram":preload("res://prototype/assets/enemies/ram.tres"),
  "thief":preload("res://prototype/assets/enemies/thief.tres"),
  "archer":preload("res://prototype/assets/enemies/archer.tres"),
- "hollow":preload("res://prototype/assets/enemies/hollow.tres"),
+ "hollow":HOLLOW,
  "nugh":preload("res://prototype/assets/enemies/nugh.tres"),
  "cantor":preload("res://prototype/assets/enemies/cantor.tres"),
  "bugh":preload("res://prototype/assets/enemies/bugh.tres"),
@@ -39,6 +40,7 @@ const WILDS = {
 }
 static var frames: Dictionary = {}
 static func texture(key: String, seconds: float = 0, moving: bool = false) -> Texture2D:
+ if key=="hollow":return HOLLOW
  if WILDS.has(key):return WILDS[key]
  if RESTORED.has(key):
   var data: Array = RESTORED[key];var index: int = int(seconds*(8 if moving else 3))%int(data[3]);var cache: String = key+str(index)

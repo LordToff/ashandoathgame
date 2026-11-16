@@ -21,6 +21,16 @@ const TEXT = """[b][color=#d5b87a]v0.4 · Read the fight, test the dice[/color][
 
 [color=#91a0af]Previous updates · v0.3: full-pool two-face choices, causal battle logs, battlefield art and combat effects. v0.2: boss explanations, dice-roll animation, opening rerolls and selectable Tuned / Original balance.[/color]"""
 
+const V45 = """[b]v0.45 · Gothic HUD and ability symbols[/b]
+
+Near-black panels, ivory symbols, crimson actions and gothic headings replace the earlier brass-and-parchment direction. Combat uses a compact three-face skill rack, a larger active hero portrait on desktop, readable intent rows and category-colored names. Spent faces turn dark gray.
+
+Every one of the 85 face identities has a distinct symbol: normal and earned abilities, generated faces, six weapon attacks and six Soulcaster spells. The same symbols appear in ability choices, dice/equipment selectors and the searchable Test chamber. Main menu → More → Art credits lists the original artists and licence.
+
+The Hollow now uses roctavian’s original 32-pixel skeletal warrior (2016), with the existing attack and death effects. Its HP, abilities, targeting and occupied tiles keep their existing rules.
+
+Test chamber remains directly on the main menu, and phone combat keeps fixed turn controls. Existing equipment, rewards, saves and normal / Trial rules are preserved."""
+
 const V44 = """[b]v0.44 · Test chamber and ash-and-brass menus[/b]
 
 [b]Test chamber is on the main menu.[/b] Its fixed button opens the ability picker directly on desktop and phone. Search by ability name or effect, select a normal or earned face, choose a Numeric result and try it on the map. The chamber includes all 73 normal / earned face entries without spending unlocks or materials.
@@ -83,6 +93,7 @@ Normal play and Trials share these rules, with separate inventories. Existing ow
 """
 
 const SECTIONS = [
+ {"title":"Gothic HUD & ability symbols · v0.45","body":V45},
  {"title":"Test chamber & menu style · v0.44","body":V44},
  {"title":"Clearer menus · v0.43","body":V43},
  {"title":"Guided preparation · v0.42","body":V42},

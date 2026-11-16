@@ -52,6 +52,7 @@ static func blank(app) -> void:
   var w: float = (usable-6)/2;var top: float = (98 if app.mobile_mode else 104)+(index/2)*(card_height+4)
   var caption: String = ("Mirror (Reaction)" if face==77 else str(info.name))+"\n%d charge%s · 1 HP" % [int(info.cost),"s" if int(info.cost)!=1 else ""]
   var button: Button = app.button(caption,at+Vector2(10+(index%2)*(w+6),top),Vector2(w,card_height),func():change(app,func():S.manifest(g,face)),app.color_for_face(face),reason!="")
+  button.icon = app.AbilityGlyphs.small_texture(face);button.add_theme_color_override("font_color",app.color_for_face(face))
   button.name = "SoulSpell"+str(face);button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART;button.add_theme_font_size_override("font_size",18 if app.mobile_mode else 17);M.fit_button(button,Vector2(w,card_height),18 if app.mobile_mode else 17)
   button.tooltip_text = info.text+"\n\n"+(reason if reason!="" else "Create on the selected Blank. It must roll on a later turn.")
  if not app.mobile_mode:

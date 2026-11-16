@@ -31,8 +31,8 @@ func run_tests() -> void:
  fresh(app);app.select_combat_die(0);var rng_before: int = app.game.rng.state;click(app,Vector2i(8,0));check(not app.game.heroes[0].used[0] and app.game.boss.hp==10 and app.game.rng.state==rng_before,"invalid target spends neither die nor RNG")
  fresh(app);app.game.heroes[0].results[0] = 78;app.game.heroes[0].build[0][3] = 78;app.game.heroes[1].hp = 2;app.select_combat_die(0);click(app,Vector2i(2,5));check(app.game.heroes[1].hp==4 and app.game.heroes[0].used[0] and app.game.heroes[0].build[0][3]==0,"Grave Stitch heals the tapped ally and returns to Blank directly")
  for key in Art.STILLS:
-  var first: AtlasTexture = Art.texture(key,0);var next: AtlasTexture = Art.texture(key,.25);var walk: AtlasTexture = Art.texture(key,0,true)
-  check(first.get_size().x>0 and (Art.RESTORED.has(key) or Art.WILDS.has(key) or (first.region!=next.region and first.region!=walk.region)),"restored sprite or licensed animation available: "+key)
-  check(first.region.size.x<=32 and first.region.size.y<=32,"pixel source bounds stay native: "+key)
+  var first: Texture2D = Art.texture(key,0);var next: Texture2D = Art.texture(key,.25);var walk: Texture2D = Art.texture(key,0,true)
+  check(first.get_size().x>0 and (key=="hollow" or Art.RESTORED.has(key) or Art.WILDS.has(key) or (first is AtlasTexture and next is AtlasTexture and walk is AtlasTexture and first.region!=next.region and first.region!=walk.region)),"restored sprite or licensed animation available: "+key)
+  check(first.get_size().x<=32 and first.get_size().y<=32,"pixel source bounds stay native: "+key)
  app.queue_free();await process_frame
  print("DIRECT v39: %d checks, %d failures" % [checks,failures]);quit(1 if failures else 0)
