@@ -28,6 +28,11 @@
     "Ash-and-Oath-v0.46-Remake-Kit.zip": {
       "bytes": 347921,
       "sha256": "9cc18a4a8c27e3e8806ee1f6aad0714c2aa989eeaa4dadad97c7cbc24c5e2361"
+    },
+    "Ash-and-Oath-Complete-Game-Remake.pdf": {
+      "bytes": 716153,
+      "sha256": "462df28867108dc2b46432b50ec51e9408e99016a5ef9a058b08368e9b8e8a55",
+      "contents": "Self-contained complete remake handoff: rules, 85 abilities, 339 balance fields, exact data and 24 reference-model scripts; no ZIP required"
     }
   }
 }
