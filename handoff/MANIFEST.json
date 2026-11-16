@@ -1,0 +1,33 @@
+{
+  "version": "0.46",
+  "source_commit": "be9f5c2675a45d989976334c7f20c7e186d4a5ca",
+  "purpose": "Mechanics-only blueprint for a complete remake; current game presentation is not a constraint",
+  "counts": {
+    "ability_identities": 85,
+    "normal_earned_generated": 73,
+    "weapon_faces": 6,
+    "soulcaster_spells": 6,
+    "bosses": 4,
+    "trial_enemy_roles": 5,
+    "creature_and_reward_families": 9,
+    "balance_schema_fields": 339
+  },
+  "files": {
+    "Ash-and-Oath-v0.46-All-Mechanics.md": {
+      "bytes": 136339,
+      "sha256": "c7325ee3dfb033502e82d5d281de9efd0fa13c63ce6f61e05d66a2cfe4a1c1aa"
+    },
+    "Ash-and-Oath-v0.46-Mechanics-Rulebook.pdf": {
+      "bytes": 170461,
+      "sha256": "dceebe05bd4cf8d707e6c57508f981119c6583e8fc3c2cc17efe72e134e6bdae"
+    },
+    "Ash-and-Oath-v0.46-Next-Chat-Prompt.txt": {
+      "bytes": 1078,
+      "sha256": "6388088f10ba019502202af7771084d764f5a64a20a1804c26b7f6caf3a5b586"
+    },
+    "Ash-and-Oath-v0.46-Remake-Kit.zip": {
+      "bytes": 347921,
+      "sha256": "9cc18a4a8c27e3e8806ee1f6aad0714c2aa989eeaa4dadad97c7cbc24c5e2361"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+I want to remake Ash & Oath from this mechanics kit. Read START_HERE.md, CORE_MECHANICS.md, ALL_GAME_RULES.md and RULE_DATA.json so you understand the complete game. Use reference-model only when exact behavior is unclear.
+
+Preserve the implemented game mechanics, all 85 ability identities, four-layer equipment rules, four bosses, normal progression, Trials, Soulcaster and optional per-turn rerolls unless I explicitly change a rule. Normal and Trial resources must remain separate. Bodies only constrain Defense/Movement/Skill; Weapons own Attack limits and Strike replacements; Souls own HP/Blanks/strong effects; Memory starts empty.
+
+I am remaking the whole presentation. Do not inherit the previous gothic UI, HUD, colors, sprites, layouts or art restrictions. There is no requirement to patch the old interface or even keep the old engine. I will give you the new visual/technical direction. First understand the rules and follow that direction without simplifying away the game. Do not change the published reference game just because this kit contains its mechanics.
