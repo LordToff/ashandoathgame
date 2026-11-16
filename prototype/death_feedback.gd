@@ -5,10 +5,7 @@ static func start(app, step: Dictionary) -> void:
  for fallen in step.fallen:
   var id: int = fallen.id;var sprite: Texture2D
   var objective: bool = app.Model.TrialRules.objective_unit(app.game,id)
-  if id<3:
-   var atlas := AtlasTexture.new();atlas.atlas = app.SPRITES
-   var half: Vector2 = app.SPRITES.get_size()/2.0
-   atlas.region = Rect2(Vector2(id%2,id/2)*half,half);sprite = atlas
+  if id<3:sprite = app.HeroArt.texture(id)
   elif not objective:sprite = app.EnemyArt.texture(app.EnemyArt.key_for(app.game,id),app.t)
   var boss: bool = id==3 and app.game.encounter_id!="event"
   var zoom: int = (4 if sprite.get_height()>24 else 5) if boss else (2 if sprite!=null and sprite.get_height()>24 else 3)

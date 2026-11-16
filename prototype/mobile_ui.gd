@@ -251,7 +251,10 @@ static func battle(app) -> void:
   var b: Button = app.BattleHUD.intent(app,entry.action,forecast.target_text,Vector2(enemy_x+i*(w+8),56 if landscape else 126),Vector2(w,40),func():app.intent_focus = Vector2i(entry.source,entry.slot);app.show_intents = true;app.rebuild(),app.BattlePanels.intent_color(entry.action))
   b.name = "EnemyIntent"+str(i)
   if active == 3 and i == app.game.boss_visible_index():b.add_theme_stylebox_override("normal",preload("res://prototype/game_skin.gd").surface("intent_active",Color(.98,.88,.73)))
- if app.BattleHUD.latest(app)!="":
+ if app.selected>=0 or app.choosing_reroll:
+  var prompt: Label = app.label_at(app.combat_prompt(),Vector2(x,106) if landscape else Vector2(12,174),13,app.GOLD,width,false,true)
+  prompt.name = "MobileActionInstruction";prompt.max_lines_visible = 2;prompt.clip_text = true;prompt.size.y = 36
+ elif app.BattleHUD.latest(app)!="":
   var result: Label = app.label_at(app.BattleHUD.latest(app),Vector2(x,106) if landscape else Vector2(12,174),13,Color("edcd94"),width)
   result.name = "LastRollResult";result.max_lines_visible = 1;result.tooltip_text = app.BattleHUD.latest(app)
  if app.trial_fight:app.trial_objective_button()
@@ -267,18 +270,16 @@ static func battle(app) -> void:
     var face: int = app.game.face(active,die);var w: float = (width-16)/3
     var b := touch(app,app.Catalog.name_for(face),Vector2(x+die*(w+8),die_y),Vector2(w,64),func():app.mobile_die = die;app.select_combat_die(die),app.color_for_face(face),not app.game.pending.is_empty() or app.game.outcome != "" or h.dead or h.hp<=0,"MobileDie"+str(die))
     fit_button(b,Vector2(w,64),18)
-    if app.Model.Soulcaster.held(app.game,active,die):b.text = "Saved · "+app.Catalog.name_for(face)
+    if app.Model.Soulcaster.held(app.game,active,die):b.text = app.Catalog.name_for(face)+"\nHeld"
     elif h.used[die] and die not in h.reaction and (h.channel.is_empty() or h.channel.die != die):app.mark_spent(b)
     elif app.selected == die:b.add_theme_stylebox_override("normal",app.style(Color("293747"),app.color_for_face(face),1))
-    app.BattleHUD.category_mark(b,app.color_for_face(face),h.used[die] and die not in h.reaction and not app.Model.Soulcaster.held(app.game,active,die) and (h.channel.is_empty() or h.channel.die!=die),face,app.selected==die,app.game.forced_die>=0 and app.game.forced_die!=die)
+    app.BattleHUD.category_mark(b,app.color_for_face(face),h.used[die] and die not in h.reaction and not app.Model.Soulcaster.held(app.game,active,die) and (h.channel.is_empty() or h.channel.die!=die),face,app.selected==die,(app.game.forced_die>=0 and app.game.forced_die!=die) or (app.choosing_reroll and app.game.reroll_reason(die)!=""))
   var action_y: float = size.y-108;var w: float = (width-16)/3
   touch(app,"Cancel" if app.trial_fight and not app.trial_choice.is_empty() else "Details",Vector2(x,action_y),Vector2(w,44),func():
    if app.trial_fight and not app.trial_choice.is_empty():app.trial_choice.clear();app.rebuild()
    else:app.show_mobile_details(),MUTED,false,"MobileDetails")
-  touch(app,"Reroll",Vector2(x+w+8,action_y),Vector2(w,44),func():
-   app.friendly_confirm = -1
-   if app.selected >= 0 and app.game.reroll_reason(app.selected) == "":app.perform_reroll(app.selected)
-   else:app.choosing_reroll = true;app.selected = -1;app.rebuild(),GOLD,app.game.reroll_window_reason() != "","MobileReroll")
+  var reroll_caption: String = "Cancel reroll" if app.choosing_reroll else "Reroll (%d)" % h.rerolls
+  touch(app,reroll_caption,Vector2(x+w+8,action_y),Vector2(w,44),app.toggle_reroll_selection,GOLD,app.game.reroll_window_reason()!="" and not app.choosing_reroll,"MobileReroll")
   var immediate: bool = app.selected >= 0 and not h.used[app.selected] and app.game.face(active,app.selected) in [0,4,9,10,11,13,14,16,17,18,20,21,22,23,24,25,26,27,29,30,31,32,33,42,43,47,49,50,51,52,54,56,60,62,63,64,65,71,72]
   if app.selected >= 0 and app.game.face(active,app.selected) == 0:immediate = app.Model.Soulcaster.equipped(app.game,active) or not app.game.reward or app.game.soul_remaining(active)<=0 or app.game.soul_mode(active) in ["heal","block"]
   if app.selected >= 0 and app.game.face(active,app.selected) == 59 and app.game.owned_worm(active)>=0:immediate = true
@@ -355,7 +356,7 @@ static func reflow(node: Control) -> void:
 static func modal(app, renderer: Callable) -> void:
  var begin: int = app.ui.get_child_count();renderer.call();var nodes: Array = app.ui.get_children().slice(begin)
  var size: Vector2 = app.get_viewport_rect().size
- var shade := ColorRect.new();shade.name = "MobileModalShade";shade.color = Color("101923");shade.size = size;app.ui.add_child(shade)
+ var shade := ColorRect.new();shade.name = "MobileModalShade";shade.color = Color("09090f");shade.size = size;app.ui.add_child(shade)
  var scroll := ScrollContainer.new();scroll.name = "MobileModal";scroll.position = Vector2(12,12);scroll.size = size-Vector2(24,24);scroll.scroll_deadzone = 14;app.ui.add_child(scroll)
  var column := VBoxContainer.new();column.custom_minimum_size.x = size.x-42;column.size_flags_horizontal = Control.SIZE_EXPAND_FILL;column.add_theme_constant_override("separation",16);scroll.add_child(column)
  for node in nodes:
@@ -373,7 +374,7 @@ static func info(app) -> void:
 static func menu(app) -> void:
  if app.trial_fight:app.TrialUI.menu(app);return
  modal(app,func():
-  app.label_at("Game menu",Vector2.ZERO,28,GOLD)
+  app.label_at("Game menu",Vector2.ZERO,28,GOLD,420,true)
   app.button("Return to battle",Vector2.ZERO,Vector2(400,68),func():app.show_menu = false;app.rebuild())
   for item in [["Enemy intents","show_intents"],["Enemy cards","show_enemy_cards"],["Full battle log","show_history"],["View dice","show_dice"],["Supplies","show_supplies"],["Help / glossary","show_player_guide"],["Sound & volume","show_soundtrack"],["Options","show_options"]]:
    app.button(item[0],Vector2.ZERO,Vector2(400,68),func():app.show_menu = false;app.set(item[1],true);app.player_guide_topic = app.PlayerGuide.context(app) if item[1]=="show_player_guide" else app.player_guide_topic;app.rebuild())
@@ -381,7 +382,7 @@ static func menu(app) -> void:
 static func options(app) -> void:
  if app.trial_fight:app.TrialUI.options(app);return
  modal(app,func():
-  app.label_at("Options",Vector2.ZERO,28,GOLD)
+  app.label_at("Options",Vector2.ZERO,28,GOLD,420,true)
   app.fullscreen_button(Vector2.ZERO,Vector2(420,68))
   app.dice_animation_button(Vector2.ZERO,Vector2(420,68))
   app.button("Debug unlocks: "+("On" if app.debug_mode else "Off"),Vector2.ZERO,Vector2(420,68),func():app.set_debug_mode(not app.debug_mode))
@@ -390,6 +391,7 @@ static func options(app) -> void:
    app.balance_values["hero.reroll_anytime"] = value
    if app.page == "battle":app.game.balance["hero.reroll_anytime"] = value
    app.rebuild())
+  app.turn_reroll_button(Vector2.ZERO,Vector2(420,68))
   app.blank_move_button(Vector2.ZERO,Vector2(420,68))
   app.button("Sound & volume",Vector2.ZERO,Vector2(420,68),func():app.show_soundtrack = true;app.rebuild())
   app.button("Desktop mode",Vector2.ZERO,Vector2(420,68),func():app.show_options = false;app.set_mobile_mode(false))

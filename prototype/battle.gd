@@ -340,8 +340,8 @@ func activate() -> void:
  active = order[cursor]; boss_index = 0; forced_die = -1
  action_owner = active; action_label = "Turn start"; action_before = {}
  record_event("turn",unit_name(active)+" begins its turn.",active)
- record_event("guide",turn_explanation(),active)
  if active == 3:
+  record_event("guide",turn_explanation(),active)
   tick_poison(3)
   if outcome != "":return
   for id in range(3):
@@ -364,6 +364,8 @@ func activate() -> void:
   h.event_salve_used = false
   if h.dead or h.hp == 0 or active in replaced:
    cursor += 1; activate(); return
+  refill_turn_reroll(active)
+  record_event("guide",turn_explanation(),active)
   tick_poison(active)
   if h.hp <= 0 or outcome != "":
    if outcome == "":finish_turn()
@@ -389,6 +391,14 @@ func activate() -> void:
    h.channel.block_lost = 0
    pending = {"kind":"channel","hero":active}
   Soulcaster.offer_omen(self)
+
+func refill_turn_reroll(hero: int) -> void:
+ if v("hero.reroll_each_turn")==0 or hero not in range(3):return
+ var h: Dictionary = heroes[hero]
+ if h.dead or h.hp<=0:return
+ var before: int = h.rerolls
+ h.rerolls = maxi(before,mini(1,v("hero.reroll_cap")))
+ if h.rerolls>before:record_event("buff","%s starts this own turn with 1 Action Reroll (turn refill)." % unit_name(hero),hero,hero,1)
 
 func tick_poison(id: int) -> void:
  var h: Dictionary = unit_data(id)
@@ -446,6 +456,7 @@ func finish_turn() -> void:
   heroes[active].damaged_enemy_turn = false;heroes[active].dagger_used = false
   heroes[active].event_salve_used = false
   TrialRules.turn_start(self,active)
+  refill_turn_reroll(active)
   heroes[active].opening = true; reset_soul_allowance(active)
   roll_context = "Recovery · fresh Action Dice"
   roll_serial += 1
@@ -1568,7 +1579,7 @@ func turn_explanation() -> String:
  var available := 0
  for used in h.used:
   if not used: available += 1
- return "%s TURN: old Block expires (Stonewake can preserve it); temporary defenses end. Action Rerolls: %d charge(s) left; use any time this turn by default (Opening only can be selected in Options). Resolve up to %d available dice in any order, choosing board targets or Resolve. Stored reactions wait for attacks. End hero turn when finished; unused immediate results are lost at the next shared roll. Next round rolls all heroes together, not at each hero turn." % [unit_name(active),h.rerolls,available]
+ return "%s TURN: old Block expires (Stonewake can preserve it); temporary defenses end. Action Rerolls: %d charge(s) left; %s use any time this turn by default (Opening only can be selected in Options). Resolve up to %d available dice in any order, choosing board targets or Resolve. Stored reactions wait for attacks. End hero turn when finished; unused immediate results are lost at the next shared roll. Next round rolls all heroes together, not at each hero turn." % [unit_name(active),h.rerolls,"turn refill ON;" if v("hero.reroll_each_turn") else "turn refill OFF;",available]
 
 
 func present_action_roll(id: int, dice: Array, kind: String) -> void:
@@ -1707,7 +1718,7 @@ func reroll_window_reason() -> String:
  if not burden_interrupt.is_empty():return "Resolve the Shared Burden copy; this is one borrowed action, not a full turn."
  if forced_die >= 0:return "Resolve the forced result before using an Action Reroll."
  if v("hero.reroll_anytime") == 0 and not h.opening:return "Opening window closed: an action has already resolved. Saved charges are usable next own turn; Focus is a separate ability."
- if h.rerolls < v("hero.reroll_cost"):return "Not enough Action Rerolls. The starting charge does not refill each round."
+ if h.rerolls < v("hero.reroll_cost"):return "No Action Rerolls left. One refills at your next own turn." if v("hero.reroll_each_turn") else "Not enough Action Rerolls. Enable turn refill in Settings, or gain a charge from an ability."
  return ""
 
 func reroll_reason(d: int) -> String:

@@ -1,0 +1,1151 @@
+{
+  "version": "0.46",
+  "restored": {
+    "nugh": {
+      "source": "prototype/assets/pixel_nugh.png",
+      "sha256": "d489be6c368897689ee446a274def7f79eb448a2726d1d61bdc343a264ddc673",
+      "frame_size": [
+        32,
+        32
+      ],
+      "frames": 1,
+      "selection": "restored existing repository sprite"
+    },
+    "nugh_phase2": {
+      "source": "prototype/assets/pixel_nugh_phase2.png",
+      "sha256": "cf3ede6705a886e75954206db549bcd043118ae39fc22e3da23bbda5c9453035",
+      "frame_size": [
+        32,
+        32
+      ],
+      "frames": 1,
+      "selection": "restored existing repository sprite"
+    },
+    "worm": {
+      "source": "prototype/assets/pixel_screaming_worm.png",
+      "sha256": "45920abd1c5414f7c7ab753532a8ac7750ff01910274d24ad1299f0390d76d49",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "friendly_worm": {
+      "source": "prototype/assets/pixel_friendly_nugh.png",
+      "sha256": "3330ece27835c8bebfde1fe1cd640f7fa16f6b5373c899ca65b592d410aac5d4",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "mite": {
+      "source": "prototype/assets/pixel_mite.png",
+      "sha256": "d6f2019605e28b560c2d4f06f22dce078320a9bc1a69e715f586f4bbe867dd3a",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "cocoon": {
+      "source": "prototype/assets/pixel_cocoon.png",
+      "sha256": "219d432eb1e3372d35ae46b083f9783c62202d2d3731dc849355d3b838ab5f8d",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "bone_creature": {
+      "source": "prototype/assets/bone_creature.png",
+      "sha256": "e0ec148016f21aa57042eb71b2d62b15991d8855d57a92aa12b431f8b6d5a015",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "support_creature": {
+      "source": "prototype/assets/support_creature.png",
+      "sha256": "a4407f05b96a9ab9f5dcb2a86d463acd3ea2fbc3ee9bab747ae034007ff461f9",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "movement_creature": {
+      "source": "prototype/assets/movement_creature.png",
+      "sha256": "61ba704cec243a2174ef5ab2770f9458bcd0cffde9d97550875838776e1d4b34",
+      "frame_size": [
+        16,
+        16
+      ],
+      "frames": 2,
+      "selection": "restored existing repository sprite"
+    },
+    "mire_leech": {
+      "source": "prototype/assets/mire_leech.tres",
+      "sha256": "cf11989e14c2a05215828ffb97289bb63b3844ddd4bef22c8800f920a8a49a72",
+      "selection": "existing Kenney Tiny Dungeon CC0 tile selection"
+    },
+    "glasswing_moth": {
+      "source": "prototype/assets/glasswing_moth.tres",
+      "sha256": "a024ccd2fc5d4c8c02c91cd1f2ba3683ada2a1561ce93554aee03f2ec34c2e1b",
+      "selection": "existing Kenney Tiny Dungeon CC0 tile selection"
+    },
+    "iron_husk": {
+      "source": "prototype/assets/iron_husk.tres",
+      "sha256": "4a13b629b558732e9d4d65849285d89dfd27f678ab185d8811f378ff7ca5dccf",
+      "selection": "existing Kenney Tiny Dungeon CC0 tile selection"
+    }
+  },
+  "other_sprites": "prototype/assets/vendor/dungeon_tileset_ii/SELECTIONS.json",
+  "new_image_generation": false,
+  "note": "Original 2016 knights and cobblestone/masonry replace party and arena art. Hollow, enemy and ability symbol selections retain v0.45 behavior. Exact new sources are in party_and_arena.",
+  "hollow": {
+    "artist": "roctavian",
+    "commit": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+    "source_path": "crawl-ref/source/rltiles/mon/undead/skeletal_warrior.png",
+    "sha256": "4d3ae1b824674cad213175bf77b9d1acb19c5cfeb67df1399e5b292d3ff3138d"
+  },
+  "ability_symbols": {
+    "repository": "https://github.com/game-icons/icons",
+    "revision": "c547b7e4941d83bba737cd97a0a168e6719a7807",
+    "revision_date": "2020-10-31",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "symbols": {
+      "plain-circle": {
+        "original_path": "delapouite/plain-circle.svg",
+        "artist": "delapouite",
+        "sha256": "5540302fe1daab38979de136fc38ca027350575fbebac1837081f8cb25100dd7",
+        "source_url": "https://game-icons.net/1x1/delapouite/plain-circle.html"
+      },
+      "broadsword": {
+        "original_path": "lorc/broadsword.svg",
+        "artist": "lorc",
+        "sha256": "e2232708111e32ae2e0bde451c5fbd371232d32b3a962f3573a58e0578d8bdb7",
+        "source_url": "https://game-icons.net/1x1/lorc/broadsword.html"
+      },
+      "footprint": {
+        "original_path": "lorc/footprint.svg",
+        "artist": "lorc",
+        "sha256": "a7da122e726b3d98699340dc00356a3fd80f8bee41f53d1c97d984821d158db5",
+        "source_url": "https://game-icons.net/1x1/lorc/footprint.html"
+      },
+      "wingfoot": {
+        "original_path": "lorc/wingfoot.svg",
+        "artist": "lorc",
+        "sha256": "5afd379de8d710508bf135462f378c7b4cec48e0f1d131ca72cf18329616eeed",
+        "source_url": "https://game-icons.net/1x1/lorc/wingfoot.html"
+      },
+      "round-shield": {
+        "original_path": "willdabeast/round-shield.svg",
+        "artist": "willdabeast",
+        "sha256": "36942692bbedebcce1c83e728492bc3f63498e640244c019663306d9c8b9cd0a",
+        "source_url": "https://game-icons.net/1x1/willdabeast/round-shield.html"
+      },
+      "shield-reflect": {
+        "original_path": "lorc/shield-reflect.svg",
+        "artist": "lorc",
+        "sha256": "31ba6597d40ae70e7eb326f3c00620ad815cf3d2fcecfc6dd30d3d593c3da34b",
+        "source_url": "https://game-icons.net/1x1/lorc/shield-reflect.html"
+      },
+      "eye-target": {
+        "original_path": "delapouite/eye-target.svg",
+        "artist": "delapouite",
+        "sha256": "0ccefba805085ebd9bc6527f3afc61f69f300a9251265d3f50f6d126c3a4a465",
+        "source_url": "https://game-icons.net/1x1/delapouite/eye-target.html"
+      },
+      "first-aid-kit": {
+        "original_path": "delapouite/first-aid-kit.svg",
+        "artist": "delapouite",
+        "sha256": "b235669e23d9b5b4c4c9d0bfa0d1154dace7e47152b5e9655028a974cc7a7326",
+        "source_url": "https://game-icons.net/1x1/delapouite/first-aid-kit.html"
+      },
+      "push": {
+        "original_path": "delapouite/push.svg",
+        "artist": "delapouite",
+        "sha256": "d1720876d7f154f34d9f8d1015f57ae66d40067350207c206038b7f5b5b9c50d",
+        "source_url": "https://game-icons.net/1x1/delapouite/push.html"
+      },
+      "two-coins": {
+        "original_path": "delapouite/two-coins.svg",
+        "artist": "delapouite",
+        "sha256": "6d43f41723a0c0776bba4489ecf9fc8f51062247efb3153718a9fe5b0ef3f0ed",
+        "source_url": "https://game-icons.net/1x1/delapouite/two-coins.html"
+      },
+      "bullseye": {
+        "original_path": "skoll/bullseye.svg",
+        "artist": "skoll",
+        "sha256": "84c3e46ae25be014eb7e83eae9f2572693084c53f9f2af164528e98f0a7a4cb2",
+        "source_url": "https://game-icons.net/1x1/skoll/bullseye.html"
+      },
+      "magic-swirl": {
+        "original_path": "lorc/magic-swirl.svg",
+        "artist": "lorc",
+        "sha256": "b9b6dd3a8f9f047158dfcfb687794bcb02b955a2d330489aa6329653ec08fd71",
+        "source_url": "https://game-icons.net/1x1/lorc/magic-swirl.html"
+      },
+      "angel-wings": {
+        "original_path": "lorc/angel-wings.svg",
+        "artist": "lorc",
+        "sha256": "c042ec9088aeefe3498f9ef75ccd26e391970f678821a9f71bd9b0c5bae66c12",
+        "source_url": "https://game-icons.net/1x1/lorc/angel-wings.html"
+      },
+      "crystal-ball": {
+        "original_path": "lorc/crystal-ball.svg",
+        "artist": "lorc",
+        "sha256": "7db3054b563602ee43f20c6f0fa164a7a71d27ee1695098fc8d98e451d362a80",
+        "source_url": "https://game-icons.net/1x1/lorc/crystal-ball.html"
+      },
+      "fist": {
+        "original_path": "lorc/fist.svg",
+        "artist": "lorc",
+        "sha256": "d30b874fb1b5fa9056165fb9fa11f12c67ce2728f990c11b3cac1dda62c55b49",
+        "source_url": "https://game-icons.net/1x1/lorc/fist.html"
+      },
+      "crowned-heart": {
+        "original_path": "lorc/crowned-heart.svg",
+        "artist": "lorc",
+        "sha256": "8ee485dacca5137bfd8ebf00b01fda7e4553e3e91ce0909a31711dfbb5fcfe6b",
+        "source_url": "https://game-icons.net/1x1/lorc/crowned-heart.html"
+      },
+      "shadow-follower": {
+        "original_path": "lorc/shadow-follower.svg",
+        "artist": "lorc",
+        "sha256": "06c54031860610b723e10655fd6f324a6274467ec2806f2ed1c3341ad8f3c243",
+        "source_url": "https://game-icons.net/1x1/lorc/shadow-follower.html"
+      },
+      "resonance": {
+        "original_path": "lorc/resonance.svg",
+        "artist": "lorc",
+        "sha256": "6b7804fdeec1b08db029fed639b56fda363a372c74fd79be48ca31fe8d3d9a26",
+        "source_url": "https://game-icons.net/1x1/lorc/resonance.html"
+      },
+      "crossed-chains": {
+        "original_path": "lorc/crossed-chains.svg",
+        "artist": "lorc",
+        "sha256": "f1abae549c51b0b226f072c1331c4cce9e9f8d542dfb3252ba2c634eb2dc9eb7",
+        "source_url": "https://game-icons.net/1x1/lorc/crossed-chains.html"
+      },
+      "healing": {
+        "original_path": "delapouite/healing.svg",
+        "artist": "delapouite",
+        "sha256": "1469b2f79fe72774afc3995f6b3888406b620a4be18e2e1dfc55e450ee87a89f",
+        "source_url": "https://game-icons.net/1x1/delapouite/healing.html"
+      },
+      "dice-target": {
+        "original_path": "delapouite/dice-target.svg",
+        "artist": "delapouite",
+        "sha256": "ca78adbcd3b6caddae0e3096d782ebb14287210beb4aa995a4d3813c4251692c",
+        "source_url": "https://game-icons.net/1x1/delapouite/dice-target.html"
+      },
+      "target-shot": {
+        "original_path": "lorc/target-shot.svg",
+        "artist": "lorc",
+        "sha256": "a427906e8ead31dff9affea81b5cf90bbad6049ed740bb431d69d6877e07aaca",
+        "source_url": "https://game-icons.net/1x1/lorc/target-shot.html"
+      },
+      "death-note": {
+        "original_path": "lorc/death-note.svg",
+        "artist": "lorc",
+        "sha256": "fa41a44394c1c54dc34d155af9c735b8252f7af6d37d4dc4b5c90e203fd922e3",
+        "source_url": "https://game-icons.net/1x1/lorc/death-note.html"
+      },
+      "cycle": {
+        "original_path": "lorc/cycle.svg",
+        "artist": "lorc",
+        "sha256": "6311c74d5be1728e703357d425d55890c8138a693539d6dfe681826143432ce8",
+        "source_url": "https://game-icons.net/1x1/lorc/cycle.html"
+      },
+      "vortex": {
+        "original_path": "lorc/vortex.svg",
+        "artist": "lorc",
+        "sha256": "2710b89be509f6468e273ddf087b5d95e7438bbb6e46cb694d0f142f83f7e2a9",
+        "source_url": "https://game-icons.net/1x1/lorc/vortex.html"
+      },
+      "caged-ball": {
+        "original_path": "lorc/caged-ball.svg",
+        "artist": "lorc",
+        "sha256": "bde56d4a815f0831fe48d79ffbc71fbb94f8b7dabae765ced4ddf25cc8aaed85",
+        "source_url": "https://game-icons.net/1x1/lorc/caged-ball.html"
+      },
+      "evil-book": {
+        "original_path": "lorc/evil-book.svg",
+        "artist": "lorc",
+        "sha256": "37287ea69c41d667efdd391942095f7acee85c6cf90b546f92cbf2298ceccb87",
+        "source_url": "https://game-icons.net/1x1/lorc/evil-book.html"
+      },
+      "drop": {
+        "original_path": "lorc/drop.svg",
+        "artist": "lorc",
+        "sha256": "c83775bdbe772f1556a6807343494700446eeddc5fc7f77ad7e011c7aa488feb",
+        "source_url": "https://game-icons.net/1x1/lorc/drop.html"
+      },
+      "divert": {
+        "original_path": "lorc/divert.svg",
+        "artist": "lorc",
+        "sha256": "68421a1006071d035d09ae0d80accf27028becedd2aa0183ac157cbf09b590f7",
+        "source_url": "https://game-icons.net/1x1/lorc/divert.html"
+      },
+      "pay-money": {
+        "original_path": "delapouite/pay-money.svg",
+        "artist": "delapouite",
+        "sha256": "092c13490edc294edf328aa8daa7ee73575556bacee93acf3e1c3e0e1460de4d",
+        "source_url": "https://game-icons.net/1x1/delapouite/pay-money.html"
+      },
+      "raven": {
+        "original_path": "lorc/raven.svg",
+        "artist": "lorc",
+        "sha256": "d5edeb469a8d63d4737a5295ae50a722176d6dacf63721ebf9476eead0d86605",
+        "source_url": "https://game-icons.net/1x1/lorc/raven.html"
+      },
+      "stone-block": {
+        "original_path": "lorc/stone-block.svg",
+        "artist": "lorc",
+        "sha256": "0b4cf5fc1a5500654b70f2631c773004d8b618238b1a6d23692731024138d82c",
+        "source_url": "https://game-icons.net/1x1/lorc/stone-block.html"
+      },
+      "smoking-orb": {
+        "original_path": "lorc/smoking-orb.svg",
+        "artist": "lorc",
+        "sha256": "9933064faaf7de4a5e818216d98f44ac3e3e5b7c545fa0bb1115bc00c279d427",
+        "source_url": "https://game-icons.net/1x1/lorc/smoking-orb.html"
+      },
+      "backbone-shell": {
+        "original_path": "lorc/backbone-shell.svg",
+        "artist": "lorc",
+        "sha256": "cf0b55efd4f478b146a35f729e5af3eadf0602946eec82cd66c01c7a36fecdee",
+        "source_url": "https://game-icons.net/1x1/lorc/backbone-shell.html"
+      },
+      "dice-six-faces-three": {
+        "original_path": "delapouite/dice-six-faces-three.svg",
+        "artist": "delapouite",
+        "sha256": "fbbfaa5d9fb87316f92b18cef3f512d4628f7e8ab16b56771713c82b0039d7b2",
+        "source_url": "https://game-icons.net/1x1/delapouite/dice-six-faces-three.html"
+      },
+      "arrow-scope": {
+        "original_path": "lorc/arrow-scope.svg",
+        "artist": "lorc",
+        "sha256": "5d6060b2e5babaec47ed0ff079e0291790aeddf7f2bda41d4592ef86a956aeab",
+        "source_url": "https://game-icons.net/1x1/lorc/arrow-scope.html"
+      },
+      "hook": {
+        "original_path": "delapouite/hook.svg",
+        "artist": "delapouite",
+        "sha256": "9ae0c3d0a8b279d900a4553ed031d0915033aed9393c671eec84d7f3eb4de3e4",
+        "source_url": "https://game-icons.net/1x1/delapouite/hook.html"
+      },
+      "piercing-sword": {
+        "original_path": "lorc/piercing-sword.svg",
+        "artist": "lorc",
+        "sha256": "335f1f0143377600a18bae50a42ac3116775164bca0f8d168547a29dbd039582",
+        "source_url": "https://game-icons.net/1x1/lorc/piercing-sword.html"
+      },
+      "axe-swing": {
+        "original_path": "lorc/axe-swing.svg",
+        "artist": "lorc",
+        "sha256": "b75a1a719e15465c598de2e18d818d6f95ddcf7a7134a50e5f866fdf8ce47e6d",
+        "source_url": "https://game-icons.net/1x1/lorc/axe-swing.html"
+      },
+      "backstab": {
+        "original_path": "lorc/backstab.svg",
+        "artist": "lorc",
+        "sha256": "68034f71f695f752e53db16224695b9634dcc893bccdacd736a18d8886d148c8",
+        "source_url": "https://game-icons.net/1x1/lorc/backstab.html"
+      },
+      "broken-bone": {
+        "original_path": "lorc/broken-bone.svg",
+        "artist": "lorc",
+        "sha256": "3f8dcc1d49f6d3a124c223099a52a8a9125b7a38596bc80f06b786ac6e0f5b9a",
+        "source_url": "https://game-icons.net/1x1/lorc/broken-bone.html"
+      },
+      "rune-sword": {
+        "original_path": "lorc/rune-sword.svg",
+        "artist": "lorc",
+        "sha256": "e8b9a1e8309d470a01150243fba4808cdd6f124847f3501d24d4141c2da6c143",
+        "source_url": "https://game-icons.net/1x1/lorc/rune-sword.html"
+      },
+      "dice-shield": {
+        "original_path": "delapouite/dice-shield.svg",
+        "artist": "delapouite",
+        "sha256": "b88deaa4f0837f971d01704e3a0a8f6b18af6af4f6cf1f22c15224c484fed6be",
+        "source_url": "https://game-icons.net/1x1/delapouite/dice-shield.html"
+      },
+      "armor-vest": {
+        "original_path": "lorc/armor-vest.svg",
+        "artist": "lorc",
+        "sha256": "2850884a0d2b0b7dc3f6f95aa693ce383c9575d1d3cadb9dad9a161349b6c791",
+        "source_url": "https://game-icons.net/1x1/lorc/armor-vest.html"
+      },
+      "layered-armor": {
+        "original_path": "lorc/layered-armor.svg",
+        "artist": "lorc",
+        "sha256": "65e85bbd6e618d3496d667e91928b6b639cdd1d88d70e71c499a964a484cca93",
+        "source_url": "https://game-icons.net/1x1/lorc/layered-armor.html"
+      },
+      "shouting": {
+        "original_path": "lorc/shouting.svg",
+        "artist": "lorc",
+        "sha256": "52fef141212812bcd6cb398538e21e518cc7ceff97ff41c2348864d234f17e18",
+        "source_url": "https://game-icons.net/1x1/lorc/shouting.html"
+      },
+      "half-dead": {
+        "original_path": "delapouite/half-dead.svg",
+        "artist": "delapouite",
+        "sha256": "e7800a704209708e50861a838e540be9332e8a164b11eb7f0212576b450ac5be",
+        "source_url": "https://game-icons.net/1x1/delapouite/half-dead.html"
+      },
+      "locked-fortress": {
+        "original_path": "lorc/locked-fortress.svg",
+        "artist": "lorc",
+        "sha256": "4d7f6e2024e2f00a371cb04f42a6780964c9848333609a4b188b905c9c7e93d7",
+        "source_url": "https://game-icons.net/1x1/lorc/locked-fortress.html"
+      },
+      "screaming": {
+        "original_path": "lorc/screaming.svg",
+        "artist": "lorc",
+        "sha256": "a9605ce855022ae54f42f14693902943aae9a19a9445b4e783f74fb2412e5bbe",
+        "source_url": "https://game-icons.net/1x1/lorc/screaming.html"
+      },
+      "heart-beats": {
+        "original_path": "delapouite/heart-beats.svg",
+        "artist": "delapouite",
+        "sha256": "38ab738016b85e5fba64c1a47df153c9990305a95237d098f2726f6ae17f9b73",
+        "source_url": "https://game-icons.net/1x1/delapouite/heart-beats.html"
+      },
+      "skull-signet": {
+        "original_path": "lorc/skull-signet.svg",
+        "artist": "lorc",
+        "sha256": "a871d4210bf611a1fea3b50105fb887ad730db8b5972a766920af6e35756bbac",
+        "source_url": "https://game-icons.net/1x1/lorc/skull-signet.html"
+      },
+      "dead-wood": {
+        "original_path": "lorc/dead-wood.svg",
+        "artist": "lorc",
+        "sha256": "43dc58a192224bd7a352d5d8d2b6c5d7c7a1647e5e7e23d986a4b416f70e27a0",
+        "source_url": "https://game-icons.net/1x1/lorc/dead-wood.html"
+      },
+      "fire-ring": {
+        "original_path": "lorc/fire-ring.svg",
+        "artist": "lorc",
+        "sha256": "ba21c322127f608aac6c1e63827646d5bfabca8ba6c8f378207c6172caead7b6",
+        "source_url": "https://game-icons.net/1x1/lorc/fire-ring.html"
+      },
+      "jump-across": {
+        "original_path": "delapouite/jump-across.svg",
+        "artist": "delapouite",
+        "sha256": "c4af106e8e4340d337af36fdc750ea16747984e4c3fe7578141caffe5822f45a",
+        "source_url": "https://game-icons.net/1x1/delapouite/jump-across.html"
+      },
+      "bone-knife": {
+        "original_path": "lorc/bone-knife.svg",
+        "artist": "lorc",
+        "sha256": "9e33c9f51216435e9daefd5d60e066bb593285403c4953d6c26ebc6771b405f3",
+        "source_url": "https://game-icons.net/1x1/lorc/bone-knife.html"
+      },
+      "heart-bottle": {
+        "original_path": "lorc/heart-bottle.svg",
+        "artist": "lorc",
+        "sha256": "6a91682637cb373b7456b8344c83da8165bcab9901d079cc2bcf67f96040b055",
+        "source_url": "https://game-icons.net/1x1/lorc/heart-bottle.html"
+      },
+      "cancel": {
+        "original_path": "sbed/cancel.svg",
+        "artist": "sbed",
+        "sha256": "466530b5307bddfaa3496afa326e5548905d80da1606bf156ed3648941d3aab2",
+        "source_url": "https://game-icons.net/1x1/sbed/cancel.html"
+      },
+      "smoke-bomb": {
+        "original_path": "darkzaitzev/smoke-bomb.svg",
+        "artist": "darkzaitzev",
+        "sha256": "3c3e4d59704f2f64b51550fd95638dcff7bc33eee13d2499e32682d6f8a17232",
+        "source_url": "https://game-icons.net/1x1/darkzaitzev/smoke-bomb.html"
+      },
+      "body-swapping": {
+        "original_path": "lorc/body-swapping.svg",
+        "artist": "lorc",
+        "sha256": "25376eee060ddc264f6cdea15b7f9a63c144c824decb10646c267f2dd757241a",
+        "source_url": "https://game-icons.net/1x1/lorc/body-swapping.html"
+      },
+      "worm-mouth": {
+        "original_path": "lorc/worm-mouth.svg",
+        "artist": "lorc",
+        "sha256": "21feae695c332c4a3e1a293d088cb21daae5b86d795a36235c866558c39d23dc",
+        "source_url": "https://game-icons.net/1x1/lorc/worm-mouth.html"
+      },
+      "dna1": {
+        "original_path": "lorc/dna1.svg",
+        "artist": "lorc",
+        "sha256": "cfb0a54b0269b8bc6eee49fccc71d4a897ade25ba4474dfc224aee6f14238c14",
+        "source_url": "https://game-icons.net/1x1/lorc/dna1.html"
+      },
+      "bone-mace": {
+        "original_path": "delapouite/bone-mace.svg",
+        "artist": "delapouite",
+        "sha256": "900e0f810c996c140eba37d475a62a2a866ea17456ab4b2de6bafda12aeda43e",
+        "source_url": "https://game-icons.net/1x1/delapouite/bone-mace.html"
+      },
+      "ribcage": {
+        "original_path": "lorc/ribcage.svg",
+        "artist": "lorc",
+        "sha256": "7ca4155f5ac7f714a3ebff0ab7f850e1cdb7bca31568329fce2c44d6eb19d7e1",
+        "source_url": "https://game-icons.net/1x1/lorc/ribcage.html"
+      },
+      "heart-wings": {
+        "original_path": "delapouite/heart-wings.svg",
+        "artist": "delapouite",
+        "sha256": "9b8795c01176f34e3ce229afeb7f2c64d2bc60675cf05edcb61370d23858de1a",
+        "source_url": "https://game-icons.net/1x1/delapouite/heart-wings.html"
+      },
+      "tear-tracks": {
+        "original_path": "lorc/tear-tracks.svg",
+        "artist": "lorc",
+        "sha256": "5c4fff00683f7fa8db0f2bdab1a4655edddef6645629a2a9adf192d3eb3a13c4",
+        "source_url": "https://game-icons.net/1x1/lorc/tear-tracks.html"
+      },
+      "three-friends": {
+        "original_path": "delapouite/three-friends.svg",
+        "artist": "delapouite",
+        "sha256": "f01a57f0999c2e1369be610e30a75efad8c4b84463adf046d50f3c04128fe167",
+        "source_url": "https://game-icons.net/1x1/delapouite/three-friends.html"
+      },
+      "return-arrow": {
+        "original_path": "lorc/return-arrow.svg",
+        "artist": "lorc",
+        "sha256": "2fc8d92a4ec00c13755087d5227392be39036655e004dc7a930f8a6bdfdf2441",
+        "source_url": "https://game-icons.net/1x1/lorc/return-arrow.html"
+      },
+      "sprint": {
+        "original_path": "lorc/sprint.svg",
+        "artist": "lorc",
+        "sha256": "c87dfd03936c3b6a98d348fa91b26e51493ecdcf66d8cda95c3e87b1d42350d6",
+        "source_url": "https://game-icons.net/1x1/lorc/sprint.html"
+      },
+      "dodge": {
+        "original_path": "felbrigg/dodge.svg",
+        "artist": "felbrigg",
+        "sha256": "baca59b783a8fd340e4fca592b61a9d6446acaf186333d8cf0148bbee1cc3367",
+        "source_url": "https://game-icons.net/1x1/felbrigg/dodge.html"
+      },
+      "fire-axe": {
+        "original_path": "lorc/fire-axe.svg",
+        "artist": "lorc",
+        "sha256": "fdcae0fce563f7675f55cf2becaccce05962598e98d771ea401212fe5f01fd93",
+        "source_url": "https://game-icons.net/1x1/lorc/fire-axe.html"
+      },
+      "triple-needle": {
+        "original_path": "lorc/triple-needle.svg",
+        "artist": "lorc",
+        "sha256": "7fbcdd51da93cfd76ffbd0c1dd31910fbf7e5d4a242c180b236c95bed06acc3e",
+        "source_url": "https://game-icons.net/1x1/lorc/triple-needle.html"
+      },
+      "musical-notes": {
+        "original_path": "delapouite/musical-notes.svg",
+        "artist": "delapouite",
+        "sha256": "f3a1b1bc956d4348b55cb195eaebbaebf972a2fb053ef71d6de10ddadadc4799",
+        "source_url": "https://game-icons.net/1x1/delapouite/musical-notes.html"
+      },
+      "metal-scales": {
+        "original_path": "lorc/metal-scales.svg",
+        "artist": "lorc",
+        "sha256": "128abdd03012745442860f5b5d345848ed8a66b8828361684cbba1dc6f8a4c21",
+        "source_url": "https://game-icons.net/1x1/lorc/metal-scales.html"
+      },
+      "barbed-spear": {
+        "original_path": "lorc/barbed-spear.svg",
+        "artist": "lorc",
+        "sha256": "ed2ca4ed6f43071e80ab6115d54ef07e38ae50902984bf4eddd186edb94a24be",
+        "source_url": "https://game-icons.net/1x1/lorc/barbed-spear.html"
+      },
+      "cracked-shield": {
+        "original_path": "lorc/cracked-shield.svg",
+        "artist": "lorc",
+        "sha256": "bb95d028f8a82a4e4e0c23245b27d3d8c88a865d8adb86a0cff45565bde4c984",
+        "source_url": "https://game-icons.net/1x1/lorc/cracked-shield.html"
+      },
+      "ghost": {
+        "original_path": "lorc/ghost.svg",
+        "artist": "lorc",
+        "sha256": "f2dd5ae798ffd46cb3474e04477aae25715df443553098924fb86a0073a3f8aa",
+        "source_url": "https://game-icons.net/1x1/lorc/ghost.html"
+      },
+      "scythe": {
+        "original_path": "lorc/scythe.svg",
+        "artist": "lorc",
+        "sha256": "6f28e48d42e77f059cccf28a6be86784c5c2222d9236dd324573a6d1c7d2edde",
+        "source_url": "https://game-icons.net/1x1/lorc/scythe.html"
+      },
+      "mirror-mirror": {
+        "original_path": "lorc/mirror-mirror.svg",
+        "artist": "lorc",
+        "sha256": "903ba2974472436c0f8b089538c02c5cf4b40fdbadd21f2d1f160770634f9650",
+        "source_url": "https://game-icons.net/1x1/lorc/mirror-mirror.html"
+      },
+      "stitched-wound": {
+        "original_path": "lorc/stitched-wound.svg",
+        "artist": "lorc",
+        "sha256": "34272238c7e9e4147a454b9230b3db23cb1b8d89f079f746f1979f142d1f63b5",
+        "source_url": "https://game-icons.net/1x1/lorc/stitched-wound.html"
+      },
+      "hourglass": {
+        "original_path": "lorc/hourglass.svg",
+        "artist": "lorc",
+        "sha256": "26010227f128b523720d2cdacc83a9d34a1e6121a3a5ace9b08bb58d93b21fdf",
+        "source_url": "https://game-icons.net/1x1/lorc/hourglass.html"
+      },
+      "shattered-glass": {
+        "original_path": "lorc/shattered-glass.svg",
+        "artist": "lorc",
+        "sha256": "7a02bd4d9faa92bfd669764abb42b801d4a579bb26f71b6ebf42e9fec6ee9f7a",
+        "source_url": "https://game-icons.net/1x1/lorc/shattered-glass.html"
+      },
+      "plain-dagger": {
+        "original_path": "lorc/plain-dagger.svg",
+        "artist": "lorc",
+        "sha256": "d58e560dfd5f327b3a27f449add29531b880dded45efdcab757e8681ae26732f",
+        "source_url": "https://game-icons.net/1x1/lorc/plain-dagger.html"
+      },
+      "dripping-blade": {
+        "original_path": "lorc/dripping-blade.svg",
+        "artist": "lorc",
+        "sha256": "b3d421d04ba3daec10dbe06c201dd5d4e3e057bcb7e140cf0d1725aba79ab00d",
+        "source_url": "https://game-icons.net/1x1/lorc/dripping-blade.html"
+      },
+      "sacrificial-dagger": {
+        "original_path": "lorc/sacrificial-dagger.svg",
+        "artist": "lorc",
+        "sha256": "011d1c73d5509bc529d272a73d88a13dd75947ec8909200b99cb2e9f3716aa60",
+        "source_url": "https://game-icons.net/1x1/lorc/sacrificial-dagger.html"
+      },
+      "ancient-sword": {
+        "original_path": "delapouite/ancient-sword.svg",
+        "artist": "delapouite",
+        "sha256": "fca70aeb1cd1d37b50c3fa4dc7492f4e28cd3ae9e42d4516b3865f778f517a91",
+        "source_url": "https://game-icons.net/1x1/delapouite/ancient-sword.html"
+      },
+      "heart-organ": {
+        "original_path": "lorc/heart-organ.svg",
+        "artist": "lorc",
+        "sha256": "9970f6abd44ab4ccccdbcadf9456bfb4d62fd1d2a7cb300a110f77ff06e36ffb",
+        "source_url": "https://game-icons.net/1x1/lorc/heart-organ.html"
+      },
+      "anvil": {
+        "original_path": "lorc/anvil.svg",
+        "artist": "lorc",
+        "sha256": "2bed095f83429a7c712a11a791e70ba923dd024146903cd4bf8ce46ebc0910ed",
+        "source_url": "https://game-icons.net/1x1/lorc/anvil.html"
+      },
+      "rolling-dices": {
+        "original_path": "delapouite/rolling-dices.svg",
+        "artist": "delapouite",
+        "sha256": "876d2c2a2359d40d571a6f169db5a2d531e23beeed270b43247d63d227ad5a2c",
+        "source_url": "https://game-icons.net/1x1/delapouite/rolling-dices.html"
+      },
+      "crossed-swords": {
+        "original_path": "lorc/crossed-swords.svg",
+        "artist": "lorc",
+        "sha256": "29298fa9d6351a33d6b2d27c9ec50bc8bb590d8dd9aeb1d1e46b50c86e91ff9a",
+        "source_url": "https://game-icons.net/1x1/lorc/crossed-swords.html"
+      },
+      "crowned-skull": {
+        "original_path": "lorc/crowned-skull.svg",
+        "artist": "lorc",
+        "sha256": "cced800a97bea39b95edefb65a50be9e4be3aaa14f07174c8821641d4bba680f",
+        "source_url": "https://game-icons.net/1x1/lorc/crowned-skull.html"
+      },
+      "book-cover": {
+        "original_path": "lorc/book-cover.svg",
+        "artist": "lorc",
+        "sha256": "ccfcf5f2c3a1beaf5e0c8d4194197e04be3499c795dd6159d292f3e28aa436f7",
+        "source_url": "https://game-icons.net/1x1/lorc/book-cover.html"
+      },
+      "backpack": {
+        "original_path": "delapouite/backpack.svg",
+        "artist": "delapouite",
+        "sha256": "6036f15b66931d8770a4d202c93fbf0a5036f40e582dc303204b637cb2617b08",
+        "source_url": "https://game-icons.net/1x1/delapouite/backpack.html"
+      },
+      "skull-crossed-bones": {
+        "original_path": "lorc/skull-crossed-bones.svg",
+        "artist": "lorc",
+        "sha256": "77debce4b05cc12a35c2648b538a6ab22026ddadcf5ad3e117917c8b4bdf81f3",
+        "source_url": "https://game-icons.net/1x1/lorc/skull-crossed-bones.html"
+      },
+      "gothic-cross": {
+        "original_path": "lorc/gothic-cross.svg",
+        "artist": "lorc",
+        "sha256": "a5fb15804ca070de7ec152c892b4c89e7a7518352e45e034b7cf903eb3189abc",
+        "source_url": "https://game-icons.net/1x1/lorc/gothic-cross.html"
+      },
+      "burning-skull": {
+        "original_path": "skoll/burning-skull.svg",
+        "artist": "skoll",
+        "sha256": "6a5e517cf2a9cf8a285cd68843503f377ad8a0a057a3688625b8f0bdd757e9dd",
+        "source_url": "https://game-icons.net/1x1/skoll/burning-skull.html"
+      },
+      "brain": {
+        "original_path": "lorc/brain.svg",
+        "artist": "lorc",
+        "sha256": "12cfb35796e5b0164406d12a7e0a7a8e9d81fa9126576032015cd5e62130da30",
+        "source_url": "https://game-icons.net/1x1/lorc/brain.html"
+      },
+      "locked-chest": {
+        "original_path": "lorc/locked-chest.svg",
+        "artist": "lorc",
+        "sha256": "260eabd17e53d2b684dda3608f127efa60f6d4260b910855ddbc016f27ba62b6",
+        "source_url": "https://game-icons.net/1x1/lorc/locked-chest.html"
+      },
+      "arrow-dunk": {
+        "original_path": "lorc/arrow-dunk.svg",
+        "artist": "lorc",
+        "sha256": "ce1e8b5b7ceb8f9cf11774fc7ef00377e3605e37cb63bbda3c4865f7beb80556",
+        "source_url": "https://game-icons.net/1x1/lorc/arrow-dunk.html"
+      }
+    },
+    "abilities": {
+      "0": {
+        "name": "Blank",
+        "symbol": "plain-circle"
+      },
+      "1": {
+        "name": "Strike",
+        "symbol": "broadsword"
+      },
+      "2": {
+        "name": "Step",
+        "symbol": "footprint"
+      },
+      "3": {
+        "name": "Stride",
+        "symbol": "wingfoot"
+      },
+      "4": {
+        "name": "Guard",
+        "symbol": "round-shield"
+      },
+      "5": {
+        "name": "Reaction",
+        "symbol": "shield-reflect"
+      },
+      "6": {
+        "name": "Focus",
+        "symbol": "eye-target"
+      },
+      "7": {
+        "name": "First Aid",
+        "symbol": "first-aid-kit"
+      },
+      "8": {
+        "name": "Shove",
+        "symbol": "push"
+      },
+      "9": {
+        "name": "Gambler's Coin",
+        "symbol": "two-coins"
+      },
+      "10": {
+        "name": "Weak Point",
+        "symbol": "bullseye"
+      },
+      "11": {
+        "name": "Conjure",
+        "symbol": "magic-swirl"
+      },
+      "12": {
+        "name": "Blessing of Recovery",
+        "symbol": "angel-wings"
+      },
+      "13": {
+        "name": "Clairvoyance",
+        "symbol": "crystal-ball"
+      },
+      "14": {
+        "name": "Forgotten Strength",
+        "symbol": "fist"
+      },
+      "15": {
+        "name": "Passing Grace",
+        "symbol": "crowned-heart"
+      },
+      "16": {
+        "name": "Borrow Shape",
+        "symbol": "shadow-follower"
+      },
+      "17": {
+        "name": "Numeric Echo",
+        "symbol": "resonance"
+      },
+      "18": {
+        "name": "Lethargic Bind",
+        "symbol": "crossed-chains"
+      },
+      "19": {
+        "name": "Restore",
+        "symbol": "healing"
+      },
+      "20": {
+        "name": "Focus Numeric",
+        "symbol": "dice-target"
+      },
+      "21": {
+        "name": "Mark Prey",
+        "symbol": "target-shot"
+      },
+      "22": {
+        "name": "Last Word",
+        "symbol": "death-note"
+      },
+      "23": {
+        "name": "Second Chance",
+        "symbol": "cycle"
+      },
+      "24": {
+        "name": "Spiral Instability",
+        "symbol": "vortex"
+      },
+      "25": {
+        "name": "Contained Power",
+        "symbol": "caged-ball"
+      },
+      "26": {
+        "name": "Corruption Conversion",
+        "symbol": "evil-book"
+      },
+      "27": {
+        "name": "Blood Bargain",
+        "symbol": "drop"
+      },
+      "28": {
+        "name": "Target Override",
+        "symbol": "divert"
+      },
+      "29": {
+        "name": "Debt",
+        "symbol": "pay-money"
+      },
+      "30": {
+        "name": "Ill Omen",
+        "symbol": "raven"
+      },
+      "31": {
+        "name": "Stonewake",
+        "symbol": "stone-block"
+      },
+      "32": {
+        "name": "Oath of Smoke",
+        "symbol": "smoking-orb"
+      },
+      "33": {
+        "name": "Bone Mutation",
+        "symbol": "backbone-shell"
+      },
+      "34": {
+        "name": "Strike Numeric",
+        "symbol": "dice-six-faces-three"
+      },
+      "35": {
+        "name": "Short Shot",
+        "symbol": "arrow-scope"
+      },
+      "36": {
+        "name": "Hooked Slash",
+        "symbol": "hook"
+      },
+      "37": {
+        "name": "Piercing Thrust",
+        "symbol": "piercing-sword"
+      },
+      "38": {
+        "name": "Cleave",
+        "symbol": "axe-swing"
+      },
+      "39": {
+        "name": "Flanking Blow",
+        "symbol": "backstab"
+      },
+      "40": {
+        "name": "Break Rhythm",
+        "symbol": "broken-bone"
+      },
+      "41": {
+        "name": "Engrave",
+        "symbol": "rune-sword"
+      },
+      "42": {
+        "name": "Guard Numeric",
+        "symbol": "dice-shield"
+      },
+      "43": {
+        "name": "Brace Hero",
+        "symbol": "armor-vest"
+      },
+      "44": {
+        "name": "Shield Wall",
+        "symbol": "layered-armor"
+      },
+      "45": {
+        "name": "Taunt",
+        "symbol": "shouting"
+      },
+      "46": {
+        "name": "Defy Death",
+        "symbol": "half-dead"
+      },
+      "47": {
+        "name": "Bulwark",
+        "symbol": "locked-fortress"
+      },
+      "48": {
+        "name": "Echo of Pain",
+        "symbol": "screaming"
+      },
+      "49": {
+        "name": "Last Pulse",
+        "symbol": "heart-beats"
+      },
+      "50": {
+        "name": "Black Oath",
+        "symbol": "skull-signet"
+      },
+      "51": {
+        "name": "Wither Ward",
+        "symbol": "dead-wood"
+      },
+      "52": {
+        "name": "Ember Burst",
+        "symbol": "fire-ring"
+      },
+      "53": {
+        "name": "Leap of Echoes",
+        "symbol": "jump-across"
+      },
+      "54": {
+        "name": "Bone",
+        "symbol": "bone-knife"
+      },
+      "55": {
+        "name": "Recovery",
+        "symbol": "heart-bottle"
+      },
+      "56": {
+        "name": "Red Tile",
+        "symbol": "cancel"
+      },
+      "57": {
+        "name": "Ashstep",
+        "symbol": "smoke-bomb"
+      },
+      "58": {
+        "name": "Oathbound Exchange",
+        "symbol": "body-swapping"
+      },
+      "59": {
+        "name": "Summon Nu\u2019gh",
+        "symbol": "worm-mouth"
+      },
+      "60": {
+        "name": "Bone Growth",
+        "symbol": "dna1"
+      },
+      "61": {
+        "name": "Bone Strike",
+        "symbol": "bone-mace"
+      },
+      "62": {
+        "name": "Bone Guard",
+        "symbol": "ribcage"
+      },
+      "63": {
+        "name": "Shared Remedy",
+        "symbol": "heart-wings"
+      },
+      "64": {
+        "name": "Sorrow\u2019s Offering",
+        "symbol": "tear-tracks"
+      },
+      "65": {
+        "name": "Shared Burden",
+        "symbol": "three-friends"
+      },
+      "66": {
+        "name": "Retreat",
+        "symbol": "return-arrow"
+      },
+      "67": {
+        "name": "Momentum Strike",
+        "symbol": "sprint"
+      },
+      "68": {
+        "name": "Evasive Counter",
+        "symbol": "dodge"
+      },
+      "69": {
+        "name": "Ember Cut",
+        "symbol": "fire-axe"
+      },
+      "70": {
+        "name": "Brood Needle",
+        "symbol": "triple-needle"
+      },
+      "71": {
+        "name": "Quiet Note",
+        "symbol": "musical-notes"
+      },
+      "72": {
+        "name": "Iron Shelter",
+        "symbol": "metal-scales"
+      },
+      "73": {
+        "name": "Jab",
+        "symbol": "barbed-spear"
+      },
+      "74": {
+        "name": "Crack",
+        "symbol": "cracked-shield"
+      },
+      "75": {
+        "name": "Wraith Exchange",
+        "symbol": "ghost"
+      },
+      "76": {
+        "name": "Soul Harvester",
+        "symbol": "scythe"
+      },
+      "77": {
+        "name": "Mirror of the Damned",
+        "symbol": "mirror-mirror"
+      },
+      "78": {
+        "name": "Grave Stitch",
+        "symbol": "stitched-wound"
+      },
+      "79": {
+        "name": "Hoarded Omen",
+        "symbol": "hourglass"
+      },
+      "80": {
+        "name": "Fatebreaker",
+        "symbol": "shattered-glass"
+      },
+      "81": {
+        "name": "Poke",
+        "symbol": "plain-dagger"
+      },
+      "82": {
+        "name": "Poison Poke",
+        "symbol": "dripping-blade"
+      },
+      "83": {
+        "name": "Heavy Poke",
+        "symbol": "sacrificial-dagger"
+      },
+      "84": {
+        "name": "Oath Cut",
+        "symbol": "ancient-sword"
+      }
+    }
+  },
+  "floor_tiles": {
+    "cobble_1.png": {
+      "original_path": "crawl-ref/source/rltiles/dngn/floor/cobble_blood1.png",
+      "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+      "sha256": "e52918da74176ba589fdcceb2f4b3c0feba725267932bae4348b24ab9c3a5eea",
+      "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/floor/cobble_blood1.png",
+      "curated_cc0_git_blob": "cd8370a23cf6361310fe9411f89c33dd22355c07",
+      "curated_cc0_release_path": "releases/Nov-2015/dngn/floor/cobble_blood1.png"
+    },
+    "cobble_2.png": {
+      "original_path": "crawl-ref/source/rltiles/dngn/floor/cobble_blood2.png",
+      "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+      "sha256": "46bec2c779e4bcce0fb71bdf2cfcb52bd4b79aebd27d00e360aa42027cd19e79",
+      "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/floor/cobble_blood2.png",
+      "curated_cc0_git_blob": "c5c71962785cc61c41fd98ceebd0ffe367ede7cc",
+      "curated_cc0_release_path": "releases/Nov-2015/dngn/floor/cobble_blood2.png"
+    },
+    "cobble_3.png": {
+      "original_path": "crawl-ref/source/rltiles/dngn/floor/cobble_blood3.png",
+      "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+      "sha256": "6ee8cc924a849f3a428911ccf1fb6ab9a994fe02d86d919b43cb2d70daed8579",
+      "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/floor/cobble_blood3.png",
+      "curated_cc0_git_blob": "8c35db8b60d6d6f61009e5e2ffcccf996a112ad2",
+      "curated_cc0_release_path": "releases/Nov-2015/dngn/floor/cobble_blood3.png"
+    }
+  },
+  "party_and_arena": {
+    "repository": "https://github.com/crawl/crawl",
+    "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+    "revision_date": "2016-09-17",
+    "license": "Public Domain / CC0 tile artwork",
+    "files": {
+      "vesper.png": {
+        "original_path": "crawl-ref/source/rltiles/mon/vault_guard.png",
+        "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+        "sha256": "227f11fd42277c6508043266dc5f9397f2ee101d93e07edd4186f61cf19b2891",
+        "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/mon/vault_guard.png",
+        "curated_cc0_git_blob": "8da21aa72e7740f111ee189da5df47047f4deed0",
+        "curated_cc0_release_path": "releases/Nov-2015/mon/vault_guard.png"
+      },
+      "rook.png": {
+        "original_path": "crawl-ref/source/rltiles/mon/death_knight.png",
+        "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+        "sha256": "da1ddd4500b411966e39d84a2d8fe75d510736bebe3ba100ed9622215cb06800",
+        "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/mon/death_knight.png",
+        "curated_cc0_git_blob": "b28b6583268fff351a538e7104ede6ca10e767af",
+        "curated_cc0_release_path": "releases/Nov-2015/mon/death_knight.png"
+      },
+      "wren.png": {
+        "original_path": "crawl-ref/source/rltiles/mon/vault_warden.png",
+        "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+        "sha256": "3c3d8e72cb59bcabfae7abace6801e4e0808893c05a026b7da1454bf200ba4f3",
+        "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/mon/vault_warden.png",
+        "curated_cc0_git_blob": "f21e456721e8633401b0c415d3b51b53f2c4b62b",
+        "curated_cc0_release_path": "releases/Nov-2015/mon/vault_warden.png"
+      },
+      "cobble_1.png": {
+        "original_path": "crawl-ref/source/rltiles/dngn/floor/cobble_blood1.png",
+        "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+        "sha256": "e52918da74176ba589fdcceb2f4b3c0feba725267932bae4348b24ab9c3a5eea",
+        "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/floor/cobble_blood1.png",
+        "curated_cc0_git_blob": "cd8370a23cf6361310fe9411f89c33dd22355c07",
+        "curated_cc0_release_path": "releases/Nov-2015/dngn/floor/cobble_blood1.png"
+      },
+      "cobble_2.png": {
+        "original_path": "crawl-ref/source/rltiles/dngn/floor/cobble_blood2.png",
+        "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+        "sha256": "46bec2c779e4bcce0fb71bdf2cfcb52bd4b79aebd27d00e360aa42027cd19e79",
+        "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/floor/cobble_blood2.png",
+        "curated_cc0_git_blob": "c5c71962785cc61c41fd98ceebd0ffe367ede7cc",
+        "curated_cc0_release_path": "releases/Nov-2015/dngn/floor/cobble_blood2.png"
+      },
+      "cobble_3.png": {
+        "original_path": "crawl-ref/source/rltiles/dngn/floor/cobble_blood3.png",
+        "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+        "sha256": "6ee8cc924a849f3a428911ccf1fb6ab9a994fe02d86d919b43cb2d70daed8579",
+        "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/floor/cobble_blood3.png",
+        "curated_cc0_git_blob": "8c35db8b60d6d6f61009e5e2ffcccf996a112ad2",
+        "curated_cc0_release_path": "releases/Nov-2015/dngn/floor/cobble_blood3.png"
+      },
+      "masonry.png": {
+        "original_path": "crawl-ref/source/rltiles/dngn/wall/brick_gray0.png",
+        "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+        "sha256": "bc71c0d46fe1c60090504d662c9dcf7faa6353e6a75ad492ed61fe2ee77df304",
+        "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/wall/brick_gray0.png",
+        "curated_cc0_git_blob": "5cfff7790d121705360315f029570f92f48947cb",
+        "curated_cc0_release_path": "releases/Nov-2015/dngn/wall/brick_gray0.png"
+      }
+    },
+    "curated_cc0_repository": "https://github.com/crawl/tiles",
+    "curated_cc0_revision": "a6ea1655db5c044829d9eea19a232fa6fcac87b0",
+    "curated_cc0_tree": "a6ea1655db5c044829d9eea19a232fa6fcac87b0"
+  }
+}

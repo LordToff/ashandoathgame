@@ -50,7 +50,7 @@ func proof(args):
   data.objective = app.game.objective_summary() if app.game.has_method("objective_summary") else ""
   data.effective = app.game.heroes.map(func(h):return range(3).map(func(die):return app.game.face(app.game.heroes.find(h),die)))
   data.playback = {"busy":app.playback.busy(),"kind":app.playback.current.get("kind",""),"queue":app.playback.queue.map(func(step):return step.kind),"visible_hp":app.game.heroes.map(func(h):return app.display_unit(app.game.heroes.find(h)).hp),"visible_poison":app.game.heroes.map(func(h):return app.display_unit(app.game.heroes.find(h)).get("poison",0)),"last_roll":app.playback.last_roll,"dice_busy":app.dice_tray.busy,"dice_elapsed":app.dice_tray.elapsed,"settle":app.dice_tray.SETTLE,"hold":app.dice_tray.RESULT_HOLD,"effects":app.effects.map(func(fx):return fx.kind)}
-  data.blank_move = app.blank_move_setting;data.dice_animation = app.dice_animation
+  data.blank_move = app.blank_move_setting;data.dice_animation = app.dice_animation;data.turn_refill = app.reroll_each_turn;data.choosing_reroll = app.choosing_reroll
   data.trial.prepare_step = app.trials.prepare_step;data.trial.prepared = app.trials.prepared;data.trial.hero = app.trials.hero
   data.playback.fall_caption = app.DeathFeedback.caption(app)
   data.art = {"nugh":app.EnemyArt.texture("nugh").atlas.resource_path,"worm":app.EnemyArt.texture("worm").atlas.resource_path}
@@ -120,6 +120,15 @@ func proof(args):
   app.game.boss.pos = Vector2i(3,4);app.game.heroes[0].pos = Vector2i(3,5);app.game.heroes[1].pos = Vector2i(0,8);app.game.heroes[2].pos = Vector2i(8,8)
   for h in app.game.heroes:h.reaction = [];h.block = 0;h.poison = 0
   app.game.heroes[0].hp = 1;app.game.heroes[0].broken = mode=="ux42_fall_slain";app.game.heroes[0].last_ember_used = true
+  app.roll_seen = app.game.roll_presentations.size();app.seen_event = app.game.event_id;app.playback.model_id = app.game.get_instance_id();app.playback.clear(app.CombatPlayback.capture(app.game))
+ elif mode.begins_with("turns46_"):
+  proof(["direct39_trial" if mode=="turns46_trial" else "direct39_normal"])
+  app.game.order = [0,1,2,3];app.game.initiative_base = [0,1,2,3];app.game.active = 0;app.game.cursor = 0
+  for hero in range(3):app.game.heroes[hero].rerolls = 1 if hero==0 else 0
+  app.game.heroes[0].pos = Vector2i(3,6);app.game.heroes[1].pos = Vector2i(2,6)
+  app.game.balance["hero.reroll_each_turn"] = int(app.reroll_each_turn)
+  if not app.trial_fight:app.game.boss_rolls = ["Brace","Brace","Brace"]
+  app.set_dice_animation(false,false)
   app.roll_seen = app.game.roll_presentations.size();app.seen_event = app.game.event_id;app.playback.model_id = app.game.get_instance_id();app.playback.clear(app.CombatPlayback.capture(app.game))
  elif mode.begins_with("direct39_"):
   app.trials = app.Trials.new(false);app.trials.ensure_classes();app.trials.memories[0] = "";app.trials.bodies[0] = "broken";app.trials.loadout_weapons[0] = "dagger"

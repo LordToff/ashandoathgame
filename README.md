@@ -1,9 +1,11 @@
-# Ash & Oath v0.45 — playable prototype
+# Ash & Oath v0.46 — playable prototype
 
 **Canonical source:** [LordToff/ashandoathgame](https://github.com/LordToff/ashandoathgame), branch `main`.
 **Recovery and publishing:** [docs/RECOVERY.md](docs/RECOVERY.md). The browser package is on `gh-pages`.
 
-[**Play Ash & Oath v0.45 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.45)
+[**Play Ash & Oath v0.46 in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.46)
+
+v0.46 adds optional **1 reroll each turn** in Settings, fixes stale reroll / target selection, and replaces the party and arena with original 2016 knight and dungeon pixel art. Clearer movement markers and boss health placement improve the battlefield on desktop and phone. [Changes](docs/Changes-v0.46.md).
 
 v0.45 replaces the UI with a restrained gothic HUD, compact skill tiles, distinct symbols for all 85 face identities, and a new authored pixel-art Hollow. Desktop and phone share the same style. [Changes](docs/Changes-v0.45.md).
 
@@ -43,9 +45,9 @@ v0.25 adds the six-slot Ash Road event system, two ordinary monster encounters, 
 
 v0.24 replaces Bu’gh’s cocoon encounter with the Iron Warden: guard or evade his marked sweep to break Bulwark, then counterattack. Includes original pixel sprites, soundtrack and polished UI. See [release notes and validation](docs/Changes-v0.24.md). Difficulty remains provisional. The Windows download is an older release.
 
-[**Play in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.45) — no installation required.
+[**Play in your browser**](https://lordtoff.github.io/ashandoathgame/?v=0.46) — no installation required.
 
-[**Current rules: timing, abilities and bosses**](docs/current-rules.html) · [Download PDF](docs/AshAndOath-Current-Rules-v0.45.pdf). The v0.45 reference includes the full Trials rules alongside all 73 normal faces and four bosses.
+[**Current rules: timing, abilities and bosses**](docs/current-rules.html) · [Download PDF](docs/AshAndOath-Current-Rules-v0.46.pdf). The v0.46 reference includes the full Trials rules alongside all 73 normal faces and four bosses.
 
 [**Historical v0.16 playtest report**](https://lordtoff.github.io/Godot-Game-Template/playtest-report.html) · [Download the polished Excel workbook](downloads/Ash-and-Oath-Playtest-v0.16.xlsx). Includes plain-language team descriptions, each hero’s abilities, dice layouts, win rates and the test method.
 

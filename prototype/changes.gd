@@ -21,6 +21,16 @@ const TEXT = """[b][color=#d5b87a]v0.4 · Read the fight, test the dice[/color][
 
 [color=#91a0af]Previous updates · v0.3: full-pool two-face choices, causal battle logs, battlefield art and combat effects. v0.2: boss explanations, dice-roll animation, opening rerolls and selectable Tuned / Original balance.[/color]"""
 
+const V46 = """[b]v0.46 · Turn rerolls and a new stone arena[/b]
+
+[b]Settings → 1 reroll each turn.[/b] Optional and OFF by default, for normal play and Trials. Start each own turn with at least 1 Action Reroll, up to its cap. Unused refills do not stack; earned extra charges stay. Normal and full recovery turns qualify. Switching applies next turn and never grants a charge immediately. The setting saves alongside dice animation and Blank movement.
+
+[b]Clearer controls.[/b] Mobile shows the reroll count, selection mode has an explicit Cancel reroll, and changing turns clears stale reroll / target state. A new hero’s ability tap cannot accidentally spend their reroll. Saved Omen dice keep their ability name and held marker instead of looking spent.
+
+[b]Original knight and dungeon art.[/b] Three detailed 32-pixel knights, cobblestone floors and masonry come from Dungeon Crawl’s original 2016 tile artwork, Public Domain / CC0. Combat, portraits, preparation and falls share the same knight art. No image generation or invented sprite frames were used. Stats, equipment and the playable grid are unchanged.
+
+[b]Read the battlefield.[/b] A stronger active hero card, clear movement dots and target outlines, mobile action prompts, visible boss footprint and an in-footprint health bar replace overlapping boss text. Masonry is decoration outside the legal board. Near-black menus retain the gothic style."""
+
 const V45 = """[b]v0.45 · Gothic HUD and ability symbols[/b]
 
 Near-black panels, ivory symbols, crimson actions and gothic headings replace the earlier brass-and-parchment direction. Combat uses a compact three-face skill rack, a larger active hero portrait on desktop, readable intent rows and category-colored names. Spent faces turn dark gray.
@@ -93,6 +103,7 @@ Normal play and Trials share these rules, with separate inventories. Existing ow
 """
 
 const SECTIONS = [
+ {"title":"Turn rerolls & stone arena · v0.46","body":V46},
  {"title":"Gothic HUD & ability symbols · v0.45","body":V45},
  {"title":"Test chamber & menu style · v0.44","body":V44},
  {"title":"Clearer menus · v0.43","body":V43},

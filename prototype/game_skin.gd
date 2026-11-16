@@ -2,7 +2,9 @@ extends RefCounted
 ## Restrained gothic HUD: ink, bone and crimson. Original symbols are credited.
 const Symbols = preload("res://prototype/ability_symbols.gd")
 const CHAMBER = preload("res://prototype/assets/pixel_chamber.png")
-const FLOORS = [preload("res://prototype/assets/interface/floor_1.png"),preload("res://prototype/assets/interface/floor_2.png"),preload("res://prototype/assets/interface/floor_3.png")]
+const WALL = preload("res://prototype/assets/vendor/crawl_party_arena/masonry.png")
+const FLOORS = [preload("res://prototype/assets/vendor/crawl_party_arena/cobble_1.png"),preload("res://prototype/assets/vendor/crawl_party_arena/cobble_2.png"),preload("res://prototype/assets/vendor/crawl_party_arena/cobble_3.png")]
+
 const INK = Color("e5dfd4")
 const CRIMSON = Color("9d2835")
 static func surface(kind: String, color: Color = Color.WHITE) -> StyleBoxFlat:
@@ -32,7 +34,7 @@ static func apply_theme(theme: Theme) -> void:
  theme.set_stylebox("normal","LineEdit",surface("input"));var focus := surface("input");focus.border_color = Color("c6b9a8");theme.set_stylebox("focus","LineEdit",focus)
 static func mat(app, size: Vector2) -> void:
  app.draw_rect(Rect2(Vector2.ZERO,size),Color("08080b"))
- app.draw_texture_rect(CHAMBER,Rect2(Vector2.ZERO,size),false,Color(.22,.23,.25,.28))
+ app.draw_texture_rect(WALL,Rect2(Vector2.ZERO,size),true,Color(.28,.29,.33,.14))
  app.draw_rect(Rect2(Vector2.ZERO,size),Color(.02,.02,.025,.65))
 static func panel(app, rect: Rect2, tint: Color, body: bool = true) -> void:
  if body:app.draw_rect(rect,Color("0b0b0f"))

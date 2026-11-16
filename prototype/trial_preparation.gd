@@ -139,7 +139,7 @@ static func work_area(app, column: VBoxContainer, id: int) -> VBoxContainer:
  if app.mobile_mode or app.get_viewport_rect().size.x<1000:return column
  var row := HBoxContainer.new();row.add_theme_constant_override("separation",24);column.add_child(row)
  var side := VBoxContainer.new();side.custom_minimum_size.x = 180;side.add_theme_constant_override("separation",16);row.add_child(side)
- var atlas := AtlasTexture.new();atlas.atlas = app.PORTRAITS;atlas.region = app.portrait_region(id);M.picture(side,atlas)
+ M.picture(side,app.HeroArt.texture(id))
  M.text(side,M.NAMES[id],27,app.COLORS[id]);M.text(side,K.name_for(app.trials.classes[id])+" · %d HP" % app.trials.maximum_hp(id),18)
  for entry in [["BODY",R.BODIES[app.trials.bodies[id]].name],["SOUL","Beginning Soul" if app.trials.souls[id]=="" else R.SOULS[app.trials.souls[id]].name],["WEAPON",R.WEAPONS[app.trials.loadout_weapons[id]].name],["MEMORY","Empty at the start"]]:
   M.text(side,entry[0],12,app.COLORS[id]);M.text(side,entry[1],17)

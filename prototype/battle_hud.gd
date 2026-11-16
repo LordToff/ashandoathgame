@@ -1,5 +1,5 @@
 extends RefCounted
-## Drawn ash-and-brass frames and compact, separate information lanes.
+## Gothic frames and compact, separate information lanes.
 const UiSkin = preload("res://prototype/game_skin.gd")
 const PAPER = Color("eadfc7")
 const ASH = Color("171f21")
@@ -10,10 +10,12 @@ static func hero_card(app, hero: int, at: Vector2, dimensions: Vector2, compact:
  var b: Button = app.button(app.MobileUI.NAMES[hero],at,dimensions,func():app.mobile_info = app.MobileUI.NAMES[hero]+"\n"+app.game.status_description(hero);app.rebuild(),tint)
  b.name = "HeroStatus"+str(hero);b.clip_contents = true
  for state in ["normal","hover","pressed","disabled"]:
-  var box := UiSkin.surface("metal",Color(.43,.46,.44) if app.game.active==hero else Color(.25,.29,.30));box.set_content_margin_all(6);b.add_theme_stylebox_override(state,box)
+  var box := UiSkin.surface("metal",Color(.43,.46,.44) if app.game.active==hero else Color(.25,.29,.30));box.set_content_margin_all(6)
+  if app.game.active==hero:box.border_color = tint;box.bg_color = Color("0e1117").lerp(tint,.12);box.border_width_bottom = 2
+  b.add_theme_stylebox_override(state,box)
  for name in ["font_color","font_hover_color","font_pressed_color","font_focus_color","font_disabled_color","font_hover_pressed_color"]:b.add_theme_color_override(name,Color.TRANSPARENT)
  var left := 34.0 if compact else 48.0
- var icon := TextureRect.new();var atlas := AtlasTexture.new();atlas.atlas = app.PORTRAITS;atlas.region = app.portrait_region(hero)
+ var icon := TextureRect.new();var atlas: Texture2D = app.HeroArt.portrait(hero)
  var mask := ShaderMaterial.new();mask.shader = preload("res://prototype/portrait_mask.gdshader");icon.material = mask
  icon.texture = atlas;icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;icon.name = "HeroPortrait";icon.position = Vector2(7,8);icon.size = Vector2(22,24) if compact else Vector2(30,30);icon.mouse_filter = Control.MOUSE_FILTER_IGNORE;mask.set_shader_parameter("mask_size",icon.size);b.add_child(icon)
  var state_text := "Slain" if h.dead else "Downed" if h.hp<=0 else "Stunned" if h.stun else "Rooted" if int(h.get("rooted",0))>0 else "Poison %d" % int(h.get("poison",0)) if int(h.get("poison",0))>0 else "Reaction" if not h.reaction.is_empty() else "Channel" if not h.channel.is_empty() else "Broken" if h.get("broken",false) else ""
@@ -58,7 +60,7 @@ static func intent(app, action: String, target: String, at: Vector2, dimensions:
 static func active_hero(app, rect: Rect2) -> void:
  var hero: int = app.game.active;var h: Dictionary = app.display_unit(hero)
  var panel := Panel.new();panel.name = "ActiveHeroPanel";panel.position = rect.position;panel.size = rect.size;panel.mouse_filter = Control.MOUSE_FILTER_IGNORE;panel.add_theme_stylebox_override("panel",UiSkin.surface("hero"));app.ui.add_child(panel)
- var portrait := TextureRect.new();var atlas := AtlasTexture.new();atlas.atlas = app.PORTRAITS;atlas.region = app.portrait_region(hero);portrait.texture = atlas;portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;portrait.position = Vector2(12,10);portrait.size = Vector2(78,78);portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE;panel.add_child(portrait)
+ var portrait := TextureRect.new();var atlas: Texture2D = app.HeroArt.texture(hero);portrait.texture = atlas;portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;portrait.position = Vector2(12,10);portrait.size = Vector2(78,78);portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE;panel.add_child(portrait)
  var name := Label.new();name.text = app.game.unit_name(hero);name.position = Vector2(107,8);name.size = Vector2(rect.size.x-124,31);name.add_theme_font_override("font",app.TITLE);name.add_theme_font_size_override("font_size",29);name.add_theme_color_override("font_color",Color("e5ddd0"));name.mouse_filter = Control.MOUSE_FILTER_IGNORE;panel.add_child(name)
  var stats := Label.new();stats.text = "%d / %d HP     %d Block" % [h.hp,h.max_hp,h.block];stats.position = Vector2(108,44);stats.add_theme_font_size_override("font_size",17);stats.add_theme_color_override("font_color",Color("c3b8b1"));stats.mouse_filter = Control.MOUSE_FILTER_IGNORE;panel.add_child(stats)
  var track := ColorRect.new();track.color = Color("2c1720");track.position = Vector2(108,77);track.size = Vector2(rect.size.x-126,5);track.mouse_filter = Control.MOUSE_FILTER_IGNORE;panel.add_child(track)

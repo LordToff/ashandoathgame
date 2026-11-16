@@ -104,6 +104,7 @@ const CHAMBER = preload("res://prototype/assets/pixel_chamber.png")
 var score: Node
 var show_soundtrack := false
 const BACKDROP = preload("res://prototype/assets/pixel_arena.png")
+const HeroArt = preload("res://prototype/hero_art.gd")
 const PORTRAITS = preload("res://prototype/assets/pixel_portraits.png")
 const SPRITES = preload("res://prototype/assets/pixel_units.png")
 const BOSS_PHASE_TWO = preload("res://prototype/assets/pixel_boss_phase2.png")
@@ -150,6 +151,8 @@ var show_menu := false
 var show_lab_tools := false
 var reward_soul := false
 var blank_move_setting := false
+var reroll_each_turn := false
+var control_turn_stamp: Array = []
 var dice_animation := true
 var show_art_credits := false
 var show_player_guide := false
@@ -397,6 +400,12 @@ func panel(rect: Rect2, color: Color = Color("161d28"), border: Color = Color("3
 
 func rebuild() -> void:
  sync_presentation()
+ if page=="battle":
+  var stamp: Array = [game.get_instance_id(),game.active,game.round_no,game.recovery_active,game.heroes[game.active].get("spell_turn",0) if game.active in range(3) else 0]
+  if not control_turn_stamp.is_empty() and stamp!=control_turn_stamp:
+   choosing_reroll = false
+   if stamp[0]==control_turn_stamp[0] and (trial_choice.is_empty() or trial_choice.get("stamp",[])!=trial_choice_stamp()):selected = game.forced_die;shove_target = -1;friendly_confirm = -1;roll_feedback = {};hint = "Choose an ability."
+  control_turn_stamp = stamp
  if not trial_choice.is_empty() and trial_choice.get("stamp",[])!=trial_choice_stamp():trial_choice.clear()
  for c in ui.get_children(): ui.remove_child(c); c.queue_free()
  if show_art_credits:art_credits_ui();queue_redraw();return
@@ -441,7 +450,7 @@ func rebuild() -> void:
   button("Battle log",Vector2(398,112),Vector2(126,26),open_battle_log,MUTED).name = "BattleLogButton"
  else:
   label_at("ASH & OATH",Vector2(42,26),27,GOLD,500,true)
-  label_at("A DICE-BUILDING BOSS BATTLER · v0.45",Vector2(44,65),11,MUTED)
+  label_at("A DICE-BUILDING BOSS BATTLER · v0.46",Vector2(44,65),11,MUTED)
   button("View dice",Vector2(350,30),Vector2(235,40),func(): show_dice = true;dice_hero = build_hero;rebuild(),Color("9fc7e6"))
   button("Tutorial / Ability Lab",Vector2(605,30),Vector2(245,40),start_lab,Color("82c8b9"))
   button("What changed",Vector2(866,30),Vector2(225,40),func():show_changes = true;rebuild())
@@ -563,7 +572,7 @@ func battle_ui() -> void:
    if state == "FOCUS TARGET":die_button.add_theme_stylebox_override("normal",style(Color("243b3c"),Color("82c8b9")))
    if selected == d and not h.used[d]:
     var chosen := style(Color("2b3d48"),GOLD if game.forced_die == d else color_for_face(f));chosen.set_border_width_all(2);die_button.add_theme_stylebox_override("normal",chosen)
-   BattleHUD.category_mark(die_button,color_for_face(f),h.used[d] and d not in h.reaction and not Model.Soulcaster.held(game,game.active,d) and (h.channel.is_empty() or h.channel.die!=d),f,selected==d,waiting or cannot_focus)
+   BattleHUD.category_mark(die_button,color_for_face(f),h.used[d] and d not in h.reaction and not Model.Soulcaster.held(game,game.active,d) and (h.channel.is_empty() or h.channel.die!=d),f,selected==d,waiting or cannot_focus or (choosing_reroll and game.reroll_reason(d)!=""))
    if game.forced_die == d:die_button.tooltip_text = ""
 
   var instruction: String = "Choose a die, then its target. You can end your turn with dice left." if selected < 0 else hint
@@ -578,6 +587,7 @@ func battle_ui() -> void:
    instruction = "Lesson %d/8: " % (training_step+1)+LESSONS[training_step]
    if training_step == 6:instruction = "Soul lesson: select a Blank and move up to %d cells. You have %d conversions this hero turn." % [game.v("soul.move"),game.v("soul.uses")]
   if trial_fight:instruction = trial_forecast_text() if selected>=0 else instruction
+  if choosing_reroll:instruction = combat_prompt()
   var instruction_label := label_at(instruction,Vector2(760,502),14 if trial_fight else 15,Color("dce6ee"),640,false,true)
   instruction_label.name = "ActionInstruction";instruction_label.mouse_filter = Control.MOUSE_FILTER_PASS
   instruction_label.max_lines_visible = 3 if trial_fight else 2;instruction_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS;instruction_label.tooltip_text = instruction
@@ -623,15 +633,15 @@ func battle_ui() -> void:
  elif lab:lab_ui()
  if game.encounter_id == "nugh":
   label_at("BROOD %d/%d · LINK %s" % [game.living_minions().size(),game.v("nugh.worm_cap"),"OFF" if game.phase_two else "ON"],Vector2(536,118),11,Color("d7b3eb"),202).name = "NughBroodStatus"
- var goal := "v0.45 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
+ var goal := "v0.46 · THE HOLLOW · Read the intent, evade fire and prepare for half HP."
  if game.encounter_id == "event":goal = "CREATURES · Defeat the whole group. Each card has its own public dice. No phases or boss Soul."
- if game.encounter_id == "nugh":goal = "v0.45 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.45 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
+ if game.encounter_id == "nugh":goal = "v0.46 · SOUL LINK OFF · Hunt Nu’gh; clear worms for control." if game.phase_two else "v0.46 · SOUL LINK ON until half HP · Kill worms, then hunt the master."
  if game.encounter_id == "bugh":
-  goal = "v0.45 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
+  goal = "v0.46 · GUARD / EVADE → COUNTERATTACK · Escape gold sweep cells or fully defend a hit."
   var ward := button("OPEN · Counterattack" if game.guard_broken else "BULWARK %d · Guard / evade" % game.v("warden.armor"),Vector2(536,112),Vector2(202,28),func():show_turn = true;rebuild(),Color("86d8c5") if game.guard_broken else GOLD)
   ward.name = "WardenStatus";ward.add_theme_font_size_override("font_size",11)
  if game.encounter_id == "cantor":
-  goal = "v0.45 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
+  goal = "v0.46 · ATTACKS charge Resonance · SKILL / DEFENSE calm it · Burst during OPEN CORE."
   var meter := button("RESONANCE %d/%d · %s" % [game.resonance,game.v("cantor.resonance_cap"),"OPEN +%d" % game.core_bonus() if game.core_open else "closed"],Vector2(536,112),Vector2(202,28),func():show_turn = true;rebuild(),Color("8cdae4"))
   MobileUI.fit_button(meter,Vector2(202,28),11);meter.name = "ResonanceStatus"
   meter.tooltip_text = "Resonance = Veyl’s shared power. More power means harder bell hits. Click for rules and examples."
@@ -892,6 +902,7 @@ func _draw() -> void:
 
 func draw_board() -> void:
  preload("res://prototype/game_skin.gd").panel(self,Rect2(24,128,716,716),Color("a88a63"))
+ preload("res://prototype/battlefield_art.gd").room(self)
  draw_rect(Rect2(ORIGIN-Vector2.ONE*2,Vector2.ONE*(CELL*9+4)),Color("536777"),false,2)
  var preview: Dictionary = ability_preview()
  var highlights: Array = preview.tiles
@@ -908,12 +919,8 @@ func draw_board() -> void:
    if c in game.brand_cells: col = Color("663e31")
    if c in game.fire_tiles:col = Color("8c4b2c")
    if game.encounter_id == "bugh" and c in game.sweep_tiles:col = Color("a57636")
-   var floor_color: Color = Color("283232") if (x+y)%2==0 else Color("232c2d")
-   var tile: Texture2D = preload("res://prototype/game_skin.gd").FLOORS[(x*7+y*11)%3]
-   draw_texture_rect(tile,Rect2(p,Vector2.ONE*CELL),false,Color(.75,.73,.70))
-   draw_rect(Rect2(p,Vector2.ONE*CELL),Color(floor_color,.72))
-   if c in game.cells(3) or c in highlights or c in game.brand_cells or c in game.fire_tiles or (game.encounter_id=="bugh" and c in game.sweep_tiles):draw_rect(Rect2(p,Vector2.ONE*CELL),Color(col,0.52))
-   draw_rect(Rect2(p,Vector2.ONE*CELL),Color("465354"),false,1)
+   preload("res://prototype/battlefield_art.gd").tile(self,c,Rect2(p,Vector2.ONE*CELL))
+   if c in game.cells(3) or c in highlights or c in game.brand_cells or c in game.fire_tiles or (game.encounter_id=="bugh" and c in game.sweep_tiles):draw_rect(Rect2(p+Vector2.ONE*2,Vector2.ONE*(CELL-4)),Color(col,0.45))
    if game.encounter_id == "bugh" and c in game.sweep_tiles:
     draw_rect(Rect2(p+Vector2.ONE*4,Vector2.ONE*(CELL-8)),Color(.95,.69,.31,.86),false,2)
     draw_line(p+Vector2(9,52),p+Vector2(27,70),Color(.95,.69,.31,.65),2)
@@ -922,6 +929,7 @@ func draw_board() -> void:
    draw_trial_cell(c,p)
    if c in highlights:
     draw_rect(Rect2(p+Vector2.ONE*3,Vector2.ONE*(CELL-6)),Color(tint,.55),false,1)
+   if c in preview.destinations:preload("res://prototype/battlefield_art.gd").destination(self,Rect2(p,Vector2.ONE*CELL),tint)
    if c in target_cells or c in preview.destinations:
     draw_rect(Rect2(p+Vector2.ONE*5,Vector2.ONE*(CELL-10)),Color(tint,.95),false,3)
    if c in preview.blocked:
@@ -942,6 +950,7 @@ func draw_board() -> void:
  for i in range(9):
   draw_string(BODY,ORIGIN+Vector2(i*CELL+33,9*CELL+12),str(i+1),HORIZONTAL_ALIGNMENT_LEFT,-1,11,MUTED)
   draw_string(BODY,ORIGIN+Vector2(-20,i*CELL+32),char(65+i),HORIZONTAL_ALIGNMENT_LEFT,-1,11,MUTED)
+ preload("res://prototype/battlefield_art.gd").boss_footprint(self)
  # Portrait tokens use the same art as the party panels and drafting tabs.
  var bp: Vector2 = ORIGIN+Vector2(visual_positions.get(3,Vector2(game.boss.pos)))*CELL+Vector2.ONE*CELL*(0.5 if game.encounter_id == "event" else 1.0)+attack_nudge(3)
  if game.encounter_id!="event":draw_circle(bp+Vector2(0,26),43,Color(0.02,0.02,0.04,0.65))
@@ -1444,7 +1453,7 @@ func lab_tools_ui() -> void:
 
 func changes_ui() -> void:
  var shade := ColorRect.new(); shade.color = Color("101923"); shade.size = Vector2(1440,900); ui.add_child(shade)
- label_at("PATCH NOTES · v0.45",Vector2(125,75),32,GOLD,1200,true)
+ label_at("PATCH NOTES · v0.46",Vector2(125,75),32,GOLD,1200,true)
  label_at("Choose a topic · short pages · what changed and why",Vector2(128,125),15,MUTED,1100)
  var nav := ScrollContainer.new();nav.name = "PatchTopics";nav.position = Vector2(125,190);nav.size = Vector2(270,610);ui.add_child(nav)
  var topics := VBoxContainer.new();topics.custom_minimum_size.x = 255;topics.add_theme_constant_override("separation",7);nav.add_child(topics)
@@ -1492,7 +1501,7 @@ func turn_ui() -> void:
   var h: Dictionary = game.heroes[game.active]
   text.text += "Choose a bright, unspent die. Hover it to read its description beside the arena. Movement needs an empty highlighted cell; attacks and healing need a legal unit; setup effects use Resolve. Grey dice are spent, held as reactions or channelled. You may End turn without using every die."
   if game.reward: text.text += "\n\nReward Soul: " + ("%d/%d" % [game.soul_remaining(game.active),game.soul_limit(game.active)]) + " Blank-to-Move-%d conversions remain this hero turn.\n" % game.soul_distance(game.active)
-  text.text += "\n\nReroll timing: " + ("Any time during own turn" if game.v("hero.reroll_anytime") else ("Opening OPEN" if h.opening else "Opening CLOSED after first action")) + " · saved charges: " + str(h.rerolls) + ". A starting charge does not refill each round."
+  text.text += "\n\nReroll timing: " + ("Any time during own turn" if game.v("hero.reroll_anytime") else ("Opening OPEN" if h.opening else "Opening CLOSED after first action")) + " · saved charges: " + str(h.rerolls) + ". Turn refill is "+("ON: refill to 1 at each own turn start." if reroll_each_turn else "OFF: enable it in Settings.")
  text.text += "\n\n[b]Initiative[/b]\n"+" → ".join(game.order.map(func(id):return game.unit_name(id)))
  text.text += "\n\n[b]Between turns[/b]\nInitiative stays fixed for this encounter. New round = everyone rolls available dice together. Your next turn start clears old Block and temporary defenses; Channels can pause for maintain / release. HP damage, mitigation and expiry are recorded in the chronicle."
  ui.add_child(text)
@@ -1691,7 +1700,8 @@ func options_ui() -> void:
   balance_values["hero.reroll_anytime"] = value
   if page == "battle":game.balance["hero.reroll_anytime"] = value
   rebuild(),GOLD).name = "OptionsRerollTiming"
- button("Advanced balance workshop",Vector2(214,574),Vector2(472,52),open_balance_editor,MUTED)
+ turn_reroll_button(Vector2(214,546),Vector2(472,44))
+ button("Advanced balance workshop",Vector2(214,606),Vector2(472,44),open_balance_editor,MUTED)
  label_at("PRESENTATION",Vector2(758,264),14,GOLD,468)
  fullscreen_button(Vector2(758,294),Vector2(468,44))
  dice_animation_button(Vector2(758,348),Vector2(468,44))
@@ -1709,11 +1719,10 @@ func portrait_region(id: int) -> Rect2:
 func draw_portrait(id: int, rect: Rect2) -> void:
  if id==3:
   draw_texture_rect(EnemyArt.texture(EnemyArt.key_for(game,3) if page=="battle" else encounter),rect,false);return
- draw_texture_rect_region(PORTRAITS,rect,portrait_region(id))
+ draw_texture_rect(HeroArt.texture(id),rect,false)
 
 func portrait_at(id: int, at: Vector2, dimensions: Vector2) -> void:
- var atlas := AtlasTexture.new();atlas.atlas = PORTRAITS;atlas.region = portrait_region(id)
- var chosen: Texture2D = EnemyArt.texture(EnemyArt.key_for(game,3) if page=="battle" else encounter) if id==3 else atlas
+ var chosen: Texture2D = EnemyArt.texture(EnemyArt.key_for(game,3) if page=="battle" else encounter) if id==3 else HeroArt.texture(id)
  var picture := TextureRect.new();picture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST;picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE;picture.texture = chosen;picture.position = at;picture.size = dimensions;picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED;picture.mouse_filter = Control.MOUSE_FILTER_IGNORE;ui.add_child(picture)
 
 
@@ -1721,6 +1730,7 @@ func unit_moving(id: int) -> bool:
  return movement_tracks.has(id) and float(movement_tracks[id].elapsed)<float(movement_tracks[id].duration)
 
 func draw_unit_sprite(id: int, rect: Rect2) -> void:
+ if id in range(3):draw_texture_rect(HeroArt.texture(id),rect,false);return
  if id==3 and page=="battle":
   var ordinary: bool = game.encounter_id=="event";var center: Vector2 = rect.get_center()
   EnemyArt.draw(self,EnemyArt.key_for(game,id),center+Vector2(0,24 if ordinary else 48),t*(1.2 if game.phase_two else 1),unit_moving(id),not ordinary)
@@ -1783,7 +1793,7 @@ func apply_balance_profile(values: Dictionary, editor: Control = null) -> void:
  var base: bool = editor.tuned if is_instance_valid(editor) else balanced
  file.store_string(JSON.stringify({"format":"ash-and-oath-balance-v1","base_rules":"tuned" if base else "original","values":values},"  "));file.close()
  balanced = base
- balance_values = values.duplicate(true);balance_editor = null
+ balance_values = values.duplicate(true);reroll_each_turn = bool(values.get("hero.reroll_each_turn",0));save_combat_preferences();balance_editor = null
  if is_instance_valid(editor):editor.queue_free()
  selected = -1;draft_error = ""
  if page == "battle":
@@ -1860,11 +1870,14 @@ func draw_boss_vitals(center: Vector2) -> void:
    draw_rect(Rect2(center+Vector2(4,20),Vector2(28,16)),Color("243e50"))
    draw_string(BODY,center+Vector2(6,32),"B%d" % shown.block,HORIZONTAL_ALIGNMENT_LEFT,-1,11,Color("a7d1ee"))
   return
- var rect := Rect2(center+Vector2(-76,64),Vector2(152,24))
- draw_rect(rect,Color(0.06,0.07,0.1,0.92))
- draw_rect(rect,Color("d38b55") if game.phase_two else Color("90766e"),false,1)
- var text := "%d/%d HP · %d Block" % [shown.hp,shown.max_hp,shown.block]
- draw_string(BODY,rect.position+Vector2(2,17),text,HORIZONTAL_ALIGNMENT_CENTER,148,13,Color("f1dfc2"))
+ if shown.hp<=0:return
+ var rect: Rect2 = preload("res://prototype/battlefield_art.gd").boss_bar(center)
+ draw_rect(rect.grow(2),Color("101015"))
+ draw_rect(rect,Color("39202b"))
+ draw_rect(Rect2(rect.position,Vector2(rect.size.x*clampf(float(shown.hp)/maxi(1,shown.max_hp),0,1),rect.size.y)),Color("c05267"))
+ if shown.block>0:
+  var badge := Rect2(center+Vector2(36,45),Vector2(30,17));draw_rect(badge,Color("193448"));draw_rect(badge,Color("7caacc"),false,1)
+  draw_string(BODY,badge.position+Vector2(3,13),"B%d" % shown.block,HORIZONTAL_ALIGNMENT_LEFT,26,12,Color("c6e4fa"))
 
 func draw_phase_transition(fx: Dictionary) -> void:
  var progress: float = 1.0-fx.life/fx.length
@@ -2003,9 +2016,8 @@ func combat_reroll_ui() -> void:
  if window != "":caption = "REROLL UNAVAILABLE\n"+window
  elif choosing_reroll:caption = "REROLL: CLICK A DIE\nReady dice or held Reactions"
  else:caption = ("Reroll this die" if selected>=0 else "Reroll a die")+" · %d left" % h.rerolls+ ("" if game.v("hero.reroll_anytime") else " · opening only")
- var b := button(caption,Vector2(760,612),Vector2(640,58),func():
-  if selected >= 0 and game.reroll_reason(selected) == "":perform_reroll(selected)
-  else:choosing_reroll = true;selected = -1;hint = "Click a ready die or held Reaction to reroll it.";rebuild(),GOLD,window != "")
+ if choosing_reroll:caption = "Cancel reroll · choose a die above"
+ var b := button(caption,Vector2(760,612),Vector2(640,58),toggle_reroll_selection,GOLD,window!="" and not choosing_reroll)
  b.name = "ActionRerollButton";MobileUI.fit_button(b,Vector2(640,58),17)
  b.tooltip_text = "Consumes a charge. Roll all six sides; the same face can appear again. Spent and channelled dice cannot be restored."
 
@@ -2252,7 +2264,7 @@ func soundtrack_ui() -> void:
  var caption := label_at("♪ "+score.title(),at,11,MUTED,210 if page == "battle" else 520);caption.name = "SoundtrackCaption";caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
  var control := button("Audio",Vector2(1340,851) if page == "battle" else Vector2(1308,869),Vector2(66,29) if page == "battle" else Vector2(72,25),func():show_soundtrack = true;rebuild(),GOLD)
  control.name = "SoundtrackSettings";control.add_theme_font_size_override("font_size",11)
- if page != "battle":label_at("v0.45",Vector2(1220,875),10,MUTED,75)
+ if page != "battle":label_at("v0.46",Vector2(1220,875),10,MUTED,75)
 func soundtrack_settings_ui() -> void:
  overlay()
  label_at("Sound & atmosphere",Vector2(399,260),28,GOLD,575,true)
@@ -2873,6 +2885,7 @@ func open_battle_log() -> void:
  show_menu = false;mobile_more = false;show_history = true;log_filter = "All";rebuild()
 func blank_move_profile(profile: Dictionary) -> Dictionary:
  var result := profile.duplicate(true)
+ result["hero.reroll_each_turn"] = int(reroll_each_turn)
  var fields: Array[String] = []
  for hero in range(3):
   for field in ["eligible","mode","distance","allowance"]:fields.append("soul."+field+"."+str(hero))
@@ -2909,16 +2922,21 @@ func load_blank_move_setting() -> void:
  if config.load("user://ash-combat-options.cfg")==OK:
   blank_move_setting = bool(config.get_value("combat","blank_move_one",false))
   dice_animation = bool(config.get_value("combat","animate_dice",true))
+  reroll_each_turn = bool(config.get_value("combat","reroll_each_turn",false))
  if OS.has_feature("web"):
   var stored = JavaScriptBridge.eval("(()=>{try{return localStorage.getItem('ash-and-oath-blank-move-one')}catch(e){return null}})()",true)
   if stored in ["true","false"]:blank_move_setting = stored=="true"
   var animations = JavaScriptBridge.eval("(()=>{try{return localStorage.getItem('ash-and-oath-dice-animation')}catch(e){return null}})()",true)
   if animations in ["true","false"]:dice_animation = animations=="true"
+  var refill = JavaScriptBridge.eval("(()=>{try{return localStorage.getItem('ash-and-oath-reroll-each-turn')}catch(e){return null}})()",true)
+  if refill in ["true","false"]:reroll_each_turn = refill=="true"
+ balance_values["hero.reroll_each_turn"] = int(reroll_each_turn)
  playback.animate_dice = dice_animation
 
 func save_combat_preferences() -> void:
  var config := ConfigFile.new();config.load("user://ash-combat-options.cfg")
- config.set_value("combat","blank_move_one",blank_move_setting);config.set_value("combat","animate_dice",dice_animation);config.save("user://ash-combat-options.cfg")
+ config.set_value("combat","blank_move_one",blank_move_setting);config.set_value("combat","animate_dice",dice_animation);config.set_value("combat","reroll_each_turn",reroll_each_turn);config.save("user://ash-combat-options.cfg")
+ if OS.has_feature("web"):JavaScriptBridge.eval("try{localStorage.setItem('ash-and-oath-reroll-each-turn','"+("true" if reroll_each_turn else "false")+"')}catch(e){}",true)
 func dice_animation_button(at: Vector2, dimensions: Vector2) -> Button:
  var pick := button("Dice animation & pause: "+("ON" if dice_animation else "OFF"),at,dimensions,func():set_dice_animation(not dice_animation),Color("c5b1e3"))
  pick.name = "DiceAnimationToggle";MobileUI.fit_button(pick,dimensions,18);return pick
@@ -2942,5 +2960,30 @@ func art_credits_ui() -> void:
  MobileUI.text(column,"Creative Commons Attribution 3.0. Original 2020 SVGs are unchanged; the game scales and tints their display. Every ability, including spells and weapon attacks, has a distinct selected symbol.",18,MUTED)
  MenuHelpers.action(self,column,"Game-icons.net — artists and source",func():OS.shell_open("https://game-icons.net"),"IconCreditsSource")
  MenuHelpers.action(self,column,"CC BY 3.0 licence",func():OS.shell_open("https://creativecommons.org/licenses/by/3.0/"),"IconCreditsLicense")
- MobileUI.text(column,"Gothic headings: Pirata One by Rodrigo Fuenzalida and Nicolas Massi, SIL Open Font License. The Hollow: skeletal warrior by roctavian (2016), Dungeon Crawl tile artwork, Public Domain / CC0. Other existing sprite sources and licence notices remain in the repository.",18,MUTED)
+ MobileUI.text(column,"Gothic headings: Pirata One by Rodrigo Fuenzalida and Nicolas Massi, SIL Open Font License. The Hollow: skeletal warrior by roctavian (2016). Party knights, cobblestone and masonry: original Dungeon Crawl / RLTiles contributors (2016), Public Domain / CC0 tile artwork. Other existing sprite sources and licence notices remain in the repository.",18,MUTED)
  BattlePanels.footer(self,["Back to game"],[func():show_art_credits = false;rebuild()])
+
+func turn_reroll_button(at: Vector2, dimensions: Vector2) -> Button:
+ var pick := button("1 reroll each turn: "+("ON" if reroll_each_turn else "OFF"),at,dimensions,func():set_turn_reroll(not reroll_each_turn),Color("c5b1e3"))
+ pick.name = "TurnRerollToggle";pick.tooltip_text = "Refill to at least 1 Action Reroll at each hero's own turn start, up to the bank cap. Unused charges do not stack. Changes apply from the next turn; switching never grants a charge.";MobileUI.fit_button(pick,dimensions,18);return pick
+func set_turn_reroll(enabled: bool, save: bool = true) -> void:
+ reroll_each_turn = enabled;balance_values["hero.reroll_each_turn"] = int(enabled)
+ if page=="battle":game.balance["hero.reroll_each_turn"] = int(enabled)
+ if save:
+  save_combat_preferences()
+ rebuild()
+func toggle_reroll_selection() -> void:
+ if choosing_reroll:choosing_reroll = false;selected = -1;rebuild();return
+ if game.reroll_window_reason()!="":return
+ if selected>=0 and game.reroll_reason(selected)=="":perform_reroll(selected);return
+ choosing_reroll = true;selected = -1;friendly_confirm = -1;rebuild()
+func combat_prompt() -> String:
+ if choosing_reroll:return "Choose a die to reroll · press Cancel reroll to stop"
+ if game.active not in range(3):return "Tap an enemy intent for targets and effects"
+ if selected<0:return "Tap an ability, then its target on the map"
+ var face: int = game.face(game.active,selected)
+ if face==6:return "Focus · choose another ready die"
+ var preview: Dictionary = ability_preview()
+ if not preview.destinations.is_empty():return Catalog.name_for(face)+" · tap a lit tile"
+ if not preview.targets.is_empty():return Catalog.name_for(face)+" · tap a marked target"
+ return Catalog.name_for(face)+" · choose its effect"

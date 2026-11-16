@@ -1,0 +1,67 @@
+{
+  "repository": "https://github.com/crawl/crawl",
+  "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+  "revision_date": "2016-09-17",
+  "license": "Public Domain / CC0 tile artwork",
+  "files": {
+    "vesper.png": {
+      "original_path": "crawl-ref/source/rltiles/mon/vault_guard.png",
+      "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+      "sha256": "227f11fd42277c6508043266dc5f9397f2ee101d93e07edd4186f61cf19b2891",
+      "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/mon/vault_guard.png",
+      "curated_cc0_git_blob": "8da21aa72e7740f111ee189da5df47047f4deed0",
+      "curated_cc0_release_path": "releases/Nov-2015/mon/vault_guard.png"
+    },
+    "rook.png": {
+      "original_path": "crawl-ref/source/rltiles/mon/death_knight.png",
+      "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+      "sha256": "da1ddd4500b411966e39d84a2d8fe75d510736bebe3ba100ed9622215cb06800",
+      "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/mon/death_knight.png",
+      "curated_cc0_git_blob": "b28b6583268fff351a538e7104ede6ca10e767af",
+      "curated_cc0_release_path": "releases/Nov-2015/mon/death_knight.png"
+    },
+    "wren.png": {
+      "original_path": "crawl-ref/source/rltiles/mon/vault_warden.png",
+      "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+      "sha256": "3c3d8e72cb59bcabfae7abace6801e4e0808893c05a026b7da1454bf200ba4f3",
+      "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/mon/vault_warden.png",
+      "curated_cc0_git_blob": "f21e456721e8633401b0c415d3b51b53f2c4b62b",
+      "curated_cc0_release_path": "releases/Nov-2015/mon/vault_warden.png"
+    },
+    "cobble_1.png": {
+      "original_path": "crawl-ref/source/rltiles/dngn/floor/cobble_blood1.png",
+      "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+      "sha256": "e52918da74176ba589fdcceb2f4b3c0feba725267932bae4348b24ab9c3a5eea",
+      "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/floor/cobble_blood1.png",
+      "curated_cc0_git_blob": "cd8370a23cf6361310fe9411f89c33dd22355c07",
+      "curated_cc0_release_path": "releases/Nov-2015/dngn/floor/cobble_blood1.png"
+    },
+    "cobble_2.png": {
+      "original_path": "crawl-ref/source/rltiles/dngn/floor/cobble_blood2.png",
+      "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+      "sha256": "46bec2c779e4bcce0fb71bdf2cfcb52bd4b79aebd27d00e360aa42027cd19e79",
+      "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/floor/cobble_blood2.png",
+      "curated_cc0_git_blob": "c5c71962785cc61c41fd98ceebd0ffe367ede7cc",
+      "curated_cc0_release_path": "releases/Nov-2015/dngn/floor/cobble_blood2.png"
+    },
+    "cobble_3.png": {
+      "original_path": "crawl-ref/source/rltiles/dngn/floor/cobble_blood3.png",
+      "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+      "sha256": "6ee8cc924a849f3a428911ccf1fb6ab9a994fe02d86d919b43cb2d70daed8579",
+      "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/floor/cobble_blood3.png",
+      "curated_cc0_git_blob": "8c35db8b60d6d6f61009e5e2ffcccf996a112ad2",
+      "curated_cc0_release_path": "releases/Nov-2015/dngn/floor/cobble_blood3.png"
+    },
+    "masonry.png": {
+      "original_path": "crawl-ref/source/rltiles/dngn/wall/brick_gray0.png",
+      "revision": "7c9bbd012c6538499643b2da006c16a7c6fee1e0",
+      "sha256": "bc71c0d46fe1c60090504d662c9dcf7faa6353e6a75ad492ed61fe2ee77df304",
+      "source_url": "https://raw.githubusercontent.com/crawl/crawl/7c9bbd012c6538499643b2da006c16a7c6fee1e0/crawl-ref/source/rltiles/dngn/wall/brick_gray0.png",
+      "curated_cc0_git_blob": "5cfff7790d121705360315f029570f92f48947cb",
+      "curated_cc0_release_path": "releases/Nov-2015/dngn/wall/brick_gray0.png"
+    }
+  },
+  "curated_cc0_repository": "https://github.com/crawl/tiles",
+  "curated_cc0_revision": "a6ea1655db5c044829d9eea19a232fa6fcac87b0",
+  "curated_cc0_tree": "a6ea1655db5c044829d9eea19a232fa6fcac87b0"
+}

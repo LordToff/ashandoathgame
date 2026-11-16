@@ -146,6 +146,8 @@ static func options(app) -> void:
  var column := P.panel(app,"Trial options","")
  var display: Button = app.fullscreen_button(Vector2.ZERO,Vector2(420,68));display.reparent(column);display.custom_minimum_size = Vector2(0,68);display.size_flags_horizontal = Control.SIZE_EXPAND_FILL
  var animations: Button = app.dice_animation_button(Vector2.ZERO,Vector2(420,68));animations.reparent(column);animations.custom_minimum_size = Vector2(0,68);animations.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+ var refill: Button = app.turn_reroll_button(Vector2.ZERO,Vector2(420,68));refill.reparent(column);refill.custom_minimum_size = Vector2(0,68);refill.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+ M.text(column,"Refill to 1 Action Reroll at each own turn start. Unused charges do not stack; switching takes effect next turn.",18,app.MUTED)
  var movement: Button = app.blank_move_button(Vector2.ZERO,Vector2(420,68));movement.reparent(column);movement.custom_minimum_size = Vector2(0,68);movement.size_flags_horizontal = Control.SIZE_EXPAND_FILL
  M.text(column,"Spend one rolled Blank as Move 1, once per hero turn. Switching does not refill it.",18,app.MUTED)
  act(app,column,"Sound & volume",func():app.show_soundtrack = true;app.rebuild(),"TrialSound")
