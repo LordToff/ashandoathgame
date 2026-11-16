@@ -1,0 +1,448 @@
+{
+  "version": "0.46",
+  "date": "2026-11-16",
+  "engine": "4.6.3.stable",
+  "result": "passed",
+  "native_check_count": 3971,
+  "native_suites": [
+    {
+      "test": "direct_v39",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "DIRECT v39: 43 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "soulcaster_v38",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "SOULCASTER v38: 144 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "classes_v37",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CLASSES v0.37: 610 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "trials_v36",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "TRIALS v0.36: 324 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "clarity_v35",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CLARITY v0.35: 98 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "trials_v34",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "TRIALS v0.34: 244 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "mobile_flow_v33",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "MOBILE FLOW v0.33: 55 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "clarity_v32",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CLARITY v0.32: 62 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "essence_v27",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "ESSENCE V0.27: 115 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "hub_v28",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "HUB V0.28: 36 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "wilds_v29",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "WILDS V0.29: 64 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "mobile_v31",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "MOBILE v0.31: 17 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "usability_v26",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.26 usability: 69 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "playtest_v12",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.12 PLAYTEST: 51 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "trial_regression",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "TRIAL REGRESSIONS: 12 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "balance",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CUSTOM BALANCE: 51 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "warden_v24",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.24 WARDEN: 38 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "cantor_v20",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.20 CANTOR: 34 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "encounter_v19",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.19 ENCOUNTERS: 358 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "summons_v22",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.22 SUMMONS: 269 checks, 0 failures; seeded friendly hits 33/120"
+      ],
+      "failures": []
+    },
+    {
+      "test": "worm_path_v221",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "V0.22.1 WORM PATH: 75 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "equipment_v40",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "EQUIPMENT v40: 78 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "playback_v41",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "PLAYBACK v41: 56 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "ux_v42",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "UX v42: 86 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "menus_v43",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "MENUS v43: 169 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "chamber_v44",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "CHAMBER v44: 164 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "skin_v45",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "SKIN v45: 587 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "test": "turns_v46",
+      "exit": 0,
+      "script_errors": false,
+      "summary": [
+        "TURNS v46: 62 checks, 0 failures"
+      ],
+      "failures": []
+    }
+  ],
+  "turns_browser": {
+    "result": "passed",
+    "devices": [
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "original knights and cobblestone arena",
+          "reroll selection and cancel",
+          "paid reroll",
+          "normal Settings toggle without immediate refill",
+          "per-hero turn refills",
+          "movement range without RNG reads",
+          "next round refill",
+          "stale selection clears before next hero action",
+          "web reload persistence",
+          "Trial OFF and ON from next turn",
+          "normal inventory unchanged"
+        ]
+      },
+      {
+        "viewport": [
+          360,
+          640
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "original knights and cobblestone arena",
+          "reroll selection and cancel",
+          "paid reroll",
+          "normal Settings toggle without immediate refill",
+          "per-hero turn refills",
+          "movement range without RNG reads",
+          "next round refill",
+          "stale selection clears before next hero action",
+          "web reload persistence",
+          "Trial OFF and ON from next turn",
+          "normal inventory unchanged"
+        ]
+      },
+      {
+        "viewport": [
+          844,
+          390
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "original knights and cobblestone arena",
+          "reroll selection and cancel",
+          "paid reroll",
+          "normal Settings toggle without immediate refill",
+          "per-hero turn refills",
+          "movement range without RNG reads",
+          "next round refill",
+          "stale selection clears before next hero action",
+          "web reload persistence",
+          "Trial OFF and ON from next turn",
+          "normal inventory unchanged"
+        ]
+      },
+      {
+        "viewport": [
+          1440,
+          900
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "original knights and cobblestone arena",
+          "reroll selection and cancel",
+          "paid reroll",
+          "normal Settings toggle without immediate refill",
+          "per-hero turn refills",
+          "movement range without RNG reads",
+          "next round refill",
+          "stale selection clears before next hero action",
+          "web reload persistence",
+          "Trial OFF and ON from next turn",
+          "normal inventory unchanged"
+        ]
+      }
+    ]
+  },
+  "direct_browser": {
+    "result": "passed",
+    "devices": [
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "Strike ability then map target",
+          "one-tap Guard",
+          "Step then destination",
+          "normal and Trial direct controls",
+          "direct targeted Grave Stitch",
+          "Borrow Shape copied Guard resolves",
+          "compact board-visible Soulcaster",
+          "two taps total to Gather/create",
+          "creation costs and delayed spell",
+          "direct Harvester/Wraith/Jab/Crack",
+          "licensed animated enemy render"
+        ]
+      },
+      {
+        "viewport": [
+          360,
+          640
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "Strike ability then map target",
+          "one-tap Guard",
+          "Step then destination",
+          "normal and Trial direct controls",
+          "direct targeted Grave Stitch",
+          "Borrow Shape copied Guard resolves",
+          "compact board-visible Soulcaster",
+          "two taps total to Gather/create",
+          "creation costs and delayed spell",
+          "direct Harvester/Wraith/Jab/Crack",
+          "licensed animated enemy render"
+        ]
+      },
+      {
+        "viewport": [
+          844,
+          390
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "Strike ability then map target",
+          "one-tap Guard",
+          "Step then destination",
+          "normal and Trial direct controls",
+          "direct targeted Grave Stitch",
+          "Borrow Shape copied Guard resolves",
+          "compact board-visible Soulcaster",
+          "two taps total to Gather/create",
+          "creation costs and delayed spell",
+          "direct Harvester/Wraith/Jab/Crack",
+          "licensed animated enemy render"
+        ]
+      },
+      {
+        "viewport": [
+          1440,
+          900
+        ],
+        "result": "passed",
+        "browser_errors": [],
+        "tested": [
+          "Strike ability then map target",
+          "one-tap Guard",
+          "Step then destination",
+          "normal and Trial direct controls",
+          "direct targeted Grave Stitch",
+          "Borrow Shape copied Guard resolves",
+          "compact board-visible Soulcaster",
+          "two taps total to Gather/create",
+          "creation costs and delayed spell",
+          "direct Harvester/Wraith/Jab/Crack",
+          "licensed animated enemy render"
+        ]
+      }
+    ]
+  },
+  "notes": [
+    "New refill behavior is OFF by default and is tested in normal / Trial models, full recovery, Shared Burden, cap limits and no-toggle farming.",
+    "A development regression clearing freshly staged valid Trial choices was fixed; the 324-check Trial v36 suite was rechecked successfully.",
+    "Seven unchanged original PNG hashes are verified, and all seven match the upstream curated CC0 release blob hashes.",
+    "Portraits, combat and falls share the original 2016 knight selections.",
+    "The exact committed no-hook shipping export is checked separately before Pages publication.",
+    "Historical exit-time native ObjectDB/resource warnings remain; passing suites have no script errors or failed assertions.",
+    "No physical phone, listening session or Windows rebuild was tested."
+  ]
+}

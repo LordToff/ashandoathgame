@@ -1,11 +1,11 @@
-# Ash & Oath v0.45
+# Ash & Oath v0.46
 
-[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.45)
+[Play in your browser](https://lordtoff.github.io/ashandoathgame/?v=0.46)
 
-A gothic HUD with near-black panels, ivory symbols and crimson accents. All 85 ability identities have distinct artist-authored symbols, and the Hollow uses roctavian’s original skeletal warrior. Test chamber, normal play and Trials share the clearer interface.
+Optional per-turn reroll refill, clear cancel and turn controls, original knight sprites and a cobblestone arena. Normal play and Trials share the saved setting and clearer battlefield.
 
-[Current rules](current-rules.html) · [Rulebook PDF](AshAndOath-Current-Rules-v0.45.pdf) · [Changes](Changes-v0.45.md) · [Validation](Validation-v0.45.md)
+[Current rules](current-rules.html) · [Rulebook PDF](AshAndOath-Current-Rules-v0.46.pdf) · [Changes](Changes-v0.46.md) · [Validation](Validation-v0.46.md)
 
 [Source repository](https://github.com/LordToff/ashandoathgame) · [Recovery and publishing](RECOVERY.md). SOURCE_COMMIT.txt and BUILD.json identify the tested source and release files.
 
-This browser release preserves the existing Windows downloads without rebuilding them.
+Existing Windows downloads are unchanged.

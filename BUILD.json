@@ -1,35 +1,39 @@
 {
-  "version": "0.45",
-  "source_commit": "4fe0ddd42f89b10e5456090243d977ea6b735692",
+  "version": "0.46",
+  "source_commit": "be9f5c2675a45d989976334c7f20c7e186d4a5ca",
   "engine": "4.6.3.stable",
   "files": {
-    "ART_NOTES_v0.45.md": {
-      "bytes": 7051,
-      "sha256": "1de0674528e44fbf8337f2e4b542be19e59ca64510bbd67d453540f793c5dec8"
+    "ART_NOTES_v0.46.md": {
+      "bytes": 9456,
+      "sha256": "0ab568c6bd634c3ae350fc425919da03b2975b36d65fcc66e19d7663c9f461da"
     },
-    "AshAndOath-Current-Rules-v0.45.pdf": {
-      "bytes": 164150,
-      "sha256": "e6be89b17a72f4df7114c225229907689f240d12d1181d84a96ceff67f6abf36"
+    "AshAndOath-Current-Rules-v0.46.pdf": {
+      "bytes": 165021,
+      "sha256": "8163b4d42d2afdaf6a42d23da9b093aa3ed33bafba60dc69dc582d0a271c8b09"
     },
     "CHANGELOG.txt": {
-      "bytes": 80258,
-      "sha256": "be092b4e9e0eea15c447c5c749bf0db3340420306acaaa273fc227edf358850f"
+      "bytes": 83125,
+      "sha256": "e790c29698f51ee3576f9fd2f92a8ec775f47db5ab94b861d559f422a23ce6ea"
     },
-    "CHANGES_v0.45.md": {
-      "bytes": 2616,
-      "sha256": "aeefee34feed758e36777aaaaf96d3503825ccc7566f449a4e57a6135f6df96d"
+    "CHANGES_v0.46.md": {
+      "bytes": 2865,
+      "sha256": "e4d758a047c6b302a861f92c7df500154fb3017e7151703ef49389ec66cf96d5"
+    },
+    "CRAWL_CC0_CURATED_README.md": {
+      "bytes": 1142,
+      "sha256": "b278580bc67fd1035d04c356a74b6efb94a802eea39b63da88777b99ebc08c16"
     },
     "CRAWL_UPSTREAM_LICENSE.txt": {
       "bytes": 19608,
       "sha256": "9567806dee0f63849647525d0e3a739f1e5f40e8956e394ef51b0026ebad96eb"
     },
-    "Changes-v0.45.md": {
-      "bytes": 2616,
-      "sha256": "aeefee34feed758e36777aaaaf96d3503825ccc7566f449a4e57a6135f6df96d"
+    "Changes-v0.46.md": {
+      "bytes": 2865,
+      "sha256": "e4d758a047c6b302a861f92c7df500154fb3017e7151703ef49389ec66cf96d5"
     },
-    "Current-Rules-v0.45.md": {
-      "bytes": 105654,
-      "sha256": "48d482a697bb1ca2efc08ec3ff3dca6e274a207c5946977440fa246dae48cd31"
+    "Current-Rules-v0.46.md": {
+      "bytes": 106720,
+      "sha256": "a40f4433175c47c2bed8f229d1a3ee95cfed06ac5b8a1c148a0d29c155523bb0"
     },
     "DUNGEON_TILESET_II_LICENSE.txt": {
       "bytes": 360,
@@ -51,45 +55,49 @@
       "bytes": 570,
       "sha256": "9f574a2f1f636a3db8a0665ba90212f34e2b5e61ecb533d77c05237766374111"
     },
+    "PARTY_ARENA_SOURCES.md": {
+      "bytes": 2018,
+      "sha256": "d1e029a62cea3f1659ae2d73c89dbea9adbf71d264c6b7b3012a207d0690944e"
+    },
     "PIRATA_ONE_OFL.txt": {
       "bytes": 4427,
       "sha256": "e8ad3f3de5baeff6bac6e711d8c406e0a6b8a61d2944741532d8965d893a2681"
     },
     "README.md": {
-      "bytes": 793,
-      "sha256": "c0be4404bf0dc978ae465ebcd640a5ddb83f20cd1fd42f32420512285824f007"
+      "bytes": 670,
+      "sha256": "0acbcd27306777a518d45e379580be9e8f6fb250d718601cc93105b1c0380717"
     },
     "RECOVERY.md": {
-      "bytes": 26212,
-      "sha256": "9535691f95a6fe59d8bd29ab78d8f2d37ed28e0c8900bd456a49a33c217249da"
+      "bytes": 27348,
+      "sha256": "519ed3b539f6bdcfe843d89f5a9d192047f9291fbe3231cfc708afb40f1e7260"
     },
     "SOURCE_COMMIT.txt": {
       "bytes": 41,
-      "sha256": "0da912d5dc14b5a047be11872ad1b94f05e45063245823d56c8003b8fe554a52"
+      "sha256": "b0c20b9cacc1be42aa29ba0e677e555457f63261c6d2989ce837b3bd0479e7fc"
     },
-    "Sprite-Selections-v0.45.json": {
-      "bytes": 38428,
-      "sha256": "8935db192389f97a6c6373195640ee48ef36bd6c558a9f261441a0372a605b94"
+    "Sprite-Selections-v0.46.json": {
+      "bytes": 44109,
+      "sha256": "82cf265c89305a7fd030eef39cf51cf1c376576073a0a68e78f0e769528c7f4f"
     },
-    "Sprite-Sources-v0.45.md": {
-      "bytes": 2239,
-      "sha256": "b8c36d6881c65311bb8f36422638264b1a494c1d7664d7e39b5e6e0b9f03d08d"
+    "Sprite-Sources-v0.46.md": {
+      "bytes": 2586,
+      "sha256": "81da3664ab0e40104f067939f217aee4a10b348de2cf611b259d1d154f729c49"
     },
     "VERSION.txt": {
       "bytes": 64,
-      "sha256": "162c58401c66234513a0fb030001916cfbaa1bf302f9a35e51a91aff3ffbd1d5"
+      "sha256": "06a0f3ee7644bcfa66f754c586135df21eee02ddaa862ebc7d397f2cf6450e20"
     },
-    "Validation-v0.45.json": {
-      "bytes": 11924,
-      "sha256": "539c32ad7b7215949c0e090cb936ff29814cea99c6904494488f290ddcc21ed3"
+    "Validation-v0.46.json": {
+      "bytes": 11408,
+      "sha256": "5d91bd48daa5ddfb7e6297baf4fc3c8587fb9e43ecd275b4ad740fd4c0c252c6"
     },
-    "Validation-v0.45.md": {
-      "bytes": 2617,
-      "sha256": "4b4e006b99e2c0953290878fab3257a4ca1bb2d8e1a0262589590176094818aa"
+    "Validation-v0.46.md": {
+      "bytes": 2898,
+      "sha256": "ca6bf3f8a15fc9f8a0e71fb2ca16788b1c533293ffd0727b8a4860f8aecd5392"
     },
     "current-rules.html": {
-      "bytes": 121919,
-      "sha256": "63f48257ffa09fae1cb42b7d1bb60eba9f010d25cc9c91dd9691a4c46776b3bd"
+      "bytes": 123012,
+      "sha256": "59aaf0d83ef5572dc7e641fc52a1fdc2e1113cad9d39f3cd0cf2aa32f4b259ae"
     },
     "index.apple-touch-icon.png": {
       "bytes": 30181,
@@ -105,7 +113,7 @@
     },
     "index.html": {
       "bytes": 5476,
-      "sha256": "3014e47c9ad0f619643c38b956b7e5bb0ceaff1c17d1f137703a783534f312f3"
+      "sha256": "7117df07591e0cd8d3cb1471c86749603381bc8ceb2b37249c3a5ff8a374eb7c"
     },
     "index.icon.png": {
       "bytes": 5373,
@@ -116,16 +124,16 @@
       "sha256": "e3f56ee40e6f84371053db06692cfac15e2c8659547b11c6b2dfa1996dabd981"
     },
     "index.pck": {
-      "bytes": 4169060,
-      "sha256": "08e962eb888f02253009c8083d6f6e82c23976df5e44775e47c0057e99341dec"
+      "bytes": 4190736,
+      "sha256": "1a8dbaa22ffe19b08d0bbaba63358a162c8eae34f304ff04b35744b23ffc60d8"
     },
     "index.png": {
       "bytes": 21443,
       "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
     },
-    "index.v0.45.pck": {
-      "bytes": 4169060,
-      "sha256": "08e962eb888f02253009c8083d6f6e82c23976df5e44775e47c0057e99341dec"
+    "index.v0.46.pck": {
+      "bytes": 4190736,
+      "sha256": "1a8dbaa22ffe19b08d0bbaba63358a162c8eae34f304ff04b35744b23ffc60d8"
     },
     "index.wasm": {
       "bytes": 37700666,
